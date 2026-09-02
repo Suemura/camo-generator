@@ -1,0 +1,926 @@
+[
+  {
+    "id": "fs34079",
+    "name": "Dark Green (Army Forest Green, ANA 631)",
+    "std": "FS 595",
+    "code": "34079",
+    "hex": "#555548",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-m81",
+        "aircraft",
+        "tank"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "M81 ウッドランドの緑。SEA 迷彩 (ベトナム期航空機) の濃緑にも使用",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs30118",
+    "name": "Field Drab (ANA 617)",
+    "std": "FS 595",
+    "code": "30118",
+    "hex": "#705b42",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-m81",
+        "tank"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "M81 ウッドランドの茶。MERDC 車両迷彩色の一つ",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs33303",
+    "name": "Sand",
+    "std": "FS 595",
+    "code": "33303",
+    "hex": "#a19074",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-m81",
+        "camo-3color-desert"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "M81 ウッドランドのサンド。3色デザートの基色にも近い",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs37030",
+    "name": "Black (Camouflage)",
+    "std": "FS 595",
+    "code": "37030",
+    "hex": "#363738",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-m81",
+        "tank"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "M81 ウッドランドの黒。NATO 3色迷彩の黒 (NATO Black)",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs37038",
+    "name": "Black (Navy #3 Black, ANA 604)",
+    "std": "FS 595",
+    "code": "37038",
+    "hex": "#373838",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "aircraft",
+        "ship",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "米軍航空機・艦艇の標準黒。TS-6 / XF-1 相当",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs34087",
+    "name": "Olive Drab",
+    "std": "FS 595",
+    "code": "34087",
+    "hex": "#3c3421",
+    "tags": {
+      "hue": "other",
+      "use": [
+        "tank",
+        "aircraft"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "米陸軍 WWII〜1970 年代の車両・ヘリ基本色。1974 年に 34088 へ改番 (595C 未収録)。XF-62 相当",
+    "source": "FS 595 hex chart 転載 (https://www.perbang.dk/rgb/3c3421/)。595C 未収録のため換算値は目安"
+  },
+  {
+    "id": "fs30219",
+    "name": "Dark Tan (Sierra Tan, ANA 628)",
+    "std": "FS 595",
+    "code": "30219",
+    "hex": "#917360",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "aircraft",
+        "tank"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "SEA 迷彩 (F-4 / F-105 等) のタン",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs34102",
+    "name": "Medium Green (Dark Green)",
+    "std": "FS 595",
+    "code": "34102",
+    "hex": "#595b45",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "aircraft",
+        "tank"
+      ],
+      "country": [
+        "us",
+        "ru"
+      ]
+    },
+    "note": "SEA 迷彩の明緑。ソ連 4BO の近似色としても引用される",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs36375",
+    "name": "Light Ghost Gray (Light Compass Ghost Gray)",
+    "std": "FS 595",
+    "code": "36375",
+    "hex": "#9aa5ab",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "aircraft"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "F-15 / F-16 / F-18 下面色。C-308 相当",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs36118",
+    "name": "Gunship Gray (ANA 603)",
+    "std": "FS 595",
+    "code": "36118",
+    "hex": "#5a6269",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "aircraft"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "F-16 / A-10 の濃灰。C-305 相当",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs35237",
+    "name": "Blue Gray (Medium Gray)",
+    "std": "FS 595",
+    "code": "35237",
+    "hex": "#7a888e",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "aircraft"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "F-14 / F-18 の TPS 迷彩上面色。C-337 相当",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs34094",
+    "name": "Green 383 (NATO Green)",
+    "std": "FS 595",
+    "code": "34094",
+    "hex": "#4f5444",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "tank"
+      ],
+      "country": [
+        "us",
+        "other"
+      ]
+    },
+    "note": "NATO 3色迷彩の緑。CARC 車両基本色。TS-61 相当",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs20150",
+    "name": "Coyote 476 / 498",
+    "std": "FS 595",
+    "code": "20150",
+    "hex": "#7c6852",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "uniform",
+        "camo-marpat",
+        "camo-multicam"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "米海兵隊装備品 (Coyote 476) / 陸軍 OCP 装備品 (Coyote 498) の基準色",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs34160",
+    "name": "Foliage Green",
+    "std": "FS 595",
+    "code": "34160",
+    "hex": "#676962",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "uniform",
+        "aircraft"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "米陸軍装備品・航空機の低彩度緑",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs24165",
+    "name": "Foliage Green 502 / 504",
+    "std": "FS 595",
+    "code": "24165",
+    "hex": "#6d6f6a",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-ucp"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "UCP (ACU) の緑",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs26260",
+    "name": "Urban Gray 501 / 505",
+    "std": "FS 595",
+    "code": "26260",
+    "hex": "#8a8981",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "camo-ucp"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "UCP (ACU) のグレー",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "fs23525",
+    "name": "Desert Sand 500 / 503",
+    "std": "FS 595",
+    "code": "23525",
+    "hex": "#bfb3a4",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-ucp"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "UCP (ACU) のサンド (基色)",
+    "source": "GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "ams34076",
+    "name": "Ranger Green",
+    "std": "AMS-STD-595A",
+    "code": "34076",
+    "hex": "#605b50",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "uniform",
+        "camo-multicam"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "米特殊部隊装備品の定番色。Multicam 装備の緑系",
+    "source": "approx.: https://hextoral.com/hex-color/605b50/ams-std-595a/ (規格チップ由来の画面近似)"
+  },
+  {
+    "id": "khaki",
+    "name": "Khaki",
+    "std": "descriptive",
+    "code": "khaki",
+    "hex": "#c3b091",
+    "tags": {
+      "hue": "other",
+      "use": [
+        "uniform",
+        "camo-dpm"
+      ],
+      "country": [
+        "uk",
+        "other"
+      ]
+    },
+    "note": "英連邦由来の軍服基本色。DPM の基色 (サンド) にも近い",
+    "source": "https://en.wikipedia.org/wiki/Khaki (色見本 #C3B091)"
+  },
+  {
+    "id": "ral7028",
+    "name": "Dunkelgelb",
+    "std": "RAL",
+    "code": "7028",
+    "hex": "#9a8953",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "tank"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ドイツ戦車 1943〜 基本色。RAL Classic 廃番のため換算値はばらつく。TS-3 / XF-60 相当",
+    "source": "approx.: https://www.scalemates.com/colors/ak-real-colors--799/rc060-dunkelgelb-dark-yellow-ral-7028-acrylic-lacquer-matt--13173 (画面近似 #9a8953)"
+  },
+  {
+    "id": "ral6003",
+    "name": "Olivgrün",
+    "std": "RAL",
+    "code": "6003",
+    "hex": "#4b573e",
+    "tags": {
+      "hue": "other",
+      "use": [
+        "tank"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ドイツ戦車 1943〜 迷彩色の緑。XF-58 相当",
+    "source": "https://encycolorpedia.com/ (RAL 6003) #4b573e"
+  },
+  {
+    "id": "ral8017",
+    "name": "Rotbraun (Schokoladenbraun)",
+    "std": "RAL",
+    "code": "8017",
+    "hex": "#44322d",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "tank"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ドイツ戦車 1943〜 迷彩色の赤褐色。XF-64 相当",
+    "source": "https://encycolorpedia.com/ (RAL 8017) #44322d"
+  },
+  {
+    "id": "ral7021",
+    "name": "Schwarzgrau (Panzergrau)",
+    "std": "RAL",
+    "code": "7021",
+    "hex": "#2e3234",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "tank"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ドイツ戦車 1940〜43 基本色。TS-4 / XF-63 相当",
+    "source": "https://encycolorpedia.com/ (RAL 7021) #2e3234"
+  },
+  {
+    "id": "ral6031",
+    "name": "Bronzegrün (F9)",
+    "std": "RAL",
+    "code": "6031",
+    "hex": "#495746",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "tank",
+        "camo-flecktarn"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ドイツ連邦軍 3色迷彩 (1984〜) の緑・基色。TS-78 相当",
+    "source": "https://encycolorpedia.com/ (RAL 6031) #495746"
+  },
+  {
+    "id": "ral8027",
+    "name": "Lederbraun (F9)",
+    "std": "RAL",
+    "code": "8027",
+    "hex": "#544c42",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "tank",
+        "camo-flecktarn"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ドイツ連邦軍 3色迷彩の茶",
+    "source": "https://nuancier-ral.com/en/ral-8027-maroon-camouflage-otan #544C42 (F9 迷彩色。他源に #5a4a3d 前後の値もあり)"
+  },
+  {
+    "id": "ral9021",
+    "name": "Teerschwarz (F9)",
+    "std": "RAL",
+    "code": "9021",
+    "hex": "#151618",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "tank",
+        "camo-flecktarn"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ドイツ連邦軍 3色迷彩の黒",
+    "source": "https://nuancier-ral.com/en/ral-9021-black-camouflage-otan-tar #151618 (他源に #3e3f3c もあり。マット黒のため差が大きい)"
+  },
+  {
+    "id": "ral6014",
+    "name": "Gelboliv",
+    "std": "RAL",
+    "code": "6014",
+    "hex": "#474135",
+    "tags": {
+      "hue": "other",
+      "use": [
+        "tank"
+      ],
+      "country": [
+        "de",
+        "fr",
+        "it"
+      ]
+    },
+    "note": "ドイツ連邦軍 1956〜84 車両単色。仏 vert OTAN / 伊 verde NATO の民生換算としても慣用",
+    "source": "https://encycolorpedia.com/ (RAL 6014) #474135"
+  },
+  {
+    "id": "su-4bo",
+    "name": "4BO 保護色 (Zashchitnyi)",
+    "std": "ソ連規格",
+    "code": "4BO",
+    "hex": "#595b45",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "tank"
+      ],
+      "country": [
+        "ru"
+      ]
+    },
+    "note": "ソ連戦車 WWII 基本色。近年の研究では FS 34102 に近いとされる。XF-67 相当",
+    "source": "approx.: FS 34102 近似説 (https://www.tankarchives.com/2014/01/soviet-camouflage.html, Vallejo 71.017 表記) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "su-7k",
+    "name": "7K 黄土色 (Zheltozem)",
+    "std": "ソ連規格",
+    "code": "7K",
+    "hex": "#d7c2a0",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "tank"
+      ],
+      "country": [
+        "ru"
+      ]
+    },
+    "note": "ソ連 1941 年 3色迷彩の黄土。FS 33578 近似",
+    "source": "approx.: FS 33578 近似 (https://kawarthascalemodellers.com/soviet-colors-in-the-great-patriotic-war/) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "bs381c-641",
+    "name": "Dark Green",
+    "std": "BS 381C",
+    "code": "641",
+    "hex": "#484838",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "aircraft",
+        "tank"
+      ],
+      "country": [
+        "uk"
+      ]
+    },
+    "note": "RAF 戦闘機上面迷彩の濃緑 (WWII〜冷戦期)。英陸軍車両の緑にも近い。C-330 / H330 相当",
+    "source": "https://www.scalemates.com/colors/palette.php?id=4 (BS 381C palette) #484838"
+  },
+  {
+    "id": "bs381c-450",
+    "name": "Dark Earth",
+    "std": "BS 381C",
+    "code": "450",
+    "hex": "#745f46",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "aircraft"
+      ],
+      "country": [
+        "uk"
+      ]
+    },
+    "note": "RAF WWII 初期 温帯陸上迷彩の茶。C-369 相当",
+    "source": "https://www.scalemates.com/colors/palette.php?id=4 (BS 381C palette) #745f46"
+  },
+  {
+    "id": "ija-noryokushoku",
+    "name": "陸軍 濃緑色 (#22)",
+    "std": "IJA 標準色",
+    "code": "濃緑色",
+    "hex": "#575c43",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "aircraft"
+      ],
+      "country": [
+        "jp"
+      ]
+    },
+    "note": "日本陸軍機 上面色 (WWII 後期)。FS 34082 近似。C-129 相当",
+    "source": "approx.: FS 34082 近似 (http://www.aviationofjapan.com/2017/04/vallejo-ija-colors-set-visual-appraisal.html) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "ijn-anryokushoku",
+    "name": "海軍 暗緑色 (D1)",
+    "std": "IJN 仮規格 117",
+    "code": "D1",
+    "hex": "#4c4e48",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "aircraft"
+      ],
+      "country": [
+        "jp"
+      ]
+    },
+    "note": "日本海軍機 上面色 (三菱系)。FS 34052 近似。C-15 相当",
+    "source": "approx.: FS 34052 近似 (https://j-aircraft.com/faq/IJNAF_Colors.htm) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "jsdf-od-2314",
+    "name": "OD色 (陸上自衛隊)",
+    "std": "NDS Z 8201E",
+    "code": "2314",
+    "hex": "#49483e",
+    "tags": {
+      "hue": "other",
+      "use": [
+        "tank"
+      ],
+      "country": [
+        "jp"
+      ]
+    },
+    "note": "陸自車両 標準色。マンセル 7.5Y 3/1。XF-74 相当",
+    "source": "approx.: NDS Z 8201E 標準色 2314 (マンセル 7.5Y 3/1, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を CIELab 経由で sRGB 換算"
+  },
+  {
+    "id": "marpat-w-tan",
+    "name": "MARPAT Woodland タン",
+    "std": "MARPAT (実測)",
+    "code": "woodland-1",
+    "hex": "#7e6a58",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-marpat"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "MARPAT ウッドランドの明色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "marpat-w-lgreen",
+    "name": "MARPAT Woodland ライトグリーン",
+    "std": "MARPAT (実測)",
+    "code": "woodland-2",
+    "hex": "#5d6656",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-marpat"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "MARPAT ウッドランドの中間緑",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "marpat-w-dgreen",
+    "name": "MARPAT Woodland ダークグリーン",
+    "std": "MARPAT (実測)",
+    "code": "woodland-3",
+    "hex": "#454c40",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-marpat"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "MARPAT ウッドランドの濃緑",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "marpat-w-black",
+    "name": "MARPAT Woodland ブラウンブラック",
+    "std": "MARPAT (実測)",
+    "code": "woodland-4",
+    "hex": "#32323a",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-marpat"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "MARPAT ウッドランドの暗色 (黒に近い褐色)",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "marpat-d-lsand",
+    "name": "MARPAT Desert ライトサンド",
+    "std": "MARPAT (実測)",
+    "code": "desert-1",
+    "hex": "#9e9e8d",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-marpat"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "MARPAT デザートの最明色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "marpat-d-sand",
+    "name": "MARPAT Desert サンド",
+    "std": "MARPAT (実測)",
+    "code": "desert-2",
+    "hex": "#8c8873",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-marpat"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "MARPAT デザートの基色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "marpat-d-brown",
+    "name": "MARPAT Desert ブラウン",
+    "std": "MARPAT (実測)",
+    "code": "desert-3",
+    "hex": "#7a6749",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-marpat"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "MARPAT デザートの中間褐色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "marpat-d-dbrown",
+    "name": "MARPAT Desert ダークブラウン",
+    "std": "MARPAT (実測)",
+    "code": "desert-4",
+    "hex": "#63462d",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-marpat"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "MARPAT デザートの最暗色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "aor1-ltan",
+    "name": "AOR1 ライトタン",
+    "std": "AOR1 (実測)",
+    "code": "aor1-1",
+    "hex": "#b5a78c",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-aor"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "AOR1 (NWU Type II) の最明色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "aor1-tan",
+    "name": "AOR1 タン",
+    "std": "AOR1 (実測)",
+    "code": "aor1-2",
+    "hex": "#958268",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-aor"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "AOR1 の基色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "aor1-brown",
+    "name": "AOR1 ブラウン",
+    "std": "AOR1 (実測)",
+    "code": "aor1-3",
+    "hex": "#776140",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-aor"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "AOR1 の中間褐色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "aor1-dbrown",
+    "name": "AOR1 ダークブラウン",
+    "std": "AOR1 (実測)",
+    "code": "aor1-4",
+    "hex": "#5b442b",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-aor"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "AOR1 の最暗色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "aor2-tan",
+    "name": "AOR2 タン",
+    "std": "AOR2 (実測)",
+    "code": "aor2-1",
+    "hex": "#a39678",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-aor"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "AOR2 (NWU Type III) の明色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "aor2-khaki",
+    "name": "AOR2 カーキ",
+    "std": "AOR2 (実測)",
+    "code": "aor2-2",
+    "hex": "#7f7852",
+    "tags": {
+      "hue": "other",
+      "use": [
+        "camo-aor"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "AOR2 の中間カーキ",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "aor2-green",
+    "name": "AOR2 グリーン",
+    "std": "AOR2 (実測)",
+    "code": "aor2-3",
+    "hex": "#5c6844",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-aor"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "AOR2 の緑",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  },
+  {
+    "id": "aor2-black",
+    "name": "AOR2 ブラック",
+    "std": "AOR2 (実測)",
+    "code": "aor2-4",
+    "hex": "#2b2220",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-aor"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "AOR2 の最暗色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から抽出)"
+  }
+]

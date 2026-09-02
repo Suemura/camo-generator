@@ -3,6 +3,7 @@
 迷彩模様をプロシージャル生成する Web アプリ。
 
 デモ（フェーズ1 プロトタイプ）: `prototype/index.html` をブラウザで開くだけで動作（依存なし・単一ファイル）。
+本実装（フェーズ3〜）: `pnpm install && pnpm dev`。公開先は `camo-generator.suemura.app`（予定）。
 
 ## 概要
 
@@ -27,28 +28,35 @@
 ## ディレクトリ構成
 
 ```
-prototype/
-  camo.js           生成コア (browser/node 共用 ES module、依存なし)
-  m81src.js         M81 実物インデックスマップ (RLE, 25KB)
-  digsrc.js         AOR1/AOR2 実物インデックスマップ (RLE, 各~140KB)
-  refs.js           実物リファレンス画像 (data URI, ビルド生成物)
-  app-template.html UI テンプレート
-  build.mjs         camo.js + refs.js をテンプレートにインライン展開 → index.html
+src/
+  core/             生成コア (camo.js: browser/node 共用 ES module、依存なし) + 実物インデックスマップ + 型定義
+  app/              React UI
+  styles/tokens/    デザイントークン (spacious 由来。primitives → semantic → CSS カスタムプロパティ)
+tools/
   render.mjs        Node レンダリングハーネス (PNG 出力、目視検証ループ用)
-  index.html        ビルド成果物 (単一ファイル、ブラウザで直接開ける)
-  experimental/     手法探索の実装 (ポリゴン分割 / 形状文法 / クラスタ成長 原本)
+  gen-tokens.mjs    docs/design/spacious-DESIGN.md → _primitives.scss
+tests/              Vitest (決定性・回帰スナップショット)
+prototype/          フェーズ1 プロトタイプ (参照のみ。build.mjs は src/core を読む)
+  app-template.html / build.mjs / refs.js / index.html / experimental/
 docs/
   01-tech-verification.md  フェーズ1 検証記録 (手法変遷・自己改善ループ全履歴)
+  02-spec.md               フェーズ2 仕様設計 (機能仕分け・画面・技術選定・Cloudflare・デザインシステム)
+  design/                  spacious トークン原本 / パレットライブラリ
+.claude/skills/design-system/SKILL.md  LLM 向けデザインルール (spacious, typeui.sh で取得)
+wrangler.jsonc      Cloudflare Workers (Static Assets) 設定
 ```
 
 ## 開発コマンド
 
 ```bash
-# ビルド (camo.js / refs.js / app-template.html → index.html)
-cd prototype && node build.mjs
+pnpm install
+pnpm dev          # 開発サーバー
+pnpm build        # dist/ 生成 (tokens → tsc → vite)
+pnpm test         # 決定性テスト
+pnpm check        # Biome
+pnpm deploy       # Cloudflare Workers へデプロイ (wrangler login 済み前提)
 
-# 全プリセットを PNG レンダ (目視検証用)
-cd prototype && node render.mjs <出力dir> <seed>
+node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG レンダ (目視検証用)
 ```
 
 ## 進め方と進捗
@@ -56,8 +64,8 @@ cd prototype && node render.mjs <出力dir> <seed>
 | フェーズ | 内容 | 状態 |
 |---------|------|------|
 | 1. 技術検証 | 生成精度の検証・手法確立（自己改善ループ計40周超 + 並行手法探索） | **完了** |
-| 2. 仕様整理 | 対応パターン・パラメータ・エクスポート仕様・UI 要件の確定 | 次 |
-| 3. 設計 | アーキテクチャ（React/Next.js）、レンダリング方式、Cloudflare 構成 | 未着手 |
+| 2. 仕様整理 | 機能仕分け・画面構成・技術選定・Cloudflare 構成・デザインシステム（`docs/02-spec.md`） | **完了** |
+| 3. 設計 | React + Vite プロジェクト骨格（完了）、トークン生成（完了）、シームレスタイリング技術検証（次） | 進行中 |
 | 4. 実装 | 本実装・デプロイ | 未着手 |
 
 ### フェーズ1 の到達点
@@ -68,7 +76,7 @@ cd prototype && node render.mjs <出力dir> <seed>
 - パレット: 実物参照画像からの k-means 抽出値を既定色に。全スロット自由変更可
 - エクスポート: PNG/JPG 任意サイズ（〜4096）、SVG はセルグリッド系（MARPAT/UCP）のみ（クイルト系のベクタ化はフェーズ2 検討）
 
-### フェーズ2 への持ち越し課題
+### フェーズ2 への持ち越し課題（仕分け結果: 3 は初期リリース、他は GitHub Issues #1〜#12）
 
 1. クイルト方式の MARPAT への展開検討（現状は布地写真ソースのみのため成長方式）
 2. 有機系パターンの SVG 出力（marching squares によるベクタ化）

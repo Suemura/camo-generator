@@ -1,0 +1,268 @@
+<title>Camo Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#15171b; --panel:#1d2025; --panel2:#24272d; --line:#32363d;
+    --text:#e8e5da; --muted:#98958a; --accent:#a8b46c; --accent-dim:#6d7549;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:15px/1.6 Barlow, "Hiragino Sans", sans-serif;
+    min-height:100vh;
+  }
+  header{
+    display:flex; align-items:baseline; gap:14px;
+    padding:14px 22px; border-bottom:1px solid var(--line);
+  }
+  header h1{
+    font:600 26px "Barlow Condensed", sans-serif; letter-spacing:.06em;
+    margin:0; color:var(--text);
+  }
+  header .sub{color:var(--muted); font-size:13px}
+  .wrap{display:flex; gap:0; align-items:stretch; flex-wrap:wrap}
+  .rail{
+    width:320px; min-width:280px; flex:0 0 auto;
+    padding:20px 22px 40px; border-right:1px solid var(--line);
+    display:flex; flex-direction:column; gap:22px;
+  }
+  .stage{
+    flex:1 1 420px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:28px; gap:12px;
+    background:radial-gradient(1200px 600px at 60% 20%, #1a1d22 0%, var(--bg) 70%);
+  }
+  .panes{
+    display:flex; gap:20px; flex-wrap:wrap; justify-content:center;
+    width:100%; max-width:1100px;
+  }
+  .pane{
+    margin:0; flex:1 1 320px; min-width:280px; max-width:520px;
+  }
+  .pane figcaption{
+    font:600 13px "Barlow Condensed",sans-serif; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:8px;
+  }
+  canvas#view, img#refimg{
+    width:100%; aspect-ratio:1; border:1px solid var(--line);
+    background:#000; box-shadow:0 18px 50px rgba(0,0,0,.45);
+    display:block; object-fit:cover;
+  }
+  .pix canvas#view{image-rendering:pixelated}
+  .meta{color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums}
+  .group>label, .group>.glabel{
+    display:block; font:600 13px "Barlow Condensed",sans-serif;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+    margin-bottom:8px;
+  }
+  select,input[type=number]{
+    width:100%; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:4px; padding:8px 10px;
+    font:14px Barlow,sans-serif;
+  }
+  select:focus,input:focus,button:focus-visible{outline:2px solid var(--accent-dim); outline-offset:1px}
+  .row{display:flex; gap:8px}
+  .row>*{flex:1}
+  button{
+    background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:4px; padding:8px 12px; cursor:pointer;
+    font:500 14px Barlow,sans-serif;
+  }
+  button:hover{border-color:var(--accent-dim)}
+  button:disabled{opacity:.4; cursor:not-allowed}
+  input[type=range]{width:100%; accent-color:var(--accent)}
+  .palette{display:flex; flex-direction:column; gap:8px}
+  .swatch{
+    display:flex; align-items:center; gap:10px;
+    background:var(--panel); border:1px solid var(--line); border-radius:4px;
+    padding:6px 10px;
+  }
+  .swatch input[type=color]{width:34px; height:26px; border:none; padding:0; background:none; cursor:pointer}
+  .swatch .nm{flex:1; font-size:13.5px}
+  .swatch .hex{color:var(--muted); font:12px ui-monospace,monospace}
+  .hint{color:var(--muted); font-size:12.5px; line-height:1.5}
+  .seedval{font:13px ui-monospace,monospace; color:var(--accent)}
+  @media (max-width:760px){
+    .rail{width:100%; border-right:none; border-bottom:1px solid var(--line)}
+  }
+</style>
+
+<header>
+  <h1>CAMO LAB</h1>
+  <span class="sub">迷彩生成 精度検証プロトタイプ — フェーズ1 (v2)</span>
+</header>
+
+<div class="wrap">
+  <div class="rail">
+    <div class="group">
+      <label for="preset">パターン</label>
+      <select id="preset"></select>
+    </div>
+
+    <div class="group">
+      <label for="seed">シード</label>
+      <div class="row">
+        <input type="number" id="seed" value="1234" min="0" step="1">
+        <button id="dice" style="flex:0 0 auto" title="ランダムシード">🎲 ランダム</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <label for="scale">模様スケール <span class="seedval" id="scaleVal">×1.00</span></label>
+      <input type="range" id="scale" min="0.4" max="2.5" step="0.05" value="1">
+    </div>
+
+    <div class="group">
+      <span class="glabel">パレット（クリックで変更）</span>
+      <div class="palette" id="palette"></div>
+      <div style="margin-top:8px"><button id="resetColors">既定色に戻す</button></div>
+    </div>
+
+    <div class="group">
+      <span class="glabel">エクスポート</span>
+      <div class="row" style="margin-bottom:8px">
+        <select id="exsize">
+          <option value="512">512 px</option>
+          <option value="1024" selected>1024 px</option>
+          <option value="2048">2048 px</option>
+          <option value="4096">4096 px</option>
+        </select>
+      </div>
+      <div class="row">
+        <button id="expng">PNG</button>
+        <button id="exjpg">JPG</button>
+        <button id="exsvg">SVG</button>
+      </div>
+      <p class="hint" id="svgHint" style="margin:8px 0 0"></p>
+    </div>
+  </div>
+
+  <div class="stage" id="stageBox">
+    <div class="panes">
+      <figure class="pane">
+        <figcaption>生成結果</figcaption>
+        <canvas id="view" width="512" height="512"></canvas>
+      </figure>
+      <figure class="pane">
+        <figcaption>実物リファレンス</figcaption>
+        <img id="refimg" alt="実物迷彩のリファレンス画像">
+        <p class="hint" style="margin:6px 0 0">出典: Wikimedia Commons（比較用ベンチマーク）</p>
+      </figure>
+    </div>
+    <div class="meta" id="meta"></div>
+  </div>
+</div>
+
+<script>
+//__INLINE_CAMO__
+//__INLINE_REFS__
+
+/* ================= SVG (デジタル系のみ: 水平ラン結合 rect) ================= */
+function digitalToSvg(grid, size, palette){
+  const {gw, gh, cellPx, cellColor} = grid;
+  const s = size / (gw*cellPx);
+  let body = '';
+  for(let y=0;y<gh;y++){
+    let x = 0;
+    while(x < gw){
+      const c = cellColor[y*gw+x];
+      let x2 = x+1;
+      while(x2 < gw && cellColor[y*gw+x2] === c) x2++;
+      body += `<rect x="${(x*cellPx*s).toFixed(2)}" y="${(y*cellPx*s).toFixed(2)}" width="${((x2-x)*cellPx*s).toFixed(2)}" height="${(cellPx*s+0.5).toFixed(2)}" fill="${palette[c]}"/>`;
+      x = x2;
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${body}</svg>`;
+}
+
+/* ================= UI ================= */
+const $ = id => document.getElementById(id);
+const view = $('view'), ctx = view.getContext('2d');
+let cur = { key:'woodland', seed:1234, scale:1, palette:[] };
+
+const sel = $('preset');
+for(const [k,p] of Object.entries(PRESETS)){
+  const o = document.createElement('option');
+  o.value = k; o.textContent = p.name; sel.appendChild(o);
+}
+
+function loadDefaults(){
+  cur.palette = PRESETS[cur.key].colors.map(c=>c.hex);
+}
+function buildPalette(){
+  const box = $('palette'); box.innerHTML = '';
+  PRESETS[cur.key].colors.forEach((c,i)=>{
+    const d = document.createElement('div'); d.className='swatch';
+    d.innerHTML = `<input type="color" value="${cur.palette[i]}" aria-label="${c.name}">
+      <span class="nm">${c.name}</span><span class="hex">${cur.palette[i]}</span>`;
+    d.querySelector('input').addEventListener('input', e=>{
+      cur.palette[i] = e.target.value;
+      d.querySelector('.hex').textContent = e.target.value;
+      render();
+    });
+    box.appendChild(d);
+  });
+}
+let lastGrid = null;
+function render(){
+  const t0 = performance.now();
+  const res = generate(cur.key, 512, 512, cur.seed, cur.scale);
+  lastGrid = res.grid || null;
+  ctx.putImageData(new ImageData(toRGBA(res, cur.palette), 512, 512), 0, 0);
+  const ms = (performance.now()-t0).toFixed(0);
+  $('meta').textContent = `${PRESETS[cur.key].name} · seed ${cur.seed} · scale ${cur.scale} · 512×512 · ${ms} ms`;
+  const dig = !!lastGrid;
+  $('stageBox').classList.toggle('pix', dig);
+  $('exsvg').disabled = !dig;
+  const refKey = PRESETS[cur.key].ref;
+  $('refimg').src = REFS[refKey] || '';
+  $('svgHint').textContent = dig
+    ? 'SVG: セル矩形を水平方向に結合して出力。'
+    : 'SVG: 有機形状はベクタ化（marching squares）をフェーズ2で検証。';
+}
+
+sel.addEventListener('change', ()=>{ cur.key = sel.value; loadDefaults(); buildPalette(); render(); });
+$('seed').addEventListener('change', ()=>{ cur.seed = parseInt($('seed').value)||0; render(); });
+$('dice').addEventListener('click', ()=>{
+  cur.seed = Math.floor(Math.random()*1e6);
+  $('seed').value = cur.seed; render();
+});
+$('scale').addEventListener('input', ()=>{
+  cur.scale = parseFloat($('scale').value);
+  $('scaleVal').textContent = '×'+cur.scale.toFixed(2);
+  render();
+});
+$('resetColors').addEventListener('click', ()=>{ loadDefaults(); buildPalette(); render(); });
+
+/* 保存: Artifactビューア内は downloads capability、ローカルは <a download> */
+let dl = null;
+if(window.claude?.use) claude.use('downloads').then(ns=>{ dl = ns; });
+async function saveFile(filename, data){
+  if(dl){
+    try{ await dl.save({filename, data}); }
+    catch(e){ if(e?.code !== 'declined') $('meta').textContent = '保存失敗: '+(e?.code||e); }
+    return;
+  }
+  const blob = typeof data === 'string' ? new Blob([data]) : data;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+function exportRaster(type){
+  const size = parseInt($('exsize').value);
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const res = generate(cur.key, size, size, cur.seed, cur.scale);
+  c.getContext('2d').putImageData(new ImageData(toRGBA(res, cur.palette), size, size), 0, 0);
+  const ext = type === 'image/jpeg' ? 'jpg' : 'png';
+  c.toBlob(b=>saveFile(`camo-${cur.key}-${cur.seed}.${ext}`, b), type, 0.92);
+}
+$('expng').addEventListener('click', ()=>exportRaster('image/png'));
+$('exjpg').addEventListener('click', ()=>exportRaster('image/jpeg'));
+$('exsvg').addEventListener('click', ()=>{
+  if(!lastGrid) return;
+  const size = parseInt($('exsize').value);
+  saveFile(`camo-${cur.key}-${cur.seed}.svg`, digitalToSvg(lastGrid, size, cur.palette));
+});
+
+loadDefaults(); buildPalette(); render();
+</script>

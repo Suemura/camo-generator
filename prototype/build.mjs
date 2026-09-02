@@ -1,9 +1,12 @@
 // camo.js を app-template.html にインライン展開して index.html を生成
 import fs from 'node:fs';
 const dir = new URL('.', import.meta.url).pathname;
-const m81src = fs.readFileSync(dir+'m81src.js', 'utf8')
-  .replace(/^export /gm, '');
-const camo = m81src + '\n' + fs.readFileSync(dir+'camo.js', 'utf8')
+// ソースマップ類は camo.js より前にインライン展開する
+const srcFiles = ['m81src.js', 'digsrc.js'];
+const srcInline = srcFiles
+  .map(f => fs.readFileSync(dir+f, 'utf8').replace(/^export /gm, ''))
+  .join('\n');
+const camo = srcInline + '\n' + fs.readFileSync(dir+'camo.js', 'utf8')
   .replace(/^import .*$/gm, '')  // ESM import はインライン化済み
   .replace(/^export /gm, '');    // ブラウザ用に export を除去
 const refs = fs.readFileSync(dir+'refs.js', 'utf8');

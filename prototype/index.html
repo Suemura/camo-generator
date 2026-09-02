@@ -163,6 +163,7 @@ const M81_SRC_RLE = 'vwiBxYEDh0HzqVuaG7+/v7+3y4l0gz8/FYHJvweBx4ECh0Hyq1mZHL+/v7+
 'use strict';
 
 
+
 /* ================= 決定的乱数・ノイズ ================= */
 function hash2(ix, iy, seed){
   let h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ Math.imul(seed|0, 1274126177);
@@ -730,19 +731,23 @@ function genGrowth(w, h, seed, scale, P){
 /* ================= Image Quilting (Efros-Freeman 2001) =================
    実物図案(パブリックドメイン)のインデックスマップからブロックを
    最小誤差シームで継ぎ合わせる。局所=実物図案そのもの、大域=シード配置。 */
-let _m81map = null;
-function m81Map(){
-  if(_m81map) return _m81map;
-  const bin = atob(M81_SRC_RLE);
-  const out = new Uint8Array(M81_SRC_W * M81_SRC_H);
+const _srcCache = {};
+function decodeSrc(key, rle, W, H){
+  if(_srcCache[key]) return _srcCache[key];
+  const bin = atob(rle);
+  const map = new Uint8Array(W*H);
   let p = 0;
   for(let i=0;i<bin.length;i++){
     const b = bin.charCodeAt(i), v = b>>6, len = b&63;
-    out.fill(v, p, p+len); p += len;
+    map.fill(v, p, p+len); p += len;
   }
-  _m81map = out;
-  return out;
+  return _srcCache[key] = {map, W, H};
 }
+const SRCS = {
+  m81:  () => decodeSrc('m81',  M81_SRC_RLE,  M81_SRC_W,  M81_SRC_H),
+  aor1: () => decodeSrc('aor1', AOR1_SRC_RLE, AOR1_SRC_W, AOR1_SRC_H),
+  aor2: () => decodeSrc('aor2', AOR2_SRC_RLE, AOR2_SRC_W, AOR2_SRC_H),
+};
 function pasteBlob(out, w, h, p, cx, cy, bb, rad, srcGet){
   const bw2 = 2*bb+1;
   const state = new Uint8Array(bw2*bw2);   // 0=未訪問 1=キュー済/塗布済
@@ -793,11 +798,13 @@ function pasteBlob(out, w, h, p, cx, cy, bb, rad, srcGet){
     }
   }
 }
-function genQuilt(w, h, seed, scale, srcMap, SW, SH){
+function genQuilt(w, h, seed, scale, P){
+  const SRC = SRCS[P.src]();
+  const srcMap = SRC.map, SW = SRC.W, SH = SRC.H;
   // ブロブマスク・パッチ合成: 有機輪郭のパッチを実物ソースから貼り重ねる。
   // 矩形グリッド/直線シームが構造的に存在しない (Graphcut Textures の簡略版)
   const src = srcMap, rng = mulberry32(seed ^ 0x77a1);
-  const k = 0.95 * (512/w) * scale;           // target px → src px
+  const k = (P.kBase ?? 0.95) * (512/w) * scale;           // target px → src px
   // 多数決ミップマップ: 縮小サンプリング時のエイリアス(市松ノイズ)防止
   let srcM = src, SWm = SW, SHm = SH, km = k;
   while(km > 1.4 && SWm > 64){
@@ -817,8 +824,8 @@ function genQuilt(w, h, seed, scale, srcMap, SW, SH){
     srcM = d; SWm = nw; SHm = nh; km /= 2;
   }
   const out = new Uint8Array(w*h);
-  const TARGET_FRAC = [0.24, 0.27, 0.333, 0.157];  // 広範囲ソース実測
-  const DIVW = [1, 1, 1, 2.4];
+  const TARGET_FRAC = P.frac;
+  const DIVW = P.divw ?? [1, 1, 1, 2];
   // ソース参照: パッチ中心相対 + 折返し不要な範囲選択 (鏡映対称アーティファクト防止)
   // span: パッチが参照するソース半径。範囲内に収まる sx,sy を選ぶ
   const pick = (rng2, spanX, spanY) => {
@@ -841,7 +848,7 @@ function genQuilt(w, h, seed, scale, srcMap, SW, SH){
   // 高スケール時にベースの折返し鏡映が出る問題を根絶
   out.fill(255);
   // 2. ブロブパッチ: 有機輪郭 (半径を角度ノイズで変調した星型領域)
-  const R = 185 / k;                           // パッチ基準半径 (target px)
+  const R = (P.patchR ?? 185) / k;             // パッチ基準半径 (target px)
   const nPatch = Math.ceil(2.2 * (w*h) / (Math.PI*R*R));
   for(let pi=0; pi<nPatch; pi++){
     // キャンバス現況の色比 → 不足色をパッチ選択で補う (未塗布は除外)
@@ -864,10 +871,12 @@ function genQuilt(w, h, seed, scale, srcMap, SW, SH){
     // 候補: 境界リング上の不一致(重み大) + 内部の色多様性。
     // リング誤差が高止まりなら中心を再抽選 (境界線の露出防止)
     let best = null, bestScore = Infinity, bestRing = Infinity;
-    for(let attempt=0; attempt<3; attempt++){
+    const nAttempt = P.organic !== false ? 3 : 2;
+    const nCand = P.organic !== false ? 60 : 36;
+    for(let attempt=0; attempt<nAttempt; attempt++){
       const tx = randRange(rng, 0, w), ty = randRange(rng, 0, h);
       let aBest = null, aScore = Infinity, aRing = Infinity;
-      for(let c=0;c<60;c++){
+      for(let c=0;c<nCand;c++){
         const p = pick(rng, bb*km, bb*km);
         p.cx = tx; p.cy = ty;
         let err = 0, cnt = 0;
@@ -949,16 +958,21 @@ function genQuilt(w, h, seed, scale, srcMap, SW, SH){
       }
     }
   }
-  // nearest サンプリング起因のギザ除去 (必要最小限: ソース輪郭の微細ディテールを保持)
-  let smoothR = 0;
-  if(k > 1.05) smoothR = Math.max(1, Math.round(1.2*(w/512)));       // 縮小: エイリアス除去
-  else if(k < 0.95) smoothR = Math.max(1, Math.round(0.8/k*(w/512))); // 拡大: 階段除去
-  const sm = smoothR ? modeFilter(out, w, h, smoothR, 1, 4) : out;
-  // 微小フラグメント除去: パッチ境界が生む実物に無い小欠片を周囲色に併合
-  // 閾値: スケール比例だが、画面上で点に見えるサイズ(絶対下限)を下回らせない
-  const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),
-                                      110 * (w/512)*(w/512) / (scale*scale)));
-  cleanupFragments(sm, w, h, minFrag);
+  let sm = out;
+  if(P.organic !== false){
+    // 有機系: nearest サンプリング起因のギザ除去 (必要最小限)
+    let smoothR = 0;
+    if(k > 1.05) smoothR = Math.max(1, Math.round(1.2*(w/512)));       // 縮小: エイリアス除去
+    else if(k < 0.95) smoothR = Math.max(1, Math.round(0.8/k*(w/512))); // 拡大: 階段除去
+    if(smoothR) sm = modeFilter(out, w, h, smoothR, 1, 4);
+    // 微小フラグメント除去 (画面上で点に見えるサイズの絶対下限つき)
+    const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),
+                                        110 * (w/512)*(w/512) / (scale*scale)));
+    cleanupFragments(sm, w, h, minFrag);
+  }else{
+    // デジタル系: ピクセル輪郭を保持。サブセルの欠片だけ除去
+    cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)));
+  }
   return {type:'organic', w, h, index: sm};
 }
 // 面積 < minArea の連結成分を近傍多数色へ併合
@@ -998,25 +1012,9 @@ function cleanupFragments(index, w, h, minArea){
 /* ================= プリセット ================= */
 const PRESETS = {
   woodland: {
-    name: 'ウッドランド (M81) — 従来手法', kind: 'woodland', ref: 'm81',
-    colors: [
-      {name:'サンド',  hex:'#9c8f6f'},
-      {name:'グリーン', hex:'#4c5f49'},
-      {name:'ブラウン', hex:'#5f5345'},
-      {name:'ブラック', hex:'#3a3e3d'},
-    ],
-  },
-  woodland2: {
-    name: 'ウッドランド (M81) — 新手法(形状文法)', kind: 'woodland2', ref: 'm81',
-    colors: [
-      {name:'サンド',  hex:'#9c8f6f'},
-      {name:'グリーン', hex:'#4c5f49'},
-      {name:'ブラウン', hex:'#5f5345'},
-      {name:'ブラック', hex:'#3a3e3d'},
-    ],
-  },
-  woodland3: {
-    name: 'ウッドランド (M81) — 新手法(クイルト)', kind: 'quilt_m81', ref: 'm81',
+    name: 'ウッドランド (M81)', kind: 'quilt', src: 'm81', ref: 'm81',
+    kBase: 0.95, patchR: 185, organic: true,
+    frac: [0.24, 0.27, 0.333, 0.157], divw: [1, 1, 1, 2.4],
     colors: [
       {name:'サンド',  hex:'#9c8f6f'},
       {name:'グリーン', hex:'#4c5f49'},
@@ -1025,29 +1023,7 @@ const PRESETS = {
     ],
   },
   marpat: {
-    name: 'MARPAT ウッドランド — 従来手法', kind: 'digital', ref: 'marpat',
-    cell: 4, ratios: [0.27, 0.33, 0.27, 0.13],
-    macroFreq: 2.4, mesoFreq: 11.0, macroWeight: 0.46, superCell: 2,
-    aspectX: 0.85, aspectY: 1.0,
-    dither: 0.4, ditherPasses: 1,
-    twigs: [
-      {color: 3, freq: 5.5, aspectX: 1.0, aspectY: 0.8, gate: 0.30, width: 0.13, maskQ: 0.30},  // 黒枝
-    ],
-    speckle: [
-      {on: 1, dot: 0, density: 0.02},
-      {on: 2, dot: 3, density: 0.02},
-      {on: 0, dot: 2, density: 0.035},
-      {on: 0, dot: 1, density: 0.02},
-    ],
-    colors: [
-      {name:'タン',       hex:'#7e6a58'},
-      {name:'ライトグリーン', hex:'#5d6656'},
-      {name:'ダークグリーン', hex:'#454c40'},
-      {name:'ブラウンブラック', hex:'#32323a'},
-    ],
-  },
-  marpat2: {
-    name: 'MARPAT ウッドランド — 新手法', kind: 'growth', ref: 'marpat',
+    name: 'MARPAT ウッドランド', kind: 'growth', ref: 'marpat',
     cell: 4, growDither: 1,
     layers: [
       {color: 1, ratio: 0.44, eat: [0], min: 0.006, max: 0.028, compact: 1.2, drift: 2.2, jitter: 1.3, wander: 0.4, stratify: 5},
@@ -1066,7 +1042,7 @@ const PRESETS = {
     ],
   },
   marpat_desert: {
-    name: 'MARPAT デザート — 新手法', kind: 'growth', ref: 'marpat_desert',
+    name: 'MARPAT デザート', kind: 'growth', ref: 'marpat_desert',
     cell: 4, growDither: 1,
     layers: [
       {color: 1, ratio: 0.40, eat: [0], min: 0.004, max: 0.02, compact: 1.2, drift: 2.0, jitter: 1.3, wander: 0.4, stratify: 6},
@@ -1085,100 +1061,29 @@ const PRESETS = {
     ],
   },
   aor1: {
-    name: 'AOR1 (デザート)', kind: 'digital', ref: 'aor1',
-    cell: 3, ratios: [0.44, 0.33, 0.19, 0.04],
-    macroFreq: 3.0, mesoFreq: 28.0, macroWeight: 0.08,
-    aspectX: 0.5, aspectY: 1.3,   // 横方向に伸長した細かい流れ
-    dither: 0.4, ditherPasses: 1,
-    speckle: [
-      {on: 1, dot: 3, density: 0.012},   // 中間タンに焦茶点
-      {on: 2, dot: 0, density: 0.03},
-      {on: 0, dot: 2, density: 0.02},
-    ],
+    name: 'AOR1 (デザート)', kind: 'quilt', src: 'aor1', ref: 'aor1',
+    kBase: 1.5, patchR: 170, organic: false,
+    frac: [0.42, 0.325, 0.214, 0.041], divw: [1, 1, 1.3, 2.6],
     colors: [
-      {name:'ライトタン',  hex:'#b3a489'},
-      {name:'タン',       hex:'#a19075'},
-      {name:'ブラウン',    hex:'#917e62'},
-      {name:'ダークブラウン', hex:'#766041'},
-    ],
-  },
-  aor1_2: {
-    name: 'AOR1 (デザート) — 新手法', kind: 'growth', ref: 'aor1',
-    cell: 3, growDither: 1,
-    layers: [
-      {color: 1, ratio: 0.36, eat: [0], min: 0.0012, max: 0.009, compact: 1.15, drift: 1.9, jitter: 1.3, wander: 0.45, elongX: 1.8, stratify: 7},
-      {color: 2, ratio: 0.21, eat: [0,1], seedNear: 1, min: 0.0008, max: 0.006, compact: 1.3, drift: 1.6, jitter: 1.1, wander: 0.4, elongX: 1.6},
-      {color: 3, ratio: 0.045, eat: [0,1,2], seedNear: 2, min: 0.0004, max: 0.002, compact: 1.4, drift: 1.2, jitter: 1.0, wander: 0.5, elongX: 0.8},
-    ],
-    growSpeckle: [
-      {on: 1, dot: 0, density: 0.06}, {on: 0, dot: 1, density: 0.04},
-      {on: 2, dot: 3, density: 0.04},
-    ],
-    colors: [
-      {name:'ライトタン',  hex:'#b3a489'},
-      {name:'タン',       hex:'#a19075'},
-      {name:'ブラウン',    hex:'#917e62'},
-      {name:'ダークブラウン', hex:'#766041'},
+      {name:'ライトタン',  hex:'#b5a78c'},
+      {name:'タン',       hex:'#958268'},
+      {name:'ブラウン',    hex:'#776140'},
+      {name:'ダークブラウン', hex:'#5b442b'},
     ],
   },
   aor2: {
-    name: 'AOR2 (ウッドランド)', kind: 'digital', ref: 'aor2',
-    cell: 4, ratios: [0.12, 0.30, 0.40, 0.18],
-    macroFreq: 3.5, mesoFreq: 13.0, macroWeight: 0.28,
-    aspectX: 1.3, aspectY: 0.55,   // 縦方向に伸長
-    dither: 0.4, ditherPasses: 1,
-    twigs: [
-      {color: 3, freq: 9, aspectX: 1.6, aspectY: 0.55, gate: 0.26, width: 0.13}, // 縦蛇行の黒枝
-      {color: 3, freq: 15, aspectX: 1.5, aspectY: 0.6, gate: 0.33, width: 0.08}, // 細枝
-    ],
-    speckle: [
-      {on: 1, dot: 0, density: 0.015},  // 緑地にタン点
-      {on: 2, dot: 3, density: 0.015},
-    ],
+    name: 'AOR2 (ウッドランド)', kind: 'quilt', src: 'aor2', ref: 'aor2',
+    kBase: 1.5, patchR: 170, organic: false,
+    frac: [0.043, 0.289, 0.454, 0.214], divw: [2, 1, 1, 1.3],
     colors: [
-      {name:'タン',       hex:'#8a8460'},
-      {name:'ライトグリーン', hex:'#6d6f4b'},
-      {name:'グリーン',    hex:'#596141'},
-      {name:'ブラック',    hex:'#332e26'},
-    ],
-  },
-  aor2_2: {
-    name: 'AOR2 (ウッドランド) — 新手法', kind: 'growth', ref: 'aor2',
-    cell: 3, growDither: 1,
-    layers: [
-      {color: 1, ratio: 0.26, eat: [0], min: 0.001, max: 0.006, compact: 1.1, drift: 1.8, jitter: 1.3, wander: 0.45, elongY: 1.6, stratify: 8},
-      {color: 2, ratio: 0.45, eat: [0,1], seedNear: 1, min: 0.001, max: 0.008, compact: 1.3, drift: 1.6, jitter: 1.2, wander: 0.4, elongY: 1.6},
-      {color: 3, ratio: 0.18, eat: [0,1,2], seedNear: 2, min: 0.0015, max: 0.009, compact: 1.1, drift: 2.8, jitter: 0.8, wander: 0.3, elongY: 2.6},
-    ],
-    growSpeckle: [
-      {on: 1, dot: 0, density: 0.04}, {on: 2, dot: 3, density: 0.05},
-      {on: 3, dot: 2, density: 0.04}, {on: 2, dot: 1, density: 0.04},
-    ],
-    colors: [
-      {name:'タン',       hex:'#8a8460'},
-      {name:'ライトグリーン', hex:'#6d6f4b'},
-      {name:'グリーン',    hex:'#596141'},
-      {name:'ブラック',    hex:'#332e26'},
+      {name:'タン',       hex:'#a39678'},
+      {name:'カーキ',     hex:'#7f7852'},
+      {name:'グリーン',    hex:'#5c6844'},
+      {name:'ブラック',    hex:'#2b2220'},
     ],
   },
   ucp: {
-    name: 'UCP (ACU)', kind: 'digital', ref: 'ucp',
-    cell: 5, ratios: [0.36, 0.28, 0.36],
-    macroFreq: 3.0, mesoFreq: 9.5, macroWeight: 0.18, superCell: 2,
-    aspectX: 0.5, aspectY: 1.15,   // 横方向に強く伸長
-    dither: 0.55, ditherPasses: 2,
-    speckle: [
-      {on: 0, dot: 2, density: 0.006},
-      {on: 2, dot: 0, density: 0.006},
-    ],
-    colors: [
-      {name:'デザートサンド', hex:'#d1cfab'},
-      {name:'アーバングレー', hex:'#9ca88b'},
-      {name:'フォリッジグリーン', hex:'#798d72'},
-    ],
-  },
-  ucp_2: {
-    name: 'UCP (ACU) — 新手法', kind: 'growth', ref: 'ucp',
+    name: 'UCP (ACU)', kind: 'growth', ref: 'ucp',
     cell: 5, growDither: 1,
     layers: [
       {color: 1, ratio: 0.30, eat: [0], min: 0.004, max: 0.02, compact: 1.4, drift: 1.6, jitter: 1.1, wander: 0.3, elongX: 2.0, stratify: 5},
@@ -1200,11 +1105,9 @@ const PRESETS = {
 function generate(key, w, h, seed, scale){
   const P = PRESETS[key];
   switch(P.kind){
-    case 'woodland':  return genWoodland(w, h, seed, scale);
-    case 'woodland2': return genWoodlandHybrid(w, h, seed, scale);
-    case 'growth':    return genGrowth(w, h, seed, scale, P);
-    case 'quilt_m81': return genQuilt(w, h, seed, scale, m81Map(), M81_SRC_W, M81_SRC_H);
-    default:          return genDigital(w, h, seed, scale, P);
+    case 'quilt':  return genQuilt(w, h, seed, scale, P);
+    case 'growth': return genGrowth(w, h, seed, scale, P);
+    default: throw new Error('unknown kind: ' + P.kind);
   }
 }
 function toRGBA(res, palette){

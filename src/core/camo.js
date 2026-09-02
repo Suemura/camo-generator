@@ -237,6 +237,11 @@ export function mulberry32(seed){
 }
 function randInt(rng, lo, hi){ return lo + Math.floor(rng() * (hi - lo)); }
 function randRange(rng, lo, hi){ return lo + rng() * (hi - lo); }
+// シームレスタイリング用: 座標をトーラス上に折り返す (生地印刷・3D テクスチャで
+// タイルを並べても境界が見えないよう、生成中の全近傍参照をこの座標系で行う)
+function wrapI(v, n){ v %= n; return v < 0 ? v + n : v; }
+// 2 点間の最短差分 (トーラス上)。ドリフト方向や重心計算の誤差防止
+function wrapD(d, n){ if(d > n/2) return d - n; if(d < -n/2) return d + n; return d; }
 function noise1d(rng){
   const g = [];
   for(let i=0;i<256;i++) g.push(rng());
@@ -284,7 +289,7 @@ function drawBranch(index, w, h, rng, x, y, heading, color, o, depth=0){
 /* ---- M81 新手法 v2: 形状文法地形 + 改良黒枝 ----
    実物構造: 緑/茶の巨大領域 + 横に蛇行するサンド帯 + 鹿角状の太い黒枝 */
 // 多数決フィルタ: 輪郭の融合・平滑化
-function modeFilter(index, w, h, radius, passes, nColors){
+function modeFilter(index, w, h, radius, passes, nColors, wrap=false){
   let cur = index;
   const offs = [];
   for(let dy=-radius;dy<=radius;dy++)
@@ -297,8 +302,9 @@ function modeFilter(index, w, h, radius, passes, nColors){
       for(let x=0;x<w;x++){
         counts.fill(0);
         for(let k=0;k<offs.length;k+=2){
-          const nx = x+offs[k], ny = y+offs[k+1];
-          if(nx<0||nx>=w||ny<0||ny>=h) continue;
+          let nx = x+offs[k], ny = y+offs[k+1];
+          if(wrap){ nx = wrapI(nx, w); ny = wrapI(ny, h); }
+          else if(nx<0||nx>=w||ny<0||ny>=h) continue;
           counts[cur[ny*w+nx]]++;
         }
         let best = 0;
@@ -427,20 +433,31 @@ function growCluster(grid, gw, gh, rng, sx, sy, o){
   if(!eat.has(grid[sy*gw+sx])) return 0;
   const frontier = [];
   const inFront = new Set();
+  const wrap = !!o.wrap;
   const push = (x,y)=>{
-    if(x<0||x>=gw||y<0||y>=gh) return;
+    if(wrap){ x = wrapI(x, gw); y = wrapI(y, gh); }
+    else if(x<0||x>=gw||y<0||y>=gh) return;
     const i = y*gw+x;
     if(grid[i]===o.color || !eat.has(grid[i]) || inFront.has(i)) return;
     frontier.push({x,y}); inFront.add(i);
   };
+  const at = (x,y)=> grid[wrapI(y,gh)*gw + wrapI(x,gw)];
   const sameNbr = (x,y)=>{
     let c = 0;
+    if(wrap){
+      if(at(x-1,y)===o.color) c++; if(at(x+1,y)===o.color) c++;
+      if(at(x,y-1)===o.color) c++; if(at(x,y+1)===o.color) c++;
+      return c;
+    }
     if(x>0    && grid[y*gw+x-1]===o.color) c++;
     if(x<gw-1 && grid[y*gw+x+1]===o.color) c++;
     if(y>0    && grid[(y-1)*gw+x]===o.color) c++;
     if(y<gh-1 && grid[(y+1)*gw+x]===o.color) c++;
     return c;
   };
+  // 重心からの差分 (トーラス時は最短差分)
+  const dX = (x)=> wrap ? wrapD(x-cx, gw) : x-cx;
+  const dY = (y)=> wrap ? wrapD(y-cy, gh) : y-cy;
   grid[sy*gw+sx] = o.color;
   let placed = 1;
   push(sx+1,sy); push(sx-1,sy); push(sx,sy+1); push(sx,sy-1);
@@ -454,10 +471,11 @@ function growCluster(grid, gw, gh, rng, sx, sy, o){
     for(let t=0;t<k;t++){
       const idx = randInt(rng, 0, frontier.length);
       const f = frontier[idx];
+      const fx = dX(f.x), fy = dY(f.y), fd = Math.max(1, Math.hypot(fx, fy));
       const score = (o.compact ?? 1.0) * sameNbr(f.x, f.y)
-        + (o.drift ?? 0) * ((f.x-cx)*dxu + (f.y-cy)*dyu) / Math.max(1, Math.hypot(f.x-cx, f.y-cy))
-        + (o.elongX ?? 0) * Math.abs(f.x-cx) / Math.max(1, Math.hypot(f.x-cx, f.y-cy))
-        + (o.elongY ?? 0) * Math.abs(f.y-cy) / Math.max(1, Math.hypot(f.x-cx, f.y-cy))
+        + (o.drift ?? 0) * (fx*dxu + fy*dyu) / fd
+        + (o.elongX ?? 0) * Math.abs(fx) / fd
+        + (o.elongY ?? 0) * Math.abs(fy) / fd
         + rng() * (o.jitter ?? 1.0);
       if(score > bestScore){ bestScore = score; bestIdx = idx; }
     }
@@ -469,8 +487,9 @@ function growCluster(grid, gw, gh, rng, sx, sy, o){
     if(!eat.has(grid[i])) continue;
     grid[i] = o.color;
     placed++;
-    cx += (x-cx)/Math.min(placed, 30);
-    cy += (y-cy)/Math.min(placed, 30);
+    cx += dX(x)/Math.min(placed, 30);
+    cy += dY(y)/Math.min(placed, 30);
+    if(wrap){ cx = ((cx % gw) + gw) % gw; cy = ((cy % gh) + gh) % gh; }
     push(x+1,y); push(x-1,y); push(x,y+1); push(x,y-1);
   }
   return placed;
@@ -503,8 +522,8 @@ function growLayer(grid, gw, gh, rng, o){
       for(let t=0;t<60 && !ok;t++){
         sx = randInt(rng, 0, gw); sy = randInt(rng, 0, gh);
         ok = grid[sy*gw+sx] === o.seedNear ||
-             (sx>0 && grid[sy*gw+sx-1]===o.seedNear) ||
-             (sy>0 && grid[(sy-1)*gw+sx]===o.seedNear);
+             grid[sy*gw+wrapI(sx-1,gw)]===o.seedNear ||
+             grid[wrapI(sy-1,gh)*gw+sx]===o.seedNear;
       }
     }
     if(!o.canEat.has(grid[sy*gw+sx])) continue;
@@ -512,16 +531,22 @@ function growLayer(grid, gw, gh, rng, o){
     budget -= growCluster(grid, gw, gh, rng, sx, sy, {
       color: o.color, target: size, canEat: o.canEat,
       compact: o.compact, drift: o.drift, jitter: o.jitter,
-      wander: o.wander, elongX: o.elongX, elongY: o.elongY,
+      wander: o.wander, elongX: o.elongX, elongY: o.elongY, wrap: o.wrap,
     });
   }
 }
-function speckleGrow(grid, gw, gh, rng, {on, dot, density}){
-  for(let y=1;y<gh-1;y++){
-    for(let x=1;x<gw-1;x++){
+// 4近傍 (wrap 時はトーラス)
+function nbr4(grid, gw, gh, x, y){
+  return [grid[y*gw+wrapI(x-1,gw)], grid[y*gw+wrapI(x+1,gw)],
+          grid[wrapI(y-1,gh)*gw+x], grid[wrapI(y+1,gh)*gw+x]];
+}
+function speckleGrow(grid, gw, gh, rng, {on, dot, density}, wrap){
+  const lo = wrap ? 0 : 1;
+  for(let y=lo;y<gh-lo;y++){
+    for(let x=lo;x<gw-lo;x++){
       const i = y*gw+x;
       if(grid[i]!==on) continue;
-      const nb = [grid[i-1], grid[i+1], grid[i-gw], grid[i+gw]];
+      const nb = nbr4(grid, gw, gh, x, y);
       let edge = false;
       for(const q of nb) if(q!==on) edge = true;
       if(edge && rng() < density) grid[i] = dot;
@@ -529,9 +554,12 @@ function speckleGrow(grid, gw, gh, rng, {on, dot, density}){
   }
 }
 /* ---- 汎用 成長エンジン: P.layers でパターン別に構成 ---- */
-export function genGrowth(w, h, seed, scale, P){
+export function genGrowth(w, h, seed, scale, P, opt={}){
+  const wrap = opt.tileable !== false;
   const cellPx = Math.max(1, Math.round((P.cell ?? 4) * (w/512)));
-  const gw = Math.ceil(w/cellPx), gh = Math.ceil(h/cellPx);
+  // タイル時: セル数を丸めて端の半端セルを排除 (セル幅は最大 ±1px 不均一になるが境界が揃う)
+  const gw = wrap ? Math.max(1, Math.round(w/cellPx)) : Math.ceil(w/cellPx);
+  const gh = wrap ? Math.max(1, Math.round(h/cellPx)) : Math.ceil(h/cellPx);
   const rng = mulberry32(seed ^ 0x9e37);
   const grid = new Uint8Array(gw*gh); // 0 = 最明色
   const A = gw*gh, k = scale*scale;
@@ -541,27 +569,29 @@ export function genGrowth(w, h, seed, scale, P){
       seedNear: L.seedNear, stratify: L.stratify,
       minSize: A*L.min/k, maxSize: A*L.max/k,
       compact: L.compact, drift: L.drift, jitter: L.jitter,
-      wander: L.wander, elongX: L.elongX, elongY: L.elongY,
+      wander: L.wander, elongX: L.elongX, elongY: L.elongY, wrap,
     });
   }
+  const lo = wrap ? 0 : 1;
   for(let p=0; p<(P.growDither ?? 1); p++){
     const next = new Uint8Array(grid);
-    for(let y=1;y<gh-1;y++){
-      for(let x=1;x<gw-1;x++){
+    for(let y=lo;y<gh-lo;y++){
+      for(let x=lo;x<gw-lo;x++){
         const i = y*gw+x, c = grid[i];
-        const nb = [grid[i-1], grid[i+1], grid[i-gw], grid[i+gw]];
+        const nb = nbr4(grid, gw, gh, x, y);
         let diff = 0; for(const q of nb) if(q!==c) diff++;
         if(diff>0 && rng() < 0.35*diff/4) next[i] = nb[(rng()*4)|0];
       }
     }
     grid.set(next);
   }
-  for(const sp of (P.growSpeckle ?? [])) speckleGrow(grid, gw, gh, rng, sp);
+  for(const sp of (P.growSpeckle ?? [])) speckleGrow(grid, gw, gh, rng, sp, wrap);
   const index = new Uint8Array(w*h);
   for(let y=0;y<h;y++){
-    const gy = Math.min(gh-1, (y/cellPx)|0);
+    const gy = wrap ? Math.min(gh-1, (y*gh/h)|0) : Math.min(gh-1, (y/cellPx)|0);
     for(let x=0;x<w;x++){
-      index[y*w+x] = grid[Math.min(gw-1,(x/cellPx)|0) + gy*gw];
+      const gx = wrap ? Math.min(gw-1, (x*gw/w)|0) : Math.min(gw-1,(x/cellPx)|0);
+      index[y*w+x] = grid[gx + gy*gw];
     }
   }
   return {type:'digital', w, h, index, grid:{gw, gh, cellPx, cellColor: grid}};
@@ -588,7 +618,8 @@ const SRCS = {
   aor1: () => decodeSrc('aor1', AOR1_SRC_RLE, AOR1_SRC_W, AOR1_SRC_H),
   aor2: () => decodeSrc('aor2', AOR2_SRC_RLE, AOR2_SRC_W, AOR2_SRC_H),
 };
-function pasteBlob(out, w, h, p, cx, cy, bb, rad, srcGet){
+function pasteBlob(out, w, h, p, cx, cy, bb, rad, srcGet, wrap=false, tstate=null){
+  if(wrap) return pasteBlobTorus(out, w, h, p, cx, cy, bb, rad, srcGet, tstate);
   const bw2 = 2*bb+1;
   const state = new Uint8Array(bw2*bw2);   // 0=未訪問 1=キュー済/塗布済
   const queue = new Int32Array(bw2*bw2);
@@ -638,7 +669,64 @@ function pasteBlob(out, w, h, p, cx, cy, bb, rad, srcGet){
     }
   }
 }
-export function genQuilt(w, h, seed, scale, P){
+// トーラス版 pasteBlob (シームレスタイリング用)。
+// 相違点:
+// - 訪問管理をパッチローカル座標ではなくキャンバス座標 (state: w*h) で行う。M81 のパッチ半径は
+//   キャンバス幅の最大 0.8 倍あり、トーラス上で自分自身と重なる。ローカル管理だと同一ピクセルを
+//   2 つの相対座標から別サンプルで塗ろうとして成長が止まり、継ぎ目が直線の切断面になる
+// - 座標は Math.floor で丸める (|0 は負側で 0 方向に切り捨てられ x=0 の列が 2 重になる)
+// - ソース参照は非ラップの相対座標 (dx,dy) で行い、キャンバス書込だけラップする
+function pasteBlobTorus(out, w, h, p, cx, cy, bb, rad, srcGet, state){
+  const fl = Math.floor;
+  let cap = Math.min(w*h, (2*bb+1)*(2*bb+1));
+  let qdx = new Int32Array(cap), qdy = new Int32Array(cap);
+  let qh = 0, qt = 0;
+  const grow = () => {
+    cap *= 2;
+    const ndx = new Int32Array(cap); ndx.set(qdx); qdx = ndx;
+    const ndy = new Int32Array(cap); ndy.set(qdy); qdy = ndy;
+  };
+  const pix = (dx, dy) => wrapI(fl(cy+dy), h)*w + wrapI(fl(cx+dx), w);
+  const push = (dx, dy) => {
+    const i = pix(dx, dy);
+    if(state[i]) return;
+    state[i] = 1;
+    if(qt >= cap) grow();
+    qdx[qt] = dx; qdy[qt] = dy; qt++;
+  };
+  const coreR = 0.55;
+  for(let dy=-bb;dy<=bb;dy++){
+    for(let dx=-bb;dx<=bb;dx++){
+      if(Math.hypot(dx,dy) < rad(dx,dy)*coreR){
+        const i = pix(dx, dy);
+        if(state[i]) continue;          // 自己重複: 先着優先
+        out[i] = srcGet(p, fl(cx+dx), fl(cy+dy));
+        push(dx, dy);
+      }
+    }
+  }
+  while(qh < qt){
+    const dx = qdx[qh], dy = qdy[qh]; qh++;
+    const v = out[pix(dx, dy)];   // このピクセルの新値 (塗布済)
+    for(const [ex,ey] of [[dx-1,dy],[dx+1,dy],[dx,dy-1],[dx,dy+1]]){
+      if(ex<-bb||ex>bb||ey<-bb||ey>bb) continue;
+      if(Math.hypot(ex,ey) >= rad(ex,ey)) continue;
+      const i2 = pix(ex, ey);
+      if(state[i2]) continue;
+      const nv = srcGet(p, fl(cx+ex), fl(cy+ey));
+      const ov = out[i2];
+      if(nv === ov || nv === v || ov === 255){
+        out[i2] = nv;
+        state[i2] = 1;
+        if(qt >= cap) grow();
+        qdx[qt] = ex; qdy[qt] = ey; qt++;
+      }
+    }
+  }
+  for(let k=0;k<qt;k++) state[pix(qdx[k], qdy[k])] = 0;   // 共有バッファを掃除
+}
+export function genQuilt(w, h, seed, scale, P, opt={}){
+  const wrap = opt.tileable !== false;   // キャンバスをトーラスとして扱う (シームレスタイル)
   const SRC = SRCS[P.src]();
   const srcMap = SRC.map, SW = SRC.W, SH = SRC.H;
   // ブロブマスク・パッチ合成: 有機輪郭のパッチを実物ソースから貼り重ねる。
@@ -687,6 +775,8 @@ export function genQuilt(w, h, seed, scale, P){
   // ベースは敷かない: 全面をパッチのみで被覆 (未塗布=255)。
   // 高スケール時にベースの折返し鏡映が出る問題を根絶
   out.fill(255);
+  const tstate = wrap ? new Uint8Array(w*h) : null;   // トーラス貼付の訪問管理 (共有)
+  const fl = wrap ? Math.floor : (v)=>v|0;            // 非ラップ時は旧挙動 (|0) を維持
   // 2. ブロブパッチ: 有機輪郭 (半径を角度ノイズで変調した星型領域)
   const R = (P.patchR ?? 185) / k;             // パッチ基準半径 (target px)
   const nPatch = Math.ceil(2.2 * (w*h) / (Math.PI*R*R));
@@ -724,12 +814,13 @@ export function genQuilt(w, h, seed, scale, P){
         const es = Math.max(2, (bb/32)|0);
         for(let dy=-bb;dy<=bb;dy+=es){
           for(let dx=-bb;dx<=bb;dx+=es){
-            const x = (tx+dx)|0, y = (ty+dy)|0;
-            if(x<0||x>=w||y<0||y>=h) continue;
+            const x = fl(tx+dx), y = fl(ty+dy);
+            const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
+            if(xi<0||xi>=w||yi<0||yi>=h) continue;
             const rr = Math.hypot(dx,dy), rb = rad(dx,dy);
             if(rr >= rb) continue;
             const v = srcGet(p, x, y);
-            if(rr > rb*0.72 && out[y*w+x] < 4){ if(out[y*w+x] !== v) err++; cnt++; }  // 境界リング(塗布済のみ)
+            if(rr > rb*0.72 && out[yi*w+xi] < 4){ if(out[yi*w+xi] !== v) err++; cnt++; }  // 境界リング(塗布済のみ)
             hist[v]++; hn++;
           }
         }
@@ -748,7 +839,7 @@ export function genQuilt(w, h, seed, scale, P){
     // 貼り付け: 領域成長型シーム。コア(0.55R)は無条件、
     // 外側は「旧と一致」or「新シェイプ自身の連続」だけ塗り広げる →
     // 遷移が必ず実シェイプの輪郭上に乗り、切断面が出ない
-    pasteBlob(out, w, h, best, cx, cy, bb, rad, srcGet);
+    pasteBlob(out, w, h, best, cx, cy, bb, rad, srcGet, wrap, tstate);
   }
   // 未塗布セルが残っていれば、その位置を中心に追加パッチで埋める
   let guard = 0;
@@ -776,25 +867,26 @@ export function genQuilt(w, h, seed, scale, P){
       const es = Math.max(2, (bb/24)|0);
       for(let dy=-bb;dy<=bb;dy+=es){
         for(let dx=-bb;dx<=bb;dx+=es){
-          const x = (hx+dx)|0, y = (hy+dy)|0;
-          if(x<0||x>=w||y<0||y>=h) continue;
+          const x = fl(hx+dx), y = fl(hy+dy);
+          const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
+          if(xi<0||xi>=w||yi<0||yi>=h) continue;
           if(Math.hypot(dx,dy) >= rad2(dx,dy)) continue;
-          const ov = out[y*w+x];
+          const ov = out[yi*w+xi];
           if(ov < 4){ if(ov !== srcGet(p, x, y)) err++; cnt++; }
         }
       }
       const sc = cnt ? err/cnt : rng()*0.01;
       if(sc < hs){ hs = sc; hp = p; }
     }
-    pasteBlob(out, w, h, hp, hx, hy, bb, rad2, srcGet);
+    pasteBlob(out, w, h, hp, hx, hy, bb, rad2, srcGet, wrap, tstate);
     // 成長で埋まらなかった未塗布セルは無条件で充填 (取り残し防止)
     for(let dy=-bb;dy<=bb;dy++){
-      const y = (hy+dy)|0;
-      if(y<0||y>=h) continue;
+      const y = fl(hy+dy), yi = wrap ? wrapI(y, h) : y;
+      if(yi<0||yi>=h) continue;
       for(let dx=-bb;dx<=bb;dx++){
-        const x = (hx+dx)|0;
-        if(x<0||x>=w) continue;
-        if(out[y*w+x]===255 && Math.hypot(dx,dy) < rad2(dx,dy)) out[y*w+x] = srcGet(hp, x, y);
+        const x = fl(hx+dx), xi = wrap ? wrapI(x, w) : x;
+        if(xi<0||xi>=w) continue;
+        if(out[yi*w+xi]===255 && Math.hypot(dx,dy) < rad2(dx,dy)) out[yi*w+xi] = srcGet(hp, x, y);
       }
     }
   }
@@ -804,20 +896,31 @@ export function genQuilt(w, h, seed, scale, P){
     let smoothR = 0;
     if(k > 1.05) smoothR = Math.max(1, Math.round(1.2*(w/512)));       // 縮小: エイリアス除去
     else if(k < 0.95) smoothR = Math.max(1, Math.round(0.8/k*(w/512))); // 拡大: 階段除去
-    if(smoothR) sm = modeFilter(out, w, h, smoothR, 1, 4);
+    if(smoothR) sm = modeFilter(out, w, h, smoothR, 1, 4, wrap);
     // 微小フラグメント除去 (画面上で点に見えるサイズの絶対下限つき)
     const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),
                                         110 * (w/512)*(w/512) / (scale*scale)));
-    cleanupFragments(sm, w, h, minFrag);
+    cleanupFragments(sm, w, h, minFrag, wrap);
   }else{
     // デジタル系: ピクセル輪郭を保持。サブセルの欠片だけ除去
-    cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)));
+    cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)), wrap);
   }
   return {type:'organic', w, h, index: sm};
 }
 // 面積 < minArea の連結成分を近傍多数色へ併合
-function cleanupFragments(index, w, h, minArea){
+function cleanupFragments(index, w, h, minArea, wrap=false){
   const seen = new Uint8Array(w*h);
+  // 4近傍インデックス (wrap 時は境界をまたいで連結 → 継ぎ目で欠片が二重に数えられない)
+  const nb = (i) => {
+    const x = i % w, y = (i / w) | 0;
+    const r = [];
+    if(wrap){
+      r.push(y*w + wrapI(x-1,w), y*w + wrapI(x+1,w), wrapI(y-1,h)*w + x, wrapI(y+1,h)*w + x);
+    }else{
+      if(x>0) r.push(i-1); if(x<w-1) r.push(i+1); if(y>0) r.push(i-w); if(y<h-1) r.push(i+w);
+    }
+    return r;
+  };
   for(let start=0; start<w*h; start++){
     if(seen[start]) continue;
     const col = index[start];
@@ -827,20 +930,12 @@ function cleanupFragments(index, w, h, minArea){
     while(stack.length){
       const i = stack.pop();
       cells.push(i);
-      const x = i % w, y = (i / w) | 0;
-      if(x>0   && !seen[i-1] && index[i-1]===col){ seen[i-1]=1; stack.push(i-1); }
-      if(x<w-1 && !seen[i+1] && index[i+1]===col){ seen[i+1]=1; stack.push(i+1); }
-      if(y>0   && !seen[i-w] && index[i-w]===col){ seen[i-w]=1; stack.push(i-w); }
-      if(y<h-1 && !seen[i+w] && index[i+w]===col){ seen[i+w]=1; stack.push(i+w); }
+      for(const j of nb(i)) if(!seen[j] && index[j]===col){ seen[j]=1; stack.push(j); }
     }
     if(cells.length >= minArea) continue;
     const cnt = [0,0,0,0];
     for(const i of cells){
-      const x = i % w, y = (i / w) | 0;
-      if(x>0   && index[i-1]!==col) cnt[index[i-1]]++;
-      if(x<w-1 && index[i+1]!==col) cnt[index[i+1]]++;
-      if(y>0   && index[i-w]!==col) cnt[index[i-w]]++;
-      if(y<h-1 && index[i+w]!==col) cnt[index[i+w]]++;
+      for(const j of nb(i)) if(index[j]!==col) cnt[index[j]]++;
     }
     let best = 0;
     for(let c2=1;c2<4;c2++) if(cnt[c2]>cnt[best]) best = c2;
@@ -942,11 +1037,12 @@ export const PRESETS = {
 };
 
 /* ================= 生成入口 ================= */
-export function generate(key, w, h, seed, scale){
+// opt.tileable (既定 true): 出力を上下左右に並べても境界が連続するトーラス生成
+export function generate(key, w, h, seed, scale, opt={}){
   const P = PRESETS[key];
   switch(P.kind){
-    case 'quilt':  return genQuilt(w, h, seed, scale, P);
-    case 'growth': return genGrowth(w, h, seed, scale, P);
+    case 'quilt':  return genQuilt(w, h, seed, scale, P, opt);
+    case 'growth': return genGrowth(w, h, seed, scale, P, opt);
     default: throw new Error('unknown kind: ' + P.kind);
   }
 }

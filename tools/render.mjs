@@ -50,15 +50,27 @@ export function writePng(path, rgba, w, h) {
 const outDir = process.argv[2] || "./out";
 fs.mkdirSync(outDir, { recursive: true });
 const seed = parseInt(process.argv[3] || "1234", 10);
-const size = 512;
 const scale = parseFloat(process.argv[4] || "1.0");
+const tile = process.argv.includes("--tile"); // 2x2 に並べて継ぎ目を目視確認
+const arg = (name, def) =>
+  (process.argv.find((a) => a.startsWith(`--${name}=`)) ?? `=${def}`).split("=")[1];
+const [W0, H0] = arg("size", "512x512").split("x").map(Number); // --size=640x400
+const only = arg("preset", ""); // --preset=ucp
 for (const [key, P] of Object.entries(PRESETS)) {
+  if (only && key !== only) continue;
   const t0 = Date.now();
-  const res = generate(key, size, size, seed, scale);
-  const rgba = toRGBA(
-    res,
-    P.colors.map((c) => c.hex),
-  );
-  writePng(`${outDir}/${key}.png`, rgba, size, size);
+  const res = generate(key, W0, H0, seed, scale);
+  const pal = P.colors.map((c) => c.hex);
+  if (tile) {
+    // 2x2 タイル: 継ぎ目が中央の十字に来る
+    const W = W0 * 2;
+    const H = H0 * 2;
+    const idx = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) idx[y * W + x] = res.index[(y % H0) * W0 + (x % W0)];
+    writePng(`${outDir}/${key}-tile.png`, toRGBA({ w: W, h: H, index: idx }, pal), W, H);
+  } else {
+    writePng(`${outDir}/${key}.png`, toRGBA(res, pal), W0, H0);
+  }
   console.log(`${key}: ${Date.now() - t0}ms`);
 }

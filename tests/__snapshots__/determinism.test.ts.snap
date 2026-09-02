@@ -2,11 +2,11 @@
 
 exports[`generate() は決定的 > index マップのハッシュ (回帰スナップショット) 1`] = `
 {
-  "aor1": "0bad28f58286956d2172416390bbd69f49352b5f",
-  "aor2": "61670e9e008a9fd4e88ce2075013bd32a89b0cac",
-  "marpat": "14ea83b6b598ab273ce526b7488a5624191a5109",
-  "marpat_desert": "d4bd6b95c9daa83652ff71a5ea706ee671faa65a",
-  "ucp": "7e3ceace8166449fe2f01c330636e603e0fe26cb",
-  "woodland": "36994d1e2e8d1c93422f4f57f180b20ba4544871",
+  "aor1": "e98cb9f7013e863dd4a007d1b6db3b90684b133c",
+  "aor2": "660883b8be5be77bfcbca4d444324fdc485c46e9",
+  "marpat": "437404ee7272e779c488f55b58b7254d234e9320",
+  "marpat_desert": "21bd838c97849333b138415d3f97b17640bb8fd8",
+  "ucp": "441a15f11964ae0af4fec18ac7abba59f4dc84ad",
+  "woodland": "6b1242677b6902741e526f046ee73d072498a561",
 }
 `;

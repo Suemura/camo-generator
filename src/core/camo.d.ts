@@ -8,16 +8,20 @@ export interface Preset {
   colors: PresetColor[];
   [k: string]: unknown;
 }
+export interface GenerateOptions {
+  /** true (既定): 上下左右に並べても継ぎ目が出ないトーラス生成。false: フェーズ1 と同じ非タイル生成 */
+  tileable?: boolean;
+}
 export interface GenResult {
   w: number;
   h: number;
   /** 色インデックス (0..colors.length-1)。形状と色を分離するための正本 */
   index: Uint8Array;
   /** クラスタ成長系のみ: セルグリッド (SVG 出力用) */
-  grid?: { cw: number; ch: number; cell: number; data: Uint8Array };
+  grid?: { gw: number; gh: number; cellPx: number; cellColor: Uint8Array };
 }
 export const PRESETS: Record<PresetKey, Preset>;
-export function generate(key: PresetKey, w: number, h: number, seed: number, scale: number): GenResult;
+export function generate(key: PresetKey, w: number, h: number, seed: number, scale: number, opt?: GenerateOptions): GenResult;
 export function toRGBA(res: GenResult, palette: string[]): Uint8ClampedArray<ArrayBuffer>;
 export function hexToRgb(hex: string): [number, number, number];
 export function hash2(ix: number, iy: number, seed: number): number;

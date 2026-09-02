@@ -2,3 +2,8 @@
 node_modules/
 *.log
 prototype/out/
+dist/
+out/
+.wrangler/
+src/styles/tokens/_primitives.scss
+.tsbuildinfo

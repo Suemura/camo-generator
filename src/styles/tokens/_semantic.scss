@@ -1,0 +1,59 @@
+// セマンティックトークン: 役割名 → プリミティブ。コンポーネントはここで定義した名前だけを var(--…) で参照する。
+// テーマ追加 = $themes に 1 エントリ追加。部分的な色変更 = 該当行を変更。
+@use "primitives" as p;
+
+// テーマ非依存（文字・余白・角丸）
+$static: (
+  font-body: (p.$font-body, "Helvetica Neue", Arial, sans-serif),
+  font-display: (p.$font-display, p.$font-body, sans-serif),
+  font-mono: (p.$font-mono, "SFMono-Regular", Menlo, monospace),
+  text-xs: p.$text-xs, text-sm: p.$text-sm, text-md: p.$text-md, text-lg: p.$text-lg,
+  text-xl: p.$text-xl, text-2xl: p.$text-2xl, text-3xl: p.$text-3xl,
+  space-0: p.$space-0, space-1: p.$space-1, space-2: p.$space-2, space-3: p.$space-3,
+  space-4: p.$space-4, space-5: p.$space-5, space-6: p.$space-6, space-8: p.$space-8,
+  space-10: p.$space-10, space-12: p.$space-12,
+  radius-sm: p.$radius-sm, radius-md: p.$radius-md, radius-lg: p.$radius-lg, radius-full: p.$radius-full,
+  panel-width: 360px,
+  touch-target: 44px,
+  focus-ring: 0 0 0 3px rgba(p.$primary, 0.45),
+);
+
+$themes: (
+  light: (
+    color-bg: p.$surface,
+    color-bg-elevated: p.$neutral-50,
+    color-fg: p.$text,
+    color-fg-muted: p.$neutral-600,
+    color-fg-subtle: p.$neutral-400,
+    color-border: p.$neutral-200,
+    color-border-strong: p.$neutral-300,
+    color-accent: p.$primary,
+    color-accent-fg: p.$neutral-0,
+    color-accent-hover: #2563EB,
+    color-success: p.$success,
+    color-warning: p.$warning,
+    color-danger: p.$danger,
+    // 迷彩色の見えを汚さないため、プレビュー周辺は無彩色
+    color-preview-bg: p.$neutral-100,
+    color-preview-checker: p.$neutral-200,
+    color-slot-border: p.$neutral-300,
+  ),
+  dark: (
+    color-bg: p.$neutral-900,
+    color-bg-elevated: p.$neutral-800,
+    color-fg: p.$neutral-50,
+    color-fg-muted: p.$neutral-400,
+    color-fg-subtle: p.$neutral-500,
+    color-border: p.$neutral-700,
+    color-border-strong: p.$neutral-600,
+    color-accent: #60A5FA,
+    color-accent-fg: p.$neutral-950,
+    color-accent-hover: #93C5FD,
+    color-success: #4ADE80,
+    color-warning: #FBBF24,
+    color-danger: #F87171,
+    color-preview-bg: p.$neutral-950,
+    color-preview-checker: p.$neutral-800,
+    color-slot-border: p.$neutral-600,
+  ),
+);

@@ -1,0 +1,17 @@
+// $static / $themes を CSS カスタムプロパティとして書き出す。
+@use "sass:map";
+@use "semantic" as s;
+
+@mixin emit-map($m) {
+  @each $k, $v in $m { --#{$k}: #{$v}; }
+}
+
+:root {
+  @include emit-map(s.$static);
+  @include emit-map(map.get(s.$themes, light));
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  @include emit-map(map.get(s.$themes, dark));
+  color-scheme: dark;
+}

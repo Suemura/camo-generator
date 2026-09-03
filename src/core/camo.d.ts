@@ -7,6 +7,9 @@ export type PresetKey =
   | "aor1"
   | "aor2"
   | "ucp"
+  | "cadpat"
+  | "pla07"
+  | "emr"
   | "dcu"
   | "dbdu"
   | "jgsdf2";

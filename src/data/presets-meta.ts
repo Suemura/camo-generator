@@ -98,6 +98,27 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "digital",
     svg: true,
   },
+  cadpat: {
+    label: "CADPAT 風 (温帯林)",
+    note: "1997〜 4 色。緑 3 段のピクセル",
+    country: "カナダ",
+    group: "digital",
+    svg: true,
+  },
+  pla07: {
+    label: "07 式 通用迷彩風",
+    note: "2007〜 4 色。粗いピクセル",
+    country: "中国",
+    group: "digital",
+    svg: true,
+  },
+  emr: {
+    label: "EMR 風 (デジタルフローラ)",
+    note: "2008〜 4 色。縦長の微細ピクセル",
+    country: "ロシア",
+    group: "digital",
+    svg: true,
+  },
 };
 
 export const PRESET_KEYS = Object.keys(PRESET_META) as PresetKey[];

@@ -1061,8 +1061,111 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     // デジタル系: ピクセル輪郭を保持。サブセルの欠片だけ除去
     cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)), wrap);
   }
+  // 小石層 (DBDU のチョコチップ): 平滑化・欠片除去の「後」に実寸で置く。
+  // 先に置くと (1) 多数決ミップで消える (2) 領域成長シームに途中で切られる
+  // (3) minFrag (512px で 70〜224px 相当) の欠片除去に丸ごと食われる ため、
+  // 1〜2px の黒縁を持つ数 px の斑点はこの位置でしか成立しない。
+  if(P.chips) applyChips(sm, w, h, seed, (w/512)/scale, P.chips, wrap);
   if(progress) progress(1);
   return {type:'organic', w, h, index: sm};
+}
+/* ================= 小石層 (チョコレートチップ) =================
+   実物 DBDU の識別点は「ブロブ層の内部に散る、黒フチ付きの白い小石」。
+   ブロブ層 (クイルト) では再現できないので、後処理後の index に直接描く。
+   配置はジッタードグリッド: セル幅を w/nx で厳密に割り切り、小石の footprint が
+   セル内に収まるようジッタを制限する。これで (a) 隣接セルの小石と構造的に重ならず
+   (b) トーラス上で格子が連続し (c) 占有判定・距離場が不要になる。
+   すべて座標ハッシュなので走査順に依存せず、同一シード → 同一配置。 */
+// 小石 1 個の形。実物の小石は真円でも楕円でもない不定形 (コンマ状・腎臓状) なので
+// 半径を角度の低次ハーモニクスで変調する (pasteBlob の rad(θ) と同じ考え方、周期は 2 と 3)。
+// 戻り値: (dx,dy) が形の内側なら true
+function chipInside(dx, dy, sh){
+  const u =  dx*sh.co + dy*sh.si;
+  const t = (-dx*sh.si + dy*sh.co) / sh.ar;
+  const rr = Math.hypot(u, t);
+  if(rr > sh.a * 1.5) return false;
+  const an = Math.atan2(t, u);
+  const rad = sh.a * (1 + 0.30*Math.sin(2*an + sh.p1) + 0.18*Math.sin(3*an + sh.p2));
+  return rr <= rad;
+}
+// 小石 (白) と黒縁の 2 形を 1 回の走査で塗る。
+// 黒縁は白と同形をひとまわり大きくして中心をずらしたもの。実物の黒は小石の全周ではなく
+// 片側に寄って三日月状に太く出るので、同心の輪では実物と別物になる。
+function drawChip(index, w, h, cx, cy, wh, rimSh, C, wrap){
+  const m = Math.ceil(Math.max(wh ? wh.a : 0, rimSh.a) * 1.5 + Math.hypot(rimSh.ox, rimSh.oy)) + 2;
+  const ix0 = Math.round(cx), iy0 = Math.round(cy);
+  for(let dy=-m; dy<=m; dy++){
+    for(let dx=-m; dx<=m; dx++){
+      let v = -1;
+      if(wh && chipInside(dx, dy, wh)) v = C.v;
+      else if(chipInside(dx - rimSh.ox, dy - rimSh.oy, rimSh)) v = C.rimV;
+      if(v < 0) continue;
+      const x = ix0 + dx, y = iy0 + dy;
+      const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
+      if(xi < 0 || xi >= w || yi < 0 || yi >= h) continue;   // 非タイル時はクリップ
+      index[yi*w + xi] = v;
+    }
+  }
+}
+// 小石が置かれる範囲が単一のブロブ色で占められている比率
+// (実物の小石はブロブ内部に置かれ、境界を跨がない)
+// index にはすでに描いた小石が混ざるので、判定はブロブ層のスナップショット blob に対して行う
+// (これで小石同士の重なりを許せる。実物の小石は隣同士がくっついて連なることがある)
+function chipPurity(blob, w, h, cx, cy, r, wrap){
+  const index = blob;
+  const m = Math.ceil(r);
+  const bx = wrap ? wrapI(Math.round(cx), w) : Math.min(w-1, Math.max(0, Math.round(cx)));
+  const by = wrap ? wrapI(Math.round(cy), h) : Math.min(h-1, Math.max(0, Math.round(cy)));
+  const base = index[by*w + bx];
+  let same = 0, n = 0;
+  for(let dy=-m; dy<=m; dy+=2){
+    for(let dx=-m; dx<=m; dx+=2){
+      if(dx*dx + dy*dy > m*m) continue;
+      const x = Math.round(cx) + dx, y = Math.round(cy) + dy;
+      const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
+      if(xi < 0 || xi >= w || yi < 0 || yi >= h) continue;
+      n++;
+      if(index[yi*w + xi] === base) same++;
+    }
+  }
+  return n ? same/n : 0;
+}
+// C: {v, rimV, r, rim, spacing, density, pure}。長さの単位は「512px・scale 1.0」基準 px
+// (upx で実 px に換算。genQuilt の k と同じ換算なのでブロブと小石の寸法比が scale で保たれる)
+function applyChips(index, w, h, seed, upx, C, wrap){
+  const cell = Math.max(6, (C.spacing ?? 30) * upx);
+  const nx = Math.max(1, Math.round(w/cell)), ny = Math.max(1, Math.round(h/cell));
+  const cw = w/nx, ch = h/ny;                        // 厳密割り切り → 継ぎ目で格子がずれない
+  const s = (seed ^ 0x5b1c) | 0;
+  const rBase = (C.r ?? 8) * upx;
+  const rimF = C.rim ?? 0.42;                        // 黒縁の太さ (小石半径に対する比)
+  const blob = index.slice();                        // 配置判定用のブロブ層スナップショット
+  for(let gy=0; gy<ny; gy++){
+    for(let gx=0; gx<nx; gx++){
+      if(hash2(gx, gy, s) > (C.density ?? 0.6)) continue;       // 実物は疎密がある
+      // 大きさは 0.45〜1.55 倍でばらつく (実物の小石は大小の差が大きい)
+      const a = Math.max(1.5, rBase * (0.45 + 1.1*hash2(gx, gy, s+31)));
+      const th = 2*Math.PI * hash2(gx, gy, s+41);
+      const wh = {
+        a, co: Math.cos(th), si: Math.sin(th),
+        ar: 0.62 + 0.38*hash2(gx, gy, s+37),                   // 軸比
+        p1: 2*Math.PI*hash2(gx, gy, s+43), p2: 2*Math.PI*hash2(gx, gy, s+47),
+      };
+      // 黒縁: 同じ形をひとまわり大きくし、ランダム方向へ半径の 0.2〜0.5 だけずらす → 三日月
+      const oth = 2*Math.PI * hash2(gx, gy, s+53);
+      const od = a * (0.20 + 0.30*hash2(gx, gy, s+59));
+      const rimSh = {...wh, a: a*(1 + rimF), ox: Math.cos(oth)*od, oy: Math.sin(oth)*od};
+      const m = Math.ceil(rimSh.a * 1.5 + od) + 2;
+      // ジッタはセル全域。footprint がセルからはみ出して隣の小石と重なるのは許容する
+      // (セル内に閉じ込めると格子のリズムが目に見えてしまう。実物の配置は不規則)
+      const cx = gx*cw + hash2(gx, gy, s+11) * cw;
+      const cy = gy*ch + hash2(gx, gy, s+23) * ch;
+      if(chipPurity(blob, w, h, cx, cy, m, wrap) < (C.pure ?? 0.9)) continue;
+      // 実物には白を伴わない黒だけの斑点も混ざる
+      const blackOnly = hash2(gx, gy, s+61) < (C.blackOnly ?? 0.22);
+      drawChip(index, w, h, cx, cy, blackOnly ? null : wh, rimSh, C, wrap);
+    }
+  }
 }
 // 面積 < minArea の連結成分を近傍多数色へ併合
 function cleanupFragments(index, w, h, minArea, wrap=false){
@@ -1219,6 +1322,29 @@ export const PRESETS = {
       {name:'ライトタン',    hex:'#e9d1ae'},
       {name:'ペールグリーン', hex:'#bbb18d'},
       {name:'ブラウン',      hex:'#8f590b'},
+    ],
+  },
+  dbdu: {
+    // 6 カラーデザート (DBDU / チョコレートチップ)。実物の特徴:
+    //   - ブロブ層は DCU と同系の大ぶりで丸い形状 → ソース図案は dcu を共有する
+    //     (DBDU 実物のフラットなスウォッチはパブリックドメインで入手できないため、
+    //      同系統で PD の DCU 図案を流用している。基色は実物の 4 色に対し 3 色)
+    //   - 識別点は「小石」を模した黒フチ付きの白い斑点がブロブ内部に散ること → chips 層が担う
+    name: '6 カラーデザート (DBDU)', kind: 'quilt', src: 'dcu', ref: 'dbdu',
+    kBase: 1.35, patchR: 150, organic: true,
+    frac: [0.401, 0.506, 0.093, 0], divw: [1, 1, 1.8, 1],
+    // 小石層。r / spacing は「512px・scale 1.0」基準 px、rim は小石半径に対する比。
+    // 実物写真 (refs/dbdu.jpg) の見た目に合わせた: 小石はブロブ幅の 1/8 前後で大小が混在し、
+    // 黒は全周の輪ではなく片側に寄った三日月として小石と同程度の面積を占める
+    chips: {v: 3, rimV: 4, r: 8, rim: 0.42, spacing: 34, density: 0.72, pure: 0.9},
+    // 色の並びは index 値の順。ソース図案 (dcu) の面積比が 0.40 / 0.51 / 0.09 なので、
+    // 実物で支配的なペールタンを最大面積の値 1 に割り当てる (実物は淡色が地になる)
+    colors: [
+      {name:'ライトブラウン', hex:'#9a766b'},
+      {name:'ペールタン',    hex:'#c6b5a4'},
+      {name:'ブラウン',      hex:'#704c44'},
+      {name:'小石ホワイト',   hex:'#e5d5cd'},
+      {name:'ブラック',      hex:'#1d1f23'},
     ],
   },
 };

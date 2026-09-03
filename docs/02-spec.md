@@ -164,7 +164,7 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 - 名称・コードは公的規格（FS 595 / RAL / BS 381C / ソ連規格名 4BO 等）のみ。模型塗料の品番（TS-xx / C-xx）は `note` の参考情報に留め、商標名を主キーにしない
 - 初期収録は 30〜50 色。カテゴリ軸: 色味（green / brown / tan / grey / black / other）、用途（camo-*, tank, aircraft, ship）、国（us / ru / uk / de / jp / other）
 - hex は規格の公称値または信頼できる換算値を採用し、`source` フィールドで出典を残す
-- 収録数は 132 色（2026-09-04 時点。第 1 弾 50 + 第 2 弾 70 + プリセット実測 12）。出典は `docs/design/palette-library-sources.md`
+- 収録数は 100 色以上（公的規格色 + 各プリセットの実測色）。正確な内訳と出典は `docs/design/palette-library-sources.md`
 - 迷彩プリセットを追加したら、その既定色もライブラリに登録する（公的規格の色番号が無い色は「〜 (実測)」エントリ、ある色は既存エントリに `camo-<key>` タグ）。手順は `docs/04-add-preset.md` §3
 
 ### 3.4 画像からパレット抽出（A7）
@@ -269,7 +269,7 @@ docs/design/spacious-DESIGN.md          spacious トークンの原本
 - `.github/workflows/ci.yml`（`pull_request`）: `pnpm install --frozen-lockfile` → `pnpm check` → `pnpm test` → `pnpm build`
 - `.github/workflows/deploy.yml`（`push` to `main` / `workflow_dispatch`）: 同じ検証を再実行してから `cloudflare/wrangler-action` で `wrangler deploy`。マージコミットが PR 時点と異なりうるため CI の結果は再利用しない。`concurrency` で直列化し途中キャンセルはしない
 - Secrets: `CLOUDFLARE_API_TOKEN`（最小権限の Custom Token）/ `CLOUDFLARE_ACCOUNT_ID`。権限一覧・運用手順・障害対処は `docs/03-deploy.md`
-- 決定性テストが落ちたら生成結果が変わったことを意味する。意図した変更なら `docs/tech-verification/` に新規エントリを追加（索引 `docs/01-tech-verification.md` に 1 行足す）してスナップショット更新
+- 決定性テストが落ちたら生成結果が変わったことを意味する。意図した変更なら `docs/01-tech-verification.md` へ追記してスナップショット更新
 
 ---
 

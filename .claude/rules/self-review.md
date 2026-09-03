@@ -19,7 +19,7 @@ description: タスク完了前のドキュメント同期（docs-sync）と独�
 ### PR を作成するタスク（/start-issue 等）
 
 - 独立レビューは **PR 作成後の自動レビューフロー**（pr-reviewer によるインラインレビュー → pr-comment-resolver による対応）が担う。**PR 前の reviewer エージェント起動は不要**（同じ差分の二重フルレビューを避ける）
-- PR 前の必須検証: `pnpm check` / `pnpm typecheck` / `pnpm test` の 3 点成功 + Sprint Contract の自己チェック。生成結果が変わる変更は加えて CLAUDE.md「検証ワークフロー」（render.mjs 目視 → `docs/tech-verification/` へのエントリ追加 → 検証プロトタイプの再ビルド + Artifact 再デプロイ → `pnpm test -u`）
+- PR 前の必須検証: `pnpm check` / `pnpm typecheck` / `pnpm test` の 3 点成功 + Sprint Contract の自己チェック。生成結果が変わる変更は加えて CLAUDE.md「検証ワークフロー」（render.mjs 目視 → `docs/01-tech-verification.md` 追記 → 検証プロトタイプの再ビルド + Artifact 再デプロイ → `pnpm test -u`）
 - マージ・main push は人間が判断する（`workflow-orchestration.md`「main へのマージは必ず明示確認」「main への直接 push は原則禁止」参照）
 
 ### PR を作らないタスク
@@ -38,7 +38,7 @@ description: タスク完了前のドキュメント同期（docs-sync）と独�
 2. **開発コマンド・ビルド / デプロイ構成の変更**: package.json scripts・wrangler.jsonc・tools/
 3. **ハーネスの変更**: `.claude/` 配下（agents / commands / rules / hooks / settings）
 4. **ディレクトリ構造・テスト方針の変更**
-5. **生成手法の変更で `docs/tech-verification/` へのエントリ追加が漏れている場合**（通常は実装時にメインエージェントが追記する。docs-sync は欠落の補完のみ）
+5. **生成手法の変更で `docs/01-tech-verification.md` の追記が漏れている場合**（通常は実装時にメインエージェントが追記する。docs-sync は欠落の補完のみ）
 
 **起動しない**（明示）: バグ修正・リファクタ・内部実装変更・依存更新・テスト追加のみの変更。変更ログはコミットメッセージと PR 説明に書く（変更ログ用ドキュメントは持たない。例外は生成手法の履歴である `docs/01-tech-verification.md` のみ）。
 

@@ -4,7 +4,7 @@
 # （exit 2 の stderr は Claude へのフィードバックとして送られ、自動修正を促す）
 #
 # 注: 決定性テスト (tests/determinism.test.ts) のスナップショット不一致は「生成結果が変わった」証拠。
-# 意図した変更なら docs/tech-verification/ に新規エントリを追加してから `pnpm test -u` する（先に更新しない）。
+# 意図した変更なら docs/01-tech-verification.md に追記してから `pnpm test -u` する（先に更新しない）。
 
 input=$(cat)
 
@@ -60,7 +60,7 @@ fi
 if ! test_output=$(pnpm test 2>&1); then
   errors="${errors}【テスト失敗】以下を修正してください。
 determinism スナップショットの不一致は生成結果が変わった証拠です。意図した変更なら
-docs/tech-verification/ に新規エントリを追加 (索引 docs/01-tech-verification.md に 1 行足す)した上で pnpm test -u してください（意図しない変更なら原因を直す）:
+docs/01-tech-verification.md に変更内容と判断を追記した上で pnpm test -u してください（意図しない変更なら原因を直す）:
 ${test_output}
 
 "

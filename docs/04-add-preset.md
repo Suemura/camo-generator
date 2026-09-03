@@ -13,7 +13,7 @@ CLAUDE.md の各節（検証ワークフロー / 検証プロトタイプ / 規�
 Issue（#21 のサブ Issue）
   → /start-issue <N>        worktree 作成 → planner → 実装 → 検証 → docs-sync → PR 作成 → 自動レビュー
   → ユーザーの精度検証        Artifact（Camo Lab）でシード・スケールを変えながら実物と比較。指摘はスクショ + シード + スケールで来る
-  → 精度改善ループ            指摘 → 原因分析 → 修正 → render --compare → docs/tech-verification/ にエントリ追加 → プロトタイプ再ビルド + 再デプロイ → push
+  → 精度改善ループ            指摘 → 原因分析 → 修正 → render --compare → 01-tech-verification に vN 追記 → プロトタイプ再ビルド + 再デプロイ → push
   → /resolve-conflicts <PR>  並列 Issue が先に main に入っていればマージ取り込み（スナップショット再生成）
   → /land <N>                ユーザーが PR を特定して「マージして」と言ったときだけ。AskUserQuestion で承認を得てからマージ
 ```
@@ -83,13 +83,13 @@ CCE の 4 色は 2026-09-04 時点で未登録（残課題、§9）。
 1. `src/data/palette-library.json` にエントリを追加（末尾追記。既存エントリの順序は変えない）
 2. `docs/design/palette-library.json` を同じ内容にする（`src/data` 側のコピー元。`src/data` 側は Biome が整形するため byte 一致はしない。JSON としてパースして等価かを確認する）
 3. `src/data/palette.ts` の `USE_LABEL` に `camo-<key>` のラベルを追加（用途タブの見出しになる。無いとタグ名がそのまま表示される）
-4. `docs/design/palette-library-sources.md` の「出典一覧」表に行を追加し、冒頭の総数（「128 色」等）を更新
+4. `docs/design/palette-library-sources.md` の「出典一覧」表に行を追加（**総数は書かない**。「100 色以上」で足りる。数値を書くと追加のたびに 4 箇所を直す羽目になり、直し漏れで嘘になる）
 
-総数を書いている場所も直す: README 冒頭（「〜色の規格色ライブラリ」）と CLAUDE.md「アーキテクチャ」（「〜色ライブラリ」）。
+総数（「132 色」等）はどこにも書かない。README・CLAUDE.md・`docs/02-spec.md`・`palette-library-sources.md` の 4 箇所に散り、色を 1 つ足すたびに全部を直す羽目になる（実際に直し漏れて食い違った）。「100 色以上」で必要な情報は伝わる。
 
 ### 3.4 確認
 
-`pnpm dev --port 5199` + Playwright（`channel: "chrome"`）でカラーライブラリのドロワーを開き、総数・検索（プリセット名で件数が合うか）・用途タブに新ラベルが出ることを 1440 / light で確認する。
+`pnpm dev --port 5199` + Playwright（`channel: "chrome"`）でカラーライブラリのドロワーを開き、検索（プリセット名で件数が合うか）・用途タブに新ラベルが出ることを 1440 / light で確認する。
 
 ## 4. 検証（生成品質）
 
@@ -107,9 +107,8 @@ node tools/render.mjs /tmp/camo-render/hi 1234 --size=2048x2048 --crop=512 --pre
 - 出力 PNG を Read で目視し、既知アーティファクト（ブロック感・境界急変・切断面・鏡映対称・市松ノイズ・微小点）の再発を確認する
 - 面積比を 3 シードで記録する（`gen-src.mjs` が出すソース図案の面積比と比べる）
 - 性能: 512px の生成時間を既存プリセットと比較して記録する
-- `docs/tech-verification/YYYY-MM-DD-issue-NN-<slug>.md` を**新規作成**する（目的 / 手法の選択理由 / パラメータ / 検証 / 残課題）。**新しい番号（vNN）は振らない** — 番号の採番そのものが並列作業で衝突するため、ファイル名が識別子。既存の `v1`〜`v25` は本文中の相互参照が生きているのでそのまま参照してよい
-- 索引 `docs/01-tech-verification.md` の一覧に 1 行足す。索引は `.gitattributes` で `merge=union` にしてあるので、別エントリどうしの追加なら自動マージされる
-- **`pnpm test -u` はエントリを書いた後**。先にスナップショットを更新しない
+- `docs/01-tech-verification.md` に **vN 節を追記**（目的 / 手法の選択理由 / パラメータ / 検証 / 残課題）。節番号は main の最新 +1。並列 Issue が先にマージされて番号が衝突したら、自分の節を繰り下げる（DBDU は v20 → v24）
+- **`pnpm test -u` は追記の後**。先にスナップショットを更新しない
 
 ## 5. 検証プロトタイプ（Artifact）の更新
 
@@ -159,29 +158,29 @@ PR を作ったら終わりではない。ユーザーが Artifact で確認し�
 
 - 指摘は `docs/01-tech-verification.md` の既知アーティファクト一覧と照合してから着手する（同じ轍を踏まない）
 - 原因を構造的に説明できるまで分析する。「パラメータを少し変える」で済ませない（CCE の黒が緑に削られる問題は、黒を最上層の版として刷り直す `P.topLayer` という構造の変更で解消した）
-- **同じ問題を持つ既存プリセットにも同じ対策を適用する**。ユーザーは「M81 でも同じ問題がある」と横展開を求める。共通ロジックを変えると既存プリセットのハッシュが変わるので、その旨をエントリと PR に書く
-- 「改善したが残った」指摘（CCE の平行な細線）は、対策の効いていない原因を別に探す。修正前後の直接比較（同シード）をエントリに載せる
-- 各イテレーションで: render 目視 → エントリに追記 → `node prototype/build.mjs` → Artifact 再デプロイ → `pnpm test -u` → push。コミットは 1 イテレーション 1 コミットにして、レビューで差し戻せるようにする
+- **同じ問題を持つ既存プリセットにも同じ対策を適用する**。ユーザーは「M81 でも同じ問題がある」と横展開を求める。共通ロジックを変えると既存プリセットのハッシュが変わるので、その旨を vN 節と PR に書く
+- 「改善したが残った」指摘（CCE の平行な細線）は、対策の効いていない原因を別に探す。修正前後の直接比較（同シード）を vN 節に載せる
+- 各イテレーションで: render 目視 → vN 追記 → `node prototype/build.mjs` → Artifact 再デプロイ → `pnpm test -u` → push。コミットは 1 イテレーション 1 コミットにして、レビューで差し戻せるようにする
 
 ## 8. 並列 Issue との統合とマージ
 
 複数のサブ Issue を並列に進めると、「一覧の末尾に 1 行足す」型の変更がぶつかってコンフリクトする。
-`.gitattributes` で自動解決できるものは下記のとおり指定してあるが、手で解く必要が残るものもある。
+機械的に解けるものは `.gitattributes` で自動解決してあるので、手で解くのは残りだけでよい。
 
 | ファイル | マージ方針 |
 | --- | --- |
-| `tests/__snapshots__/*.snap` | `merge=union`（自動）。解消後に `pnpm test` で検証する |
+| `tests/__snapshots__/*.snap` | `merge=union`（自動）。両側の行が残る。解消後に `pnpm test` で妥当性を検証する |
 | `prototype/refs.js` | `merge=union`（自動） |
-| `docs/01-tech-verification.md`（索引） | `merge=union`（自動）。順序が乱れたら日付順に直す |
 | `prototype/index.html` | `merge=ours`（自動）。**マージ後に必ず `node prototype/build.mjs` で再生成する**（`tests/prototype-sync.test.ts` が忘れを検出する） |
 | `src/core/camo.js` / `presets-meta.ts` / `palette.ts` / `camo.d.ts` | 手で解く。**両側を残す**（DBDU の `applyChips` と CCE の `cleanupSlivers`、`PRESETS` の両エントリなど） |
-| `README.md` / `CLAUDE.md` / `docs/` | 手で解く。両側の記述を統合する |
+| `docs/01-tech-verification.md` | 手で解く。時系列に両方残し、自分の節番号を繰り下げる |
+| `README.md` / `CLAUDE.md` / その他 docs | 手で解く。両側の記述を統合する |
 
 `merge=ours` は git 組み込みではないため `git config merge.ours.driver true` が要る。`pnpm install` の
 `prepare` が設定するので、worktree を作ったら一度 `pnpm install` すること。
 
 - `/resolve-conflicts <PR>` で origin/main をマージ取り込みする（rebase しない）
-- スナップショットは手で統合せず、マージ後に `pnpm test -u`。**自分のプリセットのハッシュが相手側の共通ロジック変更で変わる**ことがある（DBDU は CCE 側の 1px 筋除去で変わった）。`--compare` / `--tile` で劣化がないことを目視し、自分のエントリに「統合」小節として書く
+- スナップショットは手で統合せず、マージ後に `pnpm test -u`。**自分のプリセットのハッシュが相手側の共通ロジック変更で変わる**ことがある（DBDU は CCE 側の 1px 筋除去で変わった）。`--compare` / `--tile` で劣化がないことを目視し、vN 節に「統合」小節として書く
 - マージ後にプロトタイプを再ビルドし、Artifact を再デプロイする
 - **マージはユーザーが PR を特定して明示的に依頼したときだけ**。「精度検証 OK、マージして」が合図。`/land <N>` の中で `AskUserQuestion` により PR 番号・タイトル・マージ方式を提示して承認を得る。「デプロイして」「進めて」からマージを推測しない（`.claude/rules/workflow-orchestration.md`）
 - マージ後は GitHub Actions の Deploy 成功を確認し、`/land` で worktree とブランチを片付ける
@@ -192,10 +191,10 @@ PR を作ったら終わりではない。ユーザーが Artifact で確認し�
 - [ ] リファレンス画像を用意し、ライセンスと派生物の扱いを判断した（refs/ なら README クレジット節を更新）
 - [ ] PRESETS / PRESET_META を追加し、名称は「〜風」表記
 - [ ] colors は extract-palette.mjs の実測値
-- [ ] カラーライブラリに登録した（palette-library.json ×2 / USE_LABEL / palette-library-sources.md / 総数表記）
+- [ ] カラーライブラリに登録した（palette-library.json ×2 / USE_LABEL / palette-library-sources.md の出典表）
 - [ ] render.mjs: 3 シード × 4 スケール / --compare / --tile / --size=2048 --crop=512 を目視、既知アーティファクトなし
 - [ ] 既存プリセットのスナップショットが不変（差分は新プリセットの 1 行のみ）。共通ロジックを変えた場合はその旨を明記
-- [ ] docs/tech-verification/ にエントリを新規作成し索引に 1 行足してから pnpm test -u
+- [ ] docs/01-tech-verification.md に vN 節を追記してから pnpm test -u
 - [ ] prototype/refs.js に data URI 追加 → node prototype/build.mjs → Artifact を同じ URL に再デプロイ
 - [ ] README の対応迷彩一覧・生成手法表・クレジット節を更新
 - [ ] PR 本文: 生成結果への影響 / ライセンス判断 / カラーライブラリ登録 / 検証画像（verify-assets）/ Artifact URL

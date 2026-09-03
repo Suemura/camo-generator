@@ -73,7 +73,7 @@ CLAUDE.md と `.claude/rules/` はシステムコンテキストとして**自�
 
 - ソースの変更は `.claude/hooks/check-on-stop.sh`（Stop hook）が check / typecheck / test を自動実行している。reviewer は**同じチェックを重複実行しない**
 - 追加確認が必要な場合のみ実行: `pnpm typecheck` / `pnpm check` / `pnpm test`
-- **スナップショット（`tests/__snapshots__/`）が差分に含まれる場合**: `docs/tech-verification/` に対応するエントリが追加されているか、render.mjs による目視検証の記述があるかを確認する。どちらも無ければ Fail
+- **スナップショット（`tests/__snapshots__/`）が差分に含まれる場合**: `docs/01-tech-verification.md` に対応する追記があるか、render.mjs による目視検証の記述があるかを確認する。どちらも無ければ Fail
 
 ### Step 5: チェックリスト判定
 
@@ -97,7 +97,7 @@ CLAUDE.md と `.claude/rules/` はシステムコンテキストとして**自�
 - ビルド・テスト・lint が成功するか
 - 新規ファイルの import/export が正しいか
 - `src/lib/` のロジック変更に対応するテストがあるか
-- 生成結果を変える変更に `docs/tech-verification/` のエントリ追加があるか
+- 生成結果を変える変更に `docs/01-tech-verification.md` の追記があるか
 
 #### 5-4. ユーザー視点
 

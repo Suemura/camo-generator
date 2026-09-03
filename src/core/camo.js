@@ -1111,6 +1111,8 @@ function drawChip(index, w, h, cx, cy, wh, rimSh, C, wrap){
 // (実物の小石はブロブ内部に置かれ、境界を跨がない)
 // index にはすでに描いた小石が混ざるので、判定はブロブ層のスナップショット blob に対して行う
 // (これで小石同士の重なりを許せる。実物の小石は隣同士がくっついて連なることがある)
+// 2px 間隔サンプリング: 小石 (r ≈ 4〜16px) でも走査点は最低十数点確保できる密度で、
+// pure 閾値 0.9 の判定を粗く離散化するほどではない (目視検証: seed 1234/777/211025 で境界跨ぎ誤判定なし)
 function chipPurity(blob, w, h, cx, cy, r, wrap){
   const index = blob;
   const m = Math.ceil(r);
@@ -1132,6 +1134,9 @@ function chipPurity(blob, w, h, cx, cy, r, wrap){
 }
 // C: {v, rimV, r, rim, spacing, density, pure}。長さの単位は「512px・scale 1.0」基準 px
 // (upx で実 px に換算。genQuilt の k と同じ換算なのでブロブと小石の寸法比が scale で保たれる)
+// index はこの呼び出し時点で常に実寸 (genQuilt が多段解像度時に sm/w/h を fullW/fullH へ
+// 差し替えた「後」に呼ぶ設計、上の呼び出し行を参照)。よって index.slice() のコピーは
+// 常に実寸 1 枚分で収まり、baseMax による縮小生成後の解像度と食い違うことはない
 function applyChips(index, w, h, seed, upx, C, wrap){
   const cell = Math.max(6, (C.spacing ?? 30) * upx);
   const nx = Math.max(1, Math.round(w/cell)), ny = Math.max(1, Math.round(h/cell));
@@ -1332,6 +1337,9 @@ export const PRESETS = {
     //   - 識別点は「小石」を模した黒フチ付きの白い斑点がブロブ内部に散ること → chips 層が担う
     name: '6 カラーデザート (DBDU)', kind: 'quilt', src: 'dcu', ref: 'dbdu',
     kBase: 1.35, patchR: 150, organic: true,
+    // frac/divw は dcu からそのまま流用 (dcu 側は blob 層専用パラメータで 4 要素)。
+    // dbdu の blob 層が生成する値も 0..2 のみなので意味は保たれる。3 (小石ホワイト) /
+    // 4 (黒縁) は下の chips 層が実寸 index に直接描く専用値で、frac/divw の制御対象外
     frac: [0.401, 0.506, 0.093, 0], divw: [1, 1, 1.8, 1],
     // 小石層。r / spacing は「512px・scale 1.0」基準 px、rim は小石半径に対する比。
     // 実物写真 (refs/dbdu.jpg) の見た目に合わせた: 小石はブロブ幅の 1/8 前後で大小が混在し、

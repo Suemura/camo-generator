@@ -39,7 +39,8 @@ description: エージェントのワークフロー・オーケストレーシ�
 ## 完了前の検証
 - 動作を証明しないまま、タスクを完了にしてはならない。
 - `pnpm check` / `pnpm typecheck` / `pnpm test` の 3 点成功が完了条件。Stop フック（`.claude/hooks/check-on-stop.sh`）が応答終了時に自動実行し、失敗を差し戻す。
-- **生成品質に触れる変更**は CLAUDE.md「検証ワークフロー」が必須: `node tools/render.mjs` を複数シード × 複数スケールで実行 → PNG を Read で目視 → 既知アーティファクトの再発確認 → `docs/01-tech-verification.md` 追記 → `pnpm test -u`。**スナップショット更新を先にしない**。
+- **生成品質に触れる変更**は CLAUDE.md「検証ワークフロー」が必須: `node tools/render.mjs` を複数シード × 複数スケールで実行 → PNG を Read で目視 → 既知アーティファクトの再発確認 → `docs/01-tech-verification.md` 追記 → 検証プロトタイプの更新 → `pnpm test -u`。**スナップショット更新を先にしない**。
+- **新プリセットの追加・生成精度の変更では検証プロトタイプ（Artifact）の更新が完了条件**（CLAUDE.md「検証プロトタイプ（Artifact）」）: `prototype/refs.js` に参照画像を追加 → `node prototype/build.mjs` → `Artifact` ツールに `file_path: prototype/index.html` と既存 URL を渡して同じ URL に再デプロイ → 報告に URL を含める。`tests/prototype-sync.test.ts` が再ビルド忘れを検出するが、再デプロイ忘れは検出できないので自分で確認する。
 - UI に触れる変更は `pnpm dev --port 5199` + Playwright（`channel: "chrome"`）でデスクトップ 1440 / モバイル 390 × ライト / ダークを確認する（CLAUDE.md「UI の実画面確認」）。
 - 変更が `self-review.md` のホワイトリストに該当する場合は **docs-sync エージェント**を起動する。
 - 独立レビューは `self-review.md`「レビューの二本立て」に従う。

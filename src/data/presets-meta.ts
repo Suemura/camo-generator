@@ -42,6 +42,13 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "woodland",
     svg: false,
   },
+  dcu: {
+    label: "3 カラーデザート風 (DCU)",
+    note: "1990〜 3 色。有機形状",
+    country: "米国",
+    group: "desert",
+    svg: false,
+  },
   marpat: {
     label: "デジタル・ウッドランド風",
     note: "MARPAT 系 4 色。ピクセル",

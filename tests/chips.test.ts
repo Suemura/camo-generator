@@ -56,7 +56,7 @@ describe("DBDU の小石層", () => {
         const r = generate("dbdu", 512, 512, seed, scale);
         const comps = components(r.index, r.w, r.h, CHIP);
         // 平滑化・欠片除去の後に描いている証拠: minFrag (512px で scale 0.7→224 / 1.0→110 /
-        // 2.0→70、docs/01-tech-verification.md v20) のうち最も緩い scale=1.0 の 110 を
+        // 2.0→70、docs/01-tech-verification.md v24) のうち最も緩い scale=1.0 の 110 を
         // 全 scale 共通の閾値に使う。実測の最小成分面積は 3 seed とも 30 前後でマージンは
         // 3 倍以上あるため、chip サイズ (r/spacing) を多少調整しても閾値超過で誤検知しない
         expect(comps.length).toBeGreaterThanOrEqual(15);

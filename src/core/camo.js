@@ -867,21 +867,42 @@ function applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, top, targetFrac, see
     comps.push({id, u0, u1, v0, v1, area, ring: rc});
   }
   if(!comps.length) return;
-  // --- 2. 下刷り: 黒を消して最近傍の非黒で埋める (多点 BFS)
+  // --- 2. 下刷り: 黒を消して周囲の色で埋める。
+  // 「最近傍の色を BFS で伝播」だと細い黒枝が回廊になり、遠くの色が領域の内部へ幅 1〜2px の筋として
+  // 引き込まれる (平行に走る細線として見える。実際にユーザー指摘で出た)。
+  // → 8 近傍の多数決で 1 層ずつ膨張させる。回廊の壁は領域自身の色なので多数決では筋が生き残らない。
+  // 各スイープの結果はまとめて反映し、走査順に依存しない (決定性の維持)
   const idx = (x, y) => {
     if(wrap) return wrapI(y, h)*w + wrapI(x, w);
     if(x<0||x>=w||y<0||y>=h) return -1;
     return y*w + x;
   };
-  let q = new Int32Array(w*h), qt = 0;
-  for(let i=0;i<w*h;i++) if(out[i] !== top) q[qt++] = i;
-  for(let qh=0; qh<qt; qh++){
-    const i = q[qh], x = i % w, y = (i / w) | 0, v = out[i];
-    for(const [ox,oy] of N4){
-      const i2 = idx(x+ox, y+oy);
-      if(i2 < 0 || out[i2] !== top) continue;
-      out[i2] = v; q[qt++] = i2;                 // 隣の非黒色を伝播 (最近傍の色で埋まる)
+  const N8 = [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
+  const fill = new Int32Array(w*h);
+  for(let guard=0; guard<64; guard++){
+    let ft = 0;
+    const cnt = [0,0,0,0];
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const i = y*w + x;
+        if(out[i] !== top) continue;
+        cnt[0]=cnt[1]=cnt[2]=cnt[3]=0;
+        let n = 0;
+        for(const [ox,oy] of N8){
+          const i2 = idx(x+ox, y+oy);
+          if(i2 < 0) continue;
+          const v = out[i2];
+          if(v === top || v > 3) continue;
+          cnt[v]++; n++;
+        }
+        if(!n) continue;
+        let b = 0;
+        for(let c=1;c<4;c++) if(cnt[c] > cnt[b]) b = c;   // 同数タイは小さい色番号
+        fill[ft++] = i | (b << 28);                        // 反映はスイープ後 (順序依存を避ける)
+      }
     }
+    if(!ft) break;
+    for(let k=0;k<ft;k++) out[fill[k] & 0x0fffffff] = fill[k] >>> 28;
   }
   // --- 3. 黒成分を丸ごと刷る。面積比が目標に達するまで
   const rng = mulberry32(seed ^ 0x51ed);
@@ -1252,7 +1273,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),
                                         110 * (w/512)*(w/512) / (scale*scale)));
     cleanupFragments(sm, w, h, minFrag, wrap);
-    cleanupSlivers(sm, w, h, wrap);   // 幅 1px の筋 (消した黒枝の跡・輪郭交差) を除去
+    cleanupSlivers(sm, w, h, wrap);   // 幅 1px の筋 (輪郭交差の残り) を除去
   }else{
     // デジタル系: ピクセル輪郭を保持。サブセルの欠片だけ除去
     cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)), wrap);

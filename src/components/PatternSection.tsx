@@ -14,15 +14,18 @@ export function PatternSection({ state, onChange }: Props) {
   return (
     <div className="section">
       <h2 className="sectionTitle">パターン</h2>
-      <div role="radiogroup" aria-label="プリセット">
+      <div>
         {PRESET_GROUPS.map((g) => {
           // 該当プリセットが無いグループは見出しも出さない (プリセット追加に応じて自然に現れる)
           const keys = PRESET_KEYS.filter((k: PresetKey) => PRESET_META[k].group === g.key);
           if (keys.length === 0) return null;
+          const headingId = `preset-group-${g.key}`;
           return (
             <div key={g.key} className={styles.group}>
-              <h3 className={styles.groupTitle}>{g.label}</h3>
-              <div className={styles.grid}>
+              <h3 id={headingId} className={styles.groupTitle}>
+                {g.label}
+              </h3>
+              <div role="radiogroup" aria-labelledby={headingId} className={styles.grid}>
                 {keys.map((k: PresetKey) => (
                   <button
                     key={k}

@@ -71,6 +71,7 @@ for (const [key, P] of Object.entries(PRESETS)) {
   const t0 = Date.now();
   const res = generate(key, W0, H0, seed, scale);
   const pal = P.colors.map((c) => c.hex);
+  const refPath = compare ? findRef(key) : null;
   if (tile) {
     // 2x2 タイル: 継ぎ目が中央の十字に来る
     const W = W0 * 2;
@@ -87,9 +88,8 @@ for (const [key, P] of Object.entries(PRESETS)) {
     for (let y = 0; y < c; y++)
       for (let x = 0; x < c; x++) idx[y * c + x] = res.index[(oy + y) * W0 + ox + x];
     writePng(`${outDir}/${key}-crop${c}.png`, toRGBA({ w: c, h: c, index: idx }, pal), c, c);
-  } else if (compare && findRef(key)) {
+  } else if (refPath) {
     // 左右比較: 参照画像を出力寸法に cover でリサイズし、生成結果の右に並べる
-    const refPath = findRef(key);
     const ref = await loadRgba(refPath, { width: W0, height: H0 });
     const gen = toRGBA(res, pal);
     const W = W0 * 2;

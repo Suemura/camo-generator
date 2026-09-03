@@ -2,6 +2,9 @@
 # PreToolUse フック (Bash: git push*): push 前に refs/private/ の混入を検査し、
 # 見つかれば exit 2 でツール実行をブロックして Claude に差し戻す。
 # git 側の .githooks/pre-push と二重になるが、hooksPath が未設定の環境でも止めるための層。
+# range を HEAD 固定にしているのは、この層が「現在チェックアウト中のブランチを push する」
+# Claude Code セッションの操作のみを想定した保険だから。任意 ref/tag の厳密な検査は
+# git 側 .githooks/pre-push が stdin で渡される push 対象 ref ごとに行う（そちらが正）。
 
 input=$(cat)
 work_dir=""

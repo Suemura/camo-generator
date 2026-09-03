@@ -18,7 +18,12 @@ export type WorkerResponse = { id: number; res: GenResult } | { id: number; erro
 let sources: Promise<void> | null = null;
 function ensure(preset: PresetKey) {
   if (hasSources(preset)) return Promise.resolve();
-  sources ??= import("@/core/digsrc.js").then((m) => registerSources(m));
+  sources ??= import("@/core/digsrc.js")
+    .then((m) => registerSources(m))
+    .catch((e) => {
+      sources = null; // 取得失敗は次回再試行できるようにキャッシュを捨てる
+      throw e;
+    });
   return sources;
 }
 

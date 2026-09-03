@@ -31,7 +31,7 @@ cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.h
   - 「形状（index マップ: `Uint8Array` の色インデックス）」と「色（パレット）」を分離。`generate()` → `{w, h, index, grid?}`、着色は `toRGBA()`。この分離がパレット自由変更の根拠なので崩さない
   - 手法は3系統: `genQuilt`（ブロブパッチ合成、M81 主力）/ `genGrowth`（クラスタ成長、デジタル系）/ `genWoodland`・`genDigital`（ノイズ閾値、従来手法・比較用）
   - プリセットは `PRESETS` に集約。`kind` で生成関数にディスパッチ
-- `src/core/m81src.js` / `digsrc.js` — M81 / AOR1 / AOR2 実物図案の 4値インデックスマップ（RLE + base64）。再生成は docs 記載の Python 手順
+- `src/core/m81src.js` / `digsrc.js` — M81 / AOR1 / AOR2 実物図案の 4値インデックスマップ（RLE + base64）。再生成は docs 記載の Python 手順。**`digsrc.js`（280KB）は camo.js から静的 import しない**。利用側が動的 import して `registerSources()` で渡す（ブラウザは `src/lib/generate.ts` の `ensureSources`、Node は `tools/render.mjs` / テストで先頭登録）
 - `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means。`src/data/` — プリセット表示メタ、120 色ライブラリ、リファレンス画像（動的 import）
 - `src/styles/tokens/` がデザイントークン（§デザイン参照）、`src/styles/ui.scss` が共通クラス。コンポーネントの色・余白は `var(--…)` のみ、生値禁止。新しい余白値が要るときは `_semantic.scss` の `$static` に追加してから使う（未定義 var は無効値になり潰れる）
 - `tools/render.mjs` — Node レンダリングハーネス。`tools/gen-tokens.mjs` — トークン生成

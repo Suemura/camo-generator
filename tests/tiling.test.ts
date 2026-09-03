@@ -3,7 +3,10 @@
 // - 成長系はセルグリッド単位で測る (ピクセル単位だとセル境界にしか変化がなく cellPx 倍に膨れる)
 // - 1 列の指標は分散が大きいので 3 シード平均で判定する
 import { describe, expect, it } from "vitest";
-import { generate, PRESETS, type PresetKey } from "../src/core/camo.js";
+import { generate, PRESETS, type PresetKey, registerSources } from "../src/core/camo.js";
+import * as digsrc from "../src/core/digsrc.js";
+
+registerSources(digsrc);
 
 const keys = Object.keys(PRESETS) as PresetKey[];
 const SEEDS = [1234, 777, 211025];

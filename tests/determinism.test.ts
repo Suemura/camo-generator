@@ -2,7 +2,10 @@
 // 意図した変更なら docs/01-tech-verification.md に追記してスナップショットを更新する (vitest -u)。
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { generate, PRESETS, type PresetKey } from "../src/core/camo.js";
+import { generate, PRESETS, type PresetKey, registerSources } from "../src/core/camo.js";
+import * as digsrc from "../src/core/digsrc.js";
+
+registerSources(digsrc);
 
 const keys = Object.keys(PRESETS) as PresetKey[];
 const sha = (u8: Uint8Array) => createHash("sha1").update(u8).digest("hex");

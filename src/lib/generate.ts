@@ -1,6 +1,12 @@
 // 生成の非同期窓口。現状はメインスレッドで同期実行するが、呼び出し側は Promise として扱うので
 // Web Worker 化 (Issue #3) の際に差し替えるだけで済む。
-import { type GenResult, generate, type PresetKey } from "@/core/camo.js";
+import {
+  type GenResult,
+  generate,
+  hasSources,
+  type PresetKey,
+  registerSources,
+} from "@/core/camo.js";
 
 export interface GenerateRequest {
   preset: PresetKey;
@@ -11,7 +17,16 @@ export interface GenerateRequest {
   tileable: boolean;
 }
 
-export function generateAsync(req: GenerateRequest): Promise<GenResult> {
+let sourcesLoading: Promise<void> | null = null;
+/** AOR 実物マップ (約 280KB) は必要になった時だけ読む */
+export function ensureSources(preset: PresetKey): Promise<void> {
+  if (hasSources(preset)) return Promise.resolve();
+  sourcesLoading ??= import("@/core/digsrc.js").then((m) => registerSources(m));
+  return sourcesLoading;
+}
+
+export async function generateAsync(req: GenerateRequest): Promise<GenResult> {
+  await ensureSources(req.preset);
   return new Promise((resolve) => {
     // 描画フレームを 1 つ譲ってから実行 (進捗表示を描かせる)
     setTimeout(() => {

@@ -9,7 +9,8 @@ const srcInline = srcFiles
   .join('\n');
 const camo = srcInline + '\n' + fs.readFileSync(core+'camo.js', 'utf8')
   .replace(/^import .*$/gm, '')  // ESM import はインライン化済み
-  .replace(/^export /gm, '');    // ブラウザ用に export を除去
+  .replace(/^export /gm, '')     // ブラウザ用に export を除去
+  + '\nregisterSources({AOR1_SRC_W, AOR1_SRC_H, AOR1_SRC_RLE, AOR2_SRC_W, AOR2_SRC_H, AOR2_SRC_RLE});';
 const refs = fs.readFileSync(dir+'refs.js', 'utf8');
 const tpl = fs.readFileSync(dir+'app-template.html', 'utf8');
 fs.writeFileSync(dir+'index.html',

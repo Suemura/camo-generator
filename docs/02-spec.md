@@ -210,14 +210,14 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 
 ```
 src/
-  core/            camo.js, m81src.js, digsrc.js (依存ゼロ維持), camo.d.ts
+  core/            camo.js, m81src.js, dcusrc.js, digsrc.js (依存ゼロ維持), camo.d.ts
   workers/         palette-extract.worker.ts, (将来) generate.worker.ts
   lib/             url-state.ts, png-phys.ts, share.ts, kmeans.ts, scene3d.ts, preview3d-math.ts, webgl.ts
   components/      ControlPanel/, Preview/, Preview3D/, PaletteLibrary/, ExportPanel/ ...
   data/            palette-library.json, presets-meta.ts (サムネ・表記名)
   styles/          tokens/ (§6), base/, themes/
   app/             App.tsx, About.tsx
-tools/             render.mjs (検証ハーネス、prototype から移動), gen-tokens.mjs
+tools/             render.mjs (検証ハーネス、prototype から移動), gen-tokens.mjs, gen-src.mjs
 public/3d/         env.hdr, fabric_normal.jpg, fabric_rough.jpg, ripstop_normal.jpg, ripstop_rough.jpg
 .claude/skills/design-system/SKILL.md   spacious (LLM 向けデザインルール)
 docs/design/spacious-DESIGN.md          spacious トークンの原本

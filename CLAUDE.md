@@ -19,11 +19,14 @@ pnpm typecheck                        # tsc -b (noEmit)
 pnpm tokens                           # docs/design/spacious-DESIGN.md → src/styles/tokens/_primitives.scss
 node tools/render.mjs <outdir> <seed> [scale]   # 全プリセットを 512px PNG で出力（目視検証用）
 #   オプション: --tile (2×2 タイル) / --size=WxH / --preset=key / --crop=512 (中央を等倍切出し、高解像度の階段確認)
+#             --compare (左=生成 / 右=refs/ の実物リファレンス。精度改善の基本ループ。refs/private/<key>.* があれば優先)
+node tools/extract-palette.mjs refs/<key>.png 4   # 参照画像からパレット既定値を実測（UI の抽出と同じ k-means）
+bash tools/check-private-refs.sh [rev-range]     # refs/private/ の混入検査（pre-push / PreToolUse / CI が自動で呼ぶ）
 pnpm deploy                           # 緊急用の手動デプロイ。通常は main マージで .github/workflows/deploy.yml が自動デプロイ（運用は docs/03-deploy.md）
 cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.html の再ビルド (src/core を参照)
 ```
 
-検証は「レンダ → 実物リファレンスと目視比較」が基本ループ。Vitest は生成結果の**変化検知**のみ（品質は測れない）。
+検証は「`render.mjs --compare` でレンダ → 実物リファレンスと目視比較」が基本ループ。リファレンス画像はアプリに同梱しない（UI の実物比較は廃止。`refs/README.md`）。Vitest は生成結果の**変化検知**のみ（品質は測れない）。
 スナップショットが落ちたら生成結果が変わった証拠。意図した変更なら `docs/01-tech-verification.md` に追記して `pnpm test -u`。
 
 ## アーキテクチャ
@@ -34,10 +37,12 @@ cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.h
   - 手法は3系統: `genQuilt`（ブロブパッチ合成、M81 主力）/ `genGrowth`（クラスタ成長、デジタル系）/ `genWoodland`・`genDigital`（ノイズ閾値、従来手法・比較用）
   - プリセットは `PRESETS` に集約。`kind` で生成関数にディスパッチ
   - `generate(key, w, h, seed, scale, opt)`。`opt.tileable`（既定 true）/ `opt.progress(0..1)` / `opt.baseMax`（長辺がこれを超えると縮小生成 → 拡大 → 実寸で後処理。v17）
+- `src/core/kmeans.js` — パレット抽出の k-means（依存ゼロ JS + `kmeans.d.ts`）。ブラウザの抽出ワーカーと `tools/extract-palette.mjs` で共用
 - `src/core/m81src.js` / `digsrc.js` — M81 / AOR1 / AOR2 実物図案の 4値インデックスマップ（RLE + base64）。再生成は docs 記載の Python 手順。**`digsrc.js`（280KB）は camo.js から静的 import しない**。利用側が動的 import して `registerSources()` で渡す（ブラウザは `src/lib/generate.ts` の `ensureSources`、Node は `tools/render.mjs` / テストで先頭登録）
-- `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means、3D プレビュー（`scene3d.ts` が three 依存を閉じ込め、`Preview3D` が動的 import）。`src/data/` — プリセット表示メタ、120 色ライブラリ、リファレンス画像（動的 import）
+- `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means、3D プレビュー（`scene3d.ts` が three 依存を閉じ込め、`Preview3D` が動的 import）。`src/data/` — プリセット表示メタ（`PRESET_META`: `group` で選択 UI をグループ化、`country`）、120 色ライブラリ
 - `src/styles/tokens/` がデザイントークン（§デザイン参照）、`src/styles/ui.scss` が共通クラス。コンポーネントの色・余白は `var(--…)` のみ、生値禁止。新しい余白値が要るときは `_semantic.scss` の `$static` に追加してから使う（未定義 var は無効値になり潰れる）
-- `tools/render.mjs` — Node レンダリングハーネス。`tools/gen-tokens.mjs` — トークン生成
+- `tools/render.mjs` — Node レンダリングハーネス。`tools/image.mjs` — Node の画像読込（sharp を動的 import）と `refs/` 探索。`tools/extract-palette.mjs` — パレット実測。`tools/check-private-refs.sh` — `refs/private/` 混入検査。`tools/gen-tokens.mjs` — トークン生成
+- `refs/` — 実物リファレンス画像（開発時専用、アプリ非同梱）。`refs/<presetKey>.<ext>` は自由ライセンスのみ git 管理。`refs/private/` は再配布不可の画像用で gitignore、**絶対にコミット・push しない**（`.githooks/pre-push` / PreToolUse / CI の 4 層で防ぐ）
 - `prototype/app-template.html` — フェーズ1 UI（参照のみ）。`//__INLINE_CAMO__` / `//__INLINE_REFS__` マーカーに build.mjs がインライン展開する。**index.html を直接編集しない**（ビルドで上書きされる）
 - `prototype/index.html` — ビルド成果物。Artifact/配布用の単一ファイル
 - `prototype/experimental/` — 手法探索の原本。本体に移植済みだが履歴として保持
@@ -67,7 +72,7 @@ Issue → PR の定型フローは commands / agents / hooks で自走する。�
 
 - コマンド: `/start-issue <N>`（worktree 作成 → planner → 実装 → 検証 → docs-sync → PR 作成 → 自動レビュー）/ `/review-pr <PR>` / `/resolve-pr-comments <PR>` / `/resolve-conflicts [PR]` / `/land <N>`（マージ + worktree 後片付け）
 - エージェント: `planner`（計画 + Sprint Contract）/ `pr-reviewer` → `pr-comment-resolver`（PR 作成後に自動起動）/ `reviewer`（PR を作らないタスクの独立レビュー）/ `docs-sync`（起動条件は `rules/self-review.md`）
-- フック: Stop 時に `src/ tests/ tools/` のソース変更があれば `pnpm check` / `pnpm typecheck` / `pnpm test` を実行し失敗を差し戻す。`gh pr create` 成功で自動レビューフローを指示。Write/Edit 後に Biome 整形。SessionStart でマージ済み worktree を通知
+- フック: Stop 時に `src/ tests/ tools/` のソース変更があれば `pnpm check` / `pnpm typecheck` / `pnpm test` を実行し失敗を差し戻す。`gh pr create` 成功で自動レビューフローを指示。`git push*` の前に `refs/private/` の混入を検査してブロック（`pre-push-guard.sh`）。Write/Edit 後に Biome 整形。SessionStart でマージ済み worktree を通知
 - ルール: `rules/workflow-orchestration.md`（planner / subagent / 検証）、`rules/self-review.md`（独立レビューの二本立て・docs-sync ホワイトリスト）
 - 完了条件は上記 3 コマンド成功。生成結果が変わる変更は加えて「検証ワークフロー」（render 目視 → `docs/01-tech-verification.md` 追記 → `pnpm test -u`）。スナップショット更新と手動デプロイは ask 権限
 - デプロイは main マージで GitHub Actions が自動実行する（`docs/03-deploy.md`）。`/land` でマージしたら Actions の「Deploy」が成功したことを確認する
@@ -76,7 +81,8 @@ Issue → PR の定型フローは commands / agents / hooks で自走する。�
 
 - ドキュメント・コミットメッセージは通常の日本語
 - 生成アルゴリズムのコメントは「実物のどの特徴を再現する意図か」を書く（パラメータの意味だけでなく）
-- リファレンス画像は Wikimedia Commons 由来のみ（ライセンス管理のため）。追加時は README のクレジット節を更新
+- リファレンス画像は全プリセットで必須（リファレンス無しの実装は不可）。git 管理するのは Wikimedia Commons 等の自由ライセンスのみで、追加時は README のクレジット節にファイル名・Commons ページ・作者・ライセンスを書く。再配布不可の画像は `refs/private/` に置き、精度改善時だけ手元で使う
+- 新プリセット追加は 4 点セット: `PRESETS`（camo.js）/ `PRESET_META`（presets-meta.ts、`group` と `country`）/ `refs/<key>.<ext>` / 決定性スナップショット（`pnpm test -u`）。`node tools/render.mjs <out> <seed> --compare --preset=<key>` で実物と並べて確認する
 - パレット既定値は参照画像からの実測抽出値。感覚で変えない
 
 ## 技術方針（`docs/02-spec.md` で確定）

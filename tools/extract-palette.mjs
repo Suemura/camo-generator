@@ -61,7 +61,12 @@ function labelPixels() {
   return lab;
 }
 
-/** 領域内部 (半径 R の近傍が全て同ラベル) の画素だけを集めてクラスタごとの中央値を返す */
+/**
+ * 領域内部 (半径 R の近傍が全て同ラベル) の画素だけを集めてクラスタごとの中央値を返す。
+ * 各画素で (2R+1)^2 の窓を総当たりするため計算量は O((w-2R)*(h-2R)*(2R+1)^2)。
+ * --core の R や --max-edge (w, h) を大きくすると R^2 で急増するので、
+ * 実測用途では既定値程度 (R は数px、max-edge は数百px) に留めること。
+ */
 function coreMedians(R) {
   const lab = labelPixels();
   const buckets = Array.from({ length: k }, () => []);

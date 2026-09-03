@@ -186,7 +186,9 @@ const AOR2_SRC_RLE = 'BEcUQYpMFkGDQZBXhkEQRQNVhwdUjcOFUIdEBEQFQ4xOB0QDRwNDDZZGiQ
 
 
 
-// AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は静的 import しない。初期バンドルを小さく保つため、
+// 静的 import の目安: m81src (24KB) / dcusrc (18KB) / jgsdf2src (24KB) は
+// 数十 KB オーダーで初期バンドルへの影響が小さいため静的 import する。
+// AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は 1 桁大きく初期バンドルを膨らませるため、
 // 利用側が動的 import して registerSources() で渡す (ブラウザ: src/lib/generate.ts、Node: tools/render.mjs)。
 
 /* ================= 決定的乱数・ノイズ ================= */

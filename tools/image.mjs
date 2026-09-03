@@ -71,6 +71,9 @@ async function flatten(png, sigma) {
   const out = Buffer.alloc(data.length);
   for (let i = 0; i < data.length; i += ch) {
     for (let c = 0; c < ch; c++) {
+      // bg[i+c] は blur 後の背景推定値。写真の最暗部が 8bit で 0 に張り付くと
+      // ゼロ除算になるため 1 にフォールバックする（該当画素は data[i+c] も 0 付近で
+      // 出力への影響は小さいが、mean[c] 側との比率がわずかに不連続になる点は許容）。
       const b = bg[i + c] || 1;
       out[i + c] = Math.max(0, Math.min(255, Math.round((data[i + c] * mean[c]) / b)));
     }

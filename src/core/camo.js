@@ -4,7 +4,9 @@
 import { M81_SRC_W, M81_SRC_H, M81_SRC_RLE } from './m81src.js';
 import { DCU_SRC_W, DCU_SRC_H, DCU_SRC_RLE } from './dcusrc.js';
 import { JGSDF2_SRC_W, JGSDF2_SRC_H, JGSDF2_SRC_RLE } from './jgsdf2src.js';
-// AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は静的 import しない。初期バンドルを小さく保つため、
+// 静的 import の目安: m81src (24KB) / dcusrc (18KB) / jgsdf2src (24KB) は
+// 数十 KB オーダーで初期バンドルへの影響が小さいため静的 import する。
+// AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は 1 桁大きく初期バンドルを膨らませるため、
 // 利用側が動的 import して registerSources() で渡す (ブラウザ: src/lib/generate.ts、Node: tools/render.mjs)。
 
 /* ================= 決定的乱数・ノイズ ================= */

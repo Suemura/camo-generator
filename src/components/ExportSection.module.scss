@@ -1,0 +1,5 @@
+.size { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--space-1); align-items: end; }
+.lock { align-self: end; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.formats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-1); }
+.warn { color: var(--color-warning); }

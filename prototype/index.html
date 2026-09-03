@@ -1827,8 +1827,10 @@ const PRESETS = {
     //     ブロブの縁に刷毛目 (かすれ) が残る。クイルトは局所形状 = ソース図案そのものなので、
     //     この筆致は専用ソース図案 (dpmsrc) が担う
     //   - 黒がブラウン / グリーンの中に細長く入り込む「筆跡」が識別の核。実物は網版印刷で
-    //     黒を最後に刷るため、パッチ輪郭で筆跡が途切れないよう最上層の版 (topLayer) にする
-    //     (woodland / cce と同じ v21/v22 の構造)
+    //     黒を最後に刷るためこの性質は topLayer (woodland / cce と同じ v21/v22 の構造) が
+    //     合致するが、dpmsrc は不採用 (v26)。黒成分 18 個中 12 個が参照画像の縁で切れており
+    //     applyTopLayer が除外するため usable 面積が目標の 15% しかなく、残り成分が 6〜7 回
+    //     反復してしまう。代わりに下記 divw[3]: 2.4 で下刷りの黒を厚くして確保する
     name: 'DPM 風 (英国)', kind: 'quilt', src: 'dpm', ref: 'dpm',
     // ソース図案の生成:
     //   node tools/gen-src.mjs refs/dpm.jpg src/core/dpmsrc.js 4 DPM --resize=800 --blur=1.5 --flatten=250
@@ -1845,9 +1847,11 @@ const PRESETS = {
     // divw[3] 2.4: topLayer は使えない (参照の黒成分が縁で切れていて反復する、v26) ので、M81 と同じ重みを与えて
     // 完走が大面積色を優遇する性質で痩せないようにする
     frac: [0.172, 0.289, 0.331, 0.208], divw: [1, 1, 1, 2.4],
-    // 実測: node tools/extract-palette.mjs refs/dpm.jpg 6 --core --flatten=250
-    // (照明ムラで砂色が明部 / 暗部の 2 クラスタに割れ、k=4 では黒とブラウンが分離しない。
-    //  k=6 で測り、砂色は明部側、他 3 色はそれぞれの単一クラスタを採る)
+    // 実測: ソース図案生成と同じ前処理・同じ k-means の量子化重心を採用 (stderr 出力より)
+    //   node tools/gen-src.mjs refs/dpm.jpg src/core/dpmsrc.js 4 DPM --resize=800 --blur=1.5 --flatten=250
+    //   → 量子化パレット (明度降順): #d8a858 #616022 #50311d #28221f
+    // extract-palette.mjs --core は不採用: 照明ムラで砂色が明部 / 暗部の 2 クラスタに割れ、
+    // k=4 では黒とブラウンが 1 色に融合する。k=6 なら分離するが砂色が明部側に寄る
     colors: [
       {name:'サンド',     hex:'#d8a858'},
       {name:'グリーン',   hex:'#616022'},

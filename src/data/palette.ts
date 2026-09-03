@@ -50,6 +50,7 @@ export const USE_LABEL: Record<string, string> = {
   "camo-flecktarn": "フレクター",
   "camo-dpm": "DPM",
   "camo-3color-desert": "3 色デザート",
+  "camo-jgsdf2": "陸自迷彩 2 型",
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

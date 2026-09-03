@@ -2084,6 +2084,82 @@
     "source": "approx.: NDS Z 8201E 標準色 (マンセル 2.5Y 3.5/1.5, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算"
   },
   {
+    "id": "jgsdf2-tan",
+    "name": "陸自迷彩 2 型 タン",
+    "std": "陸自迷彩 2 型 (実測)",
+    "code": "type2-1",
+    "hex": "#8d8b7f",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-jgsdf2",
+        "uniform"
+      ],
+      "country": [
+        "jp"
+      ]
+    },
+    "note": "迷彩服 2 型 (1991〜) の地色。被服 4 色に対応する公式の色指定 (NDS・日塗工) は公表されておらず、規格色ではなく実物生地の実測値",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core --flatten=80。参照画像は Wikimedia Commons 「迷彩服2型の迷彩パターン.jpg」CC BY 3.0)"
+  },
+  {
+    "id": "jgsdf2-green",
+    "name": "陸自迷彩 2 型 グリーン",
+    "std": "陸自迷彩 2 型 (実測)",
+    "code": "type2-2",
+    "hex": "#5e775c",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-jgsdf2",
+        "uniform"
+      ],
+      "country": [
+        "jp"
+      ]
+    },
+    "note": "迷彩服 2 型の主色。車両用の jsdf-dgreen-3414 (NDS 濃緑色) より明るく彩度が高い。生地の染色色であって塗料色ではない",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core --flatten=80。参照画像は Wikimedia Commons 「迷彩服2型の迷彩パターン.jpg」CC BY 3.0)"
+  },
+  {
+    "id": "jgsdf2-brown",
+    "name": "陸自迷彩 2 型 ブラウン",
+    "std": "陸自迷彩 2 型 (実測)",
+    "code": "type2-3",
+    "hex": "#74524e",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-jgsdf2",
+        "uniform"
+      ],
+      "country": [
+        "jp"
+      ]
+    },
+    "note": "迷彩服 2 型の茶。車両用の jsdf-brown-3606 (NDS 茶色) より赤みが強い",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core --flatten=80。参照画像は Wikimedia Commons 「迷彩服2型の迷彩パターン.jpg」CC BY 3.0)"
+  },
+  {
+    "id": "jgsdf2-black",
+    "name": "陸自迷彩 2 型 ブラック",
+    "std": "陸自迷彩 2 型 (実測)",
+    "code": "type2-4",
+    "hex": "#46444b",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-jgsdf2",
+        "uniform"
+      ],
+      "country": [
+        "jp"
+      ]
+    },
+    "note": "迷彩服 2 型の最暗色。斑点クラスタを作る色で、純黒ではなくわずかに紫寄り",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core --flatten=80。参照画像は Wikimedia Commons 「迷彩服2型の迷彩パターン.jpg」CC BY 3.0)"
+  },
+  {
     "id": "jmsdf-grey-2704",
     "name": "灰色 (2) (海上自衛隊 艦艇色)",
     "std": "NDS Z 8201E",

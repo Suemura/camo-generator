@@ -2505,5 +2505,81 @@
     },
     "note": "最大の斑で全面積の約 3 割。捺染のロール方向 (布の経方向) に縦長に伸びる",
     "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2。参照画像は Wikimedia Commons 「Frog Skin camouflage pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "frogskin-beach-cream",
+    "name": "フロッグスキン クリーム",
+    "std": "フロッグスキン (実測)",
+    "code": "m1942b-1",
+    "hex": "#e2cc9d",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-frogskin",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "M1942 フロッグスキン ビーチ面の地色。斑の間を細い水路のようにつないで残る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/frogskin_beach.jpg 4 --core=2 --max-edge=294)。参照した実物スウォッチは再配布できないため refs/private/ に置き、リポジトリには含めない"
+  },
+  {
+    "id": "frogskin-beach-khaki",
+    "name": "フロッグスキン カーキ",
+    "std": "フロッグスキン (実測)",
+    "code": "m1942b-2",
+    "hex": "#bfa96d",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-frogskin",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "ビーチ面の小〜中サイズの斑。地色より一段濃い黄土",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/frogskin_beach.jpg 4 --core=2 --max-edge=294)。参照した実物スウォッチは再配布できないため refs/private/ に置き、リポジトリには含めない"
+  },
+  {
+    "id": "frogskin-beach-green",
+    "name": "フロッグスキン グリーン (ビーチ面)",
+    "std": "フロッグスキン (実測)",
+    "code": "m1942b-3",
+    "hex": "#979467",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-frogskin",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "ビーチ面の緑。単独の斑としても、ブラウン斑を縁取る版としても現れる。ジャングル面の濃緑より明るく黄味が強い",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/frogskin_beach.jpg 4 --core=2 --max-edge=294)。参照した実物スウォッチは再配布できないため refs/private/ に置き、リポジトリには含めない"
+  },
+  {
+    "id": "frogskin-beach-brown",
+    "name": "フロッグスキン ブラウン (ビーチ面)",
+    "std": "フロッグスキン (実測)",
+    "code": "m1942b-4",
+    "hex": "#a98c6a",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-frogskin",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "ビーチ面の最大の斑。ジャングル面のブラウンより明るい",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/frogskin_beach.jpg 4 --core=2 --max-edge=294)。参照した実物スウォッチは再配布できないため refs/private/ に置き、リポジトリには含めない"
   }
 ]

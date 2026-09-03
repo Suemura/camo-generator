@@ -7,7 +7,7 @@
 
 ## 概要
 
-- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / フロッグスキン (M1942) / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP の迷彩に近い模様を計算で生成する
+- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / フロッグスキン (M1942 ジャングル面・ビーチ面) / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP の迷彩に近い模様を計算で生成する
 - シード値により、同じアルゴリズムから無数のバリエーションを決定的に再現できる
 - 各パターンのパレット（例: ウッドランドの緑・茶・サンド・黒）を自由な色にその場で差し替えられる
 - 生成結果を PNG / JPG / WebP / SVG（デジタル系のみ）で任意サイズ・実寸（mm / inch × DPI、PNG に DPI 埋込）でエクスポートできる
@@ -21,7 +21,7 @@
 | 手法 | 対象 | 概要 |
 |------|------|------|
 | **ブロブパッチ合成（クイルト）** | M81 ウッドランド / CCE / DCU 3 カラーデザート / DBDU 6 カラーデザート / 陸自迷彩 2 型 / AOR1 / AOR2 | 実物図案のインデックスマップから、有機輪郭のパッチを領域成長型シームで貼り合わせる。局所形状・色・面積比は実物の設計言語そのもの。多数決ミップマップ・フラグメント除去・シェイプ完走成長などの後処理を含む。**主力手法**（ユーザー評価 88+） |
-| **斑点配置** | フロッグスキン (M1942) | 地色の上に、版（色）ごとに独立した丸い斑点を刷り重ねる手続き生成。輪郭は極座標の低次高調波で作る解析形状で、Mitchell のベストキャンディデート法で間隔を均す。実物図案を使わないため、参照画像のライセンスが派生物に及ぶ迷彩でも実装できる |
+| **斑点配置** | フロッグスキン (M1942 ジャングル面 / ビーチ面) | 地色の上に、版（色）ごとに独立した丸い斑点を刷り重ねる手続き生成。輪郭は極座標の低次高調波で作る解析形状で、Mitchell のベストキャンディデート法で間隔を均す。実物図案を使わないため、参照画像のライセンスが派生物に及ぶ迷彩でも実装できる。層に `halo` を指定すると、斑を刷る直前に同じ輪郭をひと回り大きく別の版で刷り、重ね刷りで下の版が縁として残る構造を再現する |
 | **クラスタ成長** | MARPAT (ウッドランド/デザート) / UCP | セルグリッド上で色ごとに面積予算つきシード成長。蛇行ドリフト・seedNear 連鎖・境界ディザ・スペックルで実物のクラスタ構造を再現 |
 | **ノイズ閾値（従来手法）** | （選択肢からは退役） | シード付き値ノイズ + fBm + ドメインワープ + 分位点閾値。到達上限 ~75点。コードは保持し、フェーズ2 のカスタム迷彩生成の基盤候補 |
 
@@ -44,6 +44,7 @@ tools/
 refs/               実物リファレンス画像 (開発時専用、アプリ非同梱。refs/README.md)
   <presetKey>.<ext>   自由ライセンス (Wikimedia Commons)。git 管理、出典は本 README のクレジット節
   private/            再配布不可の画像。gitignore + 4 層の push 防止で絶対にコミットしない
+                      (フロッグスキン ビーチ面の参照スウォッチがここ。生成は手続き的なので画像なしでも動く)
 .gitattributes      マージ方針 (snap / refs.js は union、prototype/index.html は ours)
 .githooks/pre-push  refs/private/ を含む push を拒否 (pnpm install の prepare が core.hooksPath を設定)
 tests/              Vitest (決定性・回帰スナップショット)
@@ -129,7 +130,7 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 ## クレジット・ライセンス注記
 
 - 3D プレビューの環境光 HDRI は Poly Haven「Kloofendal 48d Partly Cloudy (Pure Sky)」（Greg Zaal / Jarod Guest、CC0）、布地の normal / roughness マップは ambientCG「Fabric 036」「Fabric 062」（CC0）を 512px に縮小して `public/3d/` に同梱。3D 描画は three.js（MIT）
-- M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）。DCU ソースマップ（`src/core/dcusrc.js`）は `refs/dcu.png` から生成した 3 値インデックス、陸自迷彩 2 型ソースマップ（`src/core/jgsdf2src.js`）は `refs/jgsdf2.jpg`（CC BY 3.0、下記クレジット）から生成した 4 値インデックス。CCE は専用ソースマップを持たず、`m81src.js` を横方向に伸長サンプリングして生成する。DBDU も専用ソースマップを持たず、ブロブ層は `dcusrc.js` を共有し小石層を手続き生成する。フロッグスキン (M1942) はソースマップを持たず、斑点を完全に手続き生成する（参照画像が CC BY-SA のため図案の派生データを同梱しない）
+- M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）。DCU ソースマップ（`src/core/dcusrc.js`）は `refs/dcu.png` から生成した 3 値インデックス、陸自迷彩 2 型ソースマップ（`src/core/jgsdf2src.js`）は `refs/jgsdf2.jpg`（CC BY 3.0、下記クレジット）から生成した 4 値インデックス。CCE は専用ソースマップを持たず、`m81src.js` を横方向に伸長サンプリングして生成する。DBDU も専用ソースマップを持たず、ブロブ層は `dcusrc.js` を共有し小石層を手続き生成する。フロッグスキン (M1942) の両面はソースマップを持たず、斑点を完全に手続き生成する（ジャングル面は参照画像が CC BY-SA、ビーチ面は参照画像が再配布不可のため、いずれも図案の派生データを同梱しない）
 - 実物リファレンス画像（`refs/`、開発時専用・アプリ非同梱）の出典。いずれも Wikimedia Commons。米政府図案はパブリックドメイン、`cce.png` は CC0、`dbdu.jpg` と `frogskin.jpg` は CC BY-SA 3.0、`jgsdf2.jpg` は CC BY 3.0
   - `woodland.png` — [File:"M81" U.S. woodland camouflage pattern swatch.png](https://commons.wikimedia.org/wiki/File:%22M81%22_U.S._woodland_camouflage_pattern_swatch.png)（U.S. Army）
   - `cce.png` — [File:Bariolage Centre-Europe.png](https://commons.wikimedia.org/wiki/File:Bariolage_Centre-Europe.png)（Commons 利用者 Youri BRIAND による作図、CC0）

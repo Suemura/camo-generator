@@ -70,6 +70,13 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "woodland",
     svg: false,
   },
+  frogskin_beach: {
+    label: "フロッグスキン風 (ビーチ面)",
+    note: "1942〜 4 色。リバーシブルの裏面",
+    country: "米国",
+    group: "desert",
+    svg: false,
+  },
   marpat: {
     label: "デジタル・ウッドランド風",
     note: "MARPAT 系 4 色。ピクセル",

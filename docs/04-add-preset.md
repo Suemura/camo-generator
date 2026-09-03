@@ -69,7 +69,7 @@ CCE の 4 色は 2026-09-04 時点で未登録（残課題、§9）。
   "hex": "#e9d1ae",
   "tags": { "hue": "tan", "use": ["camo-3color-desert"], "country": ["us"] },
   "note": "3 色デザート (DCU) の地色。最大面積",
-  "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は …"
+  "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は 3 色デザートの陸軍色呼称 (https://ciehub.info/glossary/ThreeColorDesertCamouflagePattern.html)"
 }
 ```
 

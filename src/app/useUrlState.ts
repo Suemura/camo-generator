@@ -3,7 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { type AppState, parseState, serializeState } from "@/lib/state";
 
 export function useUrlState() {
-  const [state, setState] = useState<AppState>(() => parseState(window.location.search));
+  // 初回アクセスでシード未指定なら毎回違う模様を見せる
+  const randomSeed = () => Math.floor(Math.random() * 1_000_000);
+  const [state, setState] = useState<AppState>(() =>
+    parseState(window.location.search, randomSeed()),
+  );
 
   useEffect(() => {
     const q = serializeState(state);
@@ -14,7 +18,7 @@ export function useUrlState() {
   }, [state]);
 
   useEffect(() => {
-    const onPop = () => setState(parseState(window.location.search));
+    const onPop = () => setState(parseState(window.location.search, randomSeed()));
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);

@@ -1,6 +1,6 @@
 // プレビュー: 出力比率を保った縮小生成を表示。単一 / タイル 2×2 / 実物比較。
 import { useEffect, useRef, useState } from "react";
-import type { GenResult } from "@/core/camo.js";
+import { type GenResult, PRESETS } from "@/core/camo.js";
 import { PRESET_META } from "@/data/presets-meta";
 import { drawToCanvas } from "@/lib/export";
 import { generateAsync, previewSize } from "@/lib/generate";
@@ -20,7 +20,7 @@ interface Props {
 
 export function Preview({ state, mode, onMode, busy }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [res, setRes] = useState<GenResult | null>(null);
+  const [res, setRes] = useState<(GenResult & { preset: string; colors: number }) | null>(null);
   const [ms, setMs] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [refSrc, setRefSrc] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export function Preview({ state, mode, onMode, busy }: Props) {
       });
       if (!alive) return;
       setMs(Math.round(performance.now() - t0));
-      setRes(r);
+      setRes({ ...r, preset: state.preset, colors: PRESETS[state.preset].colors.length });
       setGenerating(false);
     }, 120);
     return () => {
@@ -56,7 +56,8 @@ export function Preview({ state, mode, onMode, busy }: Props) {
   // 着色・描画
   useEffect(() => {
     const el = canvas.current;
-    if (!el || !res) return;
+    // 旧プリセットの形状に新パレットを当てない (色数不一致で落ちる)
+    if (!el || !res || res.preset !== state.preset || pal.length < res.colors) return;
     if (mode === "tile") {
       const tmp = document.createElement("canvas");
       drawToCanvas(res, pal, tmp);
@@ -72,7 +73,7 @@ export function Preview({ state, mode, onMode, busy }: Props) {
     } else {
       drawToCanvas(res, pal, el);
     }
-  }, [res, pal, mode]);
+  }, [res, pal, mode, state.preset]);
 
   // 実物リファレンス (比較モードのみ動的 import)
   useEffect(() => {

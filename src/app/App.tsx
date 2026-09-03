@@ -1,5 +1,6 @@
 // メイン 1 画面 (docs/02-spec.md §2)。/about のみ別ページ。
 import { useCallback, useState } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ExportSection } from "@/components/ExportSection";
 import { ExtractDialog } from "@/components/ExtractDialog";
 import { Header } from "@/components/Header";
@@ -14,7 +15,7 @@ import { PRESET_META } from "@/data/presets-meta";
 import { downloadBlob, exportFilename, exportRaster, type Format, gridToSvg } from "@/lib/export";
 import { generateAsync } from "@/lib/generate";
 import { canShareUrl, copyLink, shareImage } from "@/lib/share";
-import { effectivePalette } from "@/lib/state";
+import { type AppState, effectivePalette } from "@/lib/state";
 import { outputPx } from "@/lib/units";
 import { About } from "./About";
 import styles from "./App.module.scss";
@@ -24,9 +25,11 @@ import { useUrlState } from "./useUrlState";
 export function App() {
   if (window.location.pathname.replace(/\/$/, "") === "/about") return <About />;
   return (
-    <ToastProvider>
-      <Generator />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <Generator />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -41,8 +44,17 @@ function Generator() {
   const [librarySlot, setLibrarySlot] = useState<number | null>(null);
   const [extractOpen, setExtractOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  // ライブラリから選んだ色の id (スロット別)。同 hex が複数規格にある場合の表示名確定用
+  const [slotIds, setSlotIds] = useState<(string | undefined)[]>([]);
 
   const palette = effectivePalette(state);
+  const updatePalette = useCallback(
+    (patch: Partial<AppState>) => {
+      if ("palette" in patch || "preset" in patch) setSlotIds([]);
+      update(patch);
+    },
+    [update],
+  );
   const slotNames = PRESETS[state.preset].colors.map((c) => c.name);
 
   const renderFull = useCallback(async () => {
@@ -164,12 +176,23 @@ function Generator() {
         </div>
         <div className={styles.sections} data-tab={tab}>
           <div data-section="pattern">
-            <PatternSection state={state} onChange={update} />
+            <PatternSection state={state} onChange={updatePalette} />
           </div>
           <div data-section="palette">
             <PaletteSection
               state={state}
-              onChange={update}
+              slotIds={slotIds}
+              onChange={updatePalette}
+              onPickerChange={(i, hex) => {
+                const next = [...palette];
+                next[i] = hex.toLowerCase();
+                setSlotIds((ids) => {
+                  const n = [...ids];
+                  n[i] = undefined;
+                  return n;
+                });
+                update({ palette: next });
+              }}
               onOpenLibrary={setLibrarySlot}
               onOpenExtract={() => setExtractOpen(true)}
             />
@@ -188,10 +211,16 @@ function Generator() {
         open={librarySlot !== null}
         slotName={librarySlot !== null ? slotNames[librarySlot] : ""}
         onClose={() => setLibrarySlot(null)}
-        onPick={(hex) => {
+        currentId={librarySlot !== null ? slotIds[librarySlot] : undefined}
+        onPick={(color) => {
           if (librarySlot === null) return;
           const next = [...palette];
-          next[librarySlot] = hex.toLowerCase();
+          next[librarySlot] = color.hex.toLowerCase();
+          setSlotIds((ids) => {
+            const n = [...ids];
+            n[librarySlot] = color.id;
+            return n;
+          });
           update({ palette: next });
           setLibrarySlot(null);
         }}
@@ -201,6 +230,7 @@ function Generator() {
         slotNames={slotNames}
         onClose={() => setExtractOpen(false)}
         onApply={(colors) => {
+          setSlotIds([]);
           update({ palette: colors.map((c) => c.toLowerCase()) });
           setExtractOpen(false);
           toast("抽出したパレットを適用しました", "success");

@@ -27,6 +27,15 @@ export function Header({ theme, onToggleTheme, onCopyLink, onShare }: Props) {
         <a href="/about" className="btn ghost sm">
           About
         </a>
+        <a
+          href="https://github.com/Suemura/camo-generator"
+          className="btn ghost sm"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub リポジトリ"
+        >
+          GitHub ↗
+        </a>
         <button
           type="button"
           className="btn ghost icon"

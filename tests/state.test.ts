@@ -5,7 +5,7 @@ import { outputPx } from "../src/lib/units";
 
 describe("URL 状態", () => {
   it("既定状態は空クエリ", () => {
-    expect(serializeState(DEFAULT_STATE)).toBe("");
+    expect(serializeState(DEFAULT_STATE)).toBe(`?s=${DEFAULT_STATE.seed}`);
     expect(parseState("")).toEqual(DEFAULT_STATE);
   });
   it("往復で一致する", () => {
@@ -32,6 +32,7 @@ describe("URL 状態", () => {
     const s = parseState("?p=nope&s=abc&k=99&c=zz,1,2,3&w=-5&d=1");
     expect(s.preset).toBe("woodland");
     expect(s.seed).toBe(DEFAULT_STATE.seed);
+    expect(parseState("", 99).seed).toBe(99);
     expect(s.scale).toBe(2.5);
     expect(s.palette).toBeNull();
     expect(s.w).toBe(512);

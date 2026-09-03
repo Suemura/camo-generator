@@ -1,4 +1,5 @@
-// パレットライブラリ: 検索 + 3 軸タグフィルタ。チップクリックで対象スロットへ適用。
+// パレットライブラリ: 大カテゴリ (すべて / 色味 / 国 / 用途) をタブで切替、その軸のタグをチップで絞り込み。
+// タグ未選択時はそのタグごとに見出しを付けてグループ表示する。
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ALL_COUNTRIES,
@@ -7,6 +8,7 @@ import {
   HUE_LABEL,
   type Hue,
   LIBRARY,
+  type LibraryColor,
   USE_LABEL,
 } from "@/data/palette";
 import styles from "./PaletteLibraryDrawer.module.scss";
@@ -14,17 +16,35 @@ import styles from "./PaletteLibraryDrawer.module.scss";
 interface Props {
   open: boolean;
   slotName: string;
-  onPick: (hex: string) => void;
+  currentId?: string;
+  onPick: (color: LibraryColor) => void;
   onClose: () => void;
 }
 
-const HUES = Object.keys(HUE_LABEL) as Hue[];
+type Axis = "all" | "hue" | "country" | "use";
+const AXIS_LABEL: Record<Axis, string> = {
+  all: "すべて",
+  hue: "色味ごと",
+  country: "国ごと",
+  use: "用途ごと",
+};
 
-export function PaletteLibraryDrawer({ open, slotName, onPick, onClose }: Props) {
+const TAGS: Record<Exclude<Axis, "all">, { key: string; label: string }[]> = {
+  hue: (Object.keys(HUE_LABEL) as Hue[]).map((k) => ({ key: k, label: HUE_LABEL[k] })),
+  country: ALL_COUNTRIES.map((k) => ({ key: k, label: COUNTRY_LABEL[k] ?? k })),
+  use: ALL_USES.map((k) => ({ key: k, label: USE_LABEL[k] ?? k })),
+};
+
+function hasTag(c: LibraryColor, axis: Exclude<Axis, "all">, key: string) {
+  if (axis === "hue") return c.tags.hue === key;
+  if (axis === "country") return c.tags.country.includes(key);
+  return c.tags.use.includes(key);
+}
+
+export function PaletteLibraryDrawer({ open, slotName, currentId, onPick, onClose }: Props) {
   const [q, setQ] = useState("");
-  const [hue, setHue] = useState<Hue | null>(null);
-  const [country, setCountry] = useState<string | null>(null);
-  const [use, setUse] = useState<string | null>(null);
+  const [axis, setAxis] = useState<Axis>("all");
+  const [tag, setTag] = useState<string | null>(null);
   const first = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,16 +55,25 @@ export function PaletteLibraryDrawer({ open, slotName, onPick, onClose }: Props)
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const list = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return LIBRARY.filter((c) => {
-      if (hue && c.tags.hue !== hue) return false;
-      if (country && !c.tags.country.includes(country)) return false;
-      if (use && !c.tags.use.includes(use)) return false;
-      if (!needle) return true;
-      return [c.name, c.std, c.code, c.note ?? "", c.hex].join(" ").toLowerCase().includes(needle);
-    });
-  }, [q, hue, country, use]);
+  const needle = q.trim().toLowerCase();
+  const matchesQ = (c: LibraryColor) =>
+    !needle ||
+    [c.name, c.std, c.code, c.note ?? "", c.hex].join(" ").toLowerCase().includes(needle);
+
+  // グループ: 軸 + タグ未選択 → タグごと。それ以外は単一グループ
+  const groups = useMemo((): { key: string; label: string | null; items: LibraryColor[] }[] => {
+    const base = LIBRARY.filter(matchesQ);
+    if (axis === "all") return [{ key: "all", label: null, items: base }];
+    if (tag) return [{ key: tag, label: null, items: base.filter((c) => hasTag(c, axis, tag)) }];
+    return TAGS[axis]
+      .map((t) => ({
+        key: t.key,
+        label: t.label,
+        items: base.filter((c) => hasTag(c, axis, t.key)),
+      }))
+      .filter((g) => g.items.length);
+  }, [axis, tag, needle]);
+  const total = groups.reduce((n, g) => n + g.items.length, 0);
 
   if (!open) return null;
   return (
@@ -71,64 +100,79 @@ export function PaletteLibraryDrawer({ open, slotName, onPick, onClose }: Props)
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        <div className={styles.filters}>
-          <div className={styles.chips} aria-label="色味">
-            {HUES.map((h) => (
-              <button
-                type="button"
-                key={h}
-                className="chip"
-                aria-pressed={hue === h}
-                onClick={() => setHue(hue === h ? null : h)}
-              >
-                {HUE_LABEL[h]}
-              </button>
-            ))}
-          </div>
-          <div className={styles.chips} aria-label="国">
-            {ALL_COUNTRIES.map((c) => (
-              <button
-                type="button"
-                key={c}
-                className="chip"
-                aria-pressed={country === c}
-                onClick={() => setCountry(country === c ? null : c)}
-              >
-                {COUNTRY_LABEL[c] ?? c}
-              </button>
-            ))}
-          </div>
-          <div className={styles.chips} aria-label="用途">
-            {ALL_USES.map((u) => (
-              <button
-                type="button"
-                key={u}
-                className="chip"
-                aria-pressed={use === u}
-                onClick={() => setUse(use === u ? null : u)}
-              >
-                {USE_LABEL[u] ?? u}
-              </button>
-            ))}
-          </div>
-        </div>
-        <p className="hint">{list.length} 色</p>
-        <ul className={styles.list}>
-          {list.map((c) => (
-            <li key={c.id}>
-              <button type="button" className={styles.item} onClick={() => onPick(c.hex)}>
-                <span className={styles.big} style={{ background: c.hex }} />
-                <span className={styles.itemMeta}>
-                  <span className={styles.itemName}>{c.name}</span>
-                  <span className={`${styles.itemCode} mono`}>
-                    {c.std} {c.code} · {c.hex}
-                  </span>
-                  {c.note && <span className={styles.itemNote}>{c.note}</span>}
-                </span>
-              </button>
-            </li>
+        <div className={`seg ${styles.axis}`} role="tablist" aria-label="大カテゴリ">
+          {(Object.keys(AXIS_LABEL) as Axis[]).map((a) => (
+            <button
+              type="button"
+              key={a}
+              role="tab"
+              aria-selected={axis === a}
+              aria-pressed={axis === a}
+              onClick={() => {
+                setAxis(a);
+                setTag(null);
+              }}
+            >
+              {AXIS_LABEL[a]}
+            </button>
           ))}
-        </ul>
+        </div>
+        {axis !== "all" && (
+          <div className={styles.chips} aria-label={AXIS_LABEL[axis]}>
+            <button
+              type="button"
+              className="chip"
+              aria-pressed={tag === null}
+              onClick={() => setTag(null)}
+            >
+              すべて
+            </button>
+            {TAGS[axis].map((t) => (
+              <button
+                type="button"
+                key={t.key}
+                className="chip"
+                aria-pressed={tag === t.key}
+                onClick={() => setTag(tag === t.key ? null : t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+        <p className="hint">{total} 色</p>
+        <div className={styles.list}>
+          {groups.map((g) => (
+            <section key={g.key} className={styles.group}>
+              {g.label && (
+                <h3 className={styles.groupTitle}>
+                  {g.label} <span className="mono">{g.items.length}</span>
+                </h3>
+              )}
+              <ul className={styles.items}>
+                {g.items.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      className={`${styles.item} ${c.id === currentId ? styles.current : ""}`}
+                      onClick={() => onPick(c)}
+                      aria-current={c.id === currentId || undefined}
+                    >
+                      <span className={styles.big} style={{ background: c.hex }} />
+                      <span className={styles.itemMeta}>
+                        <span className={styles.itemName}>{c.name}</span>
+                        <span className={`${styles.itemCode} mono`}>
+                          {c.std} {c.code} · {c.hex}
+                        </span>
+                        {c.note && <span className={styles.itemNote}>{c.note}</span>}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       </aside>
     </>
   );

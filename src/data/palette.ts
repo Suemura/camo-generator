@@ -55,3 +55,15 @@ export const USE_LABEL: Record<string, string> = {
 const uniq = (xs: string[]) => Array.from(new Set(xs));
 export const ALL_COUNTRIES = uniq(LIBRARY.flatMap((c) => c.tags.country));
 export const ALL_USES = uniq(LIBRARY.flatMap((c) => c.tags.use));
+
+const BY_ID = new Map(LIBRARY.map((c) => [c.id, c]));
+const BY_HEX = new Map<string, LibraryColor>();
+for (const c of LIBRARY) if (!BY_HEX.has(c.hex.toLowerCase())) BY_HEX.set(c.hex.toLowerCase(), c);
+
+export function libraryById(id: string | undefined): LibraryColor | undefined {
+  return id ? BY_ID.get(id) : undefined;
+}
+/** hex から逆引き (同 hex が複数ある場合は最初の 1 件)。URL には hex しか無いので復元用 */
+export function libraryByHex(hex: string): LibraryColor | undefined {
+  return BY_HEX.get(hex.toLowerCase());
+}

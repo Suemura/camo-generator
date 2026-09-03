@@ -57,8 +57,8 @@ function num(v: string | null, def: number, lo: number, hi: number, int = false)
   return clamp(int ? Math.round(n) : n, lo, hi);
 }
 
-/** URL クエリ → 状態。不正値は既定値にフォールバック */
-export function parseState(search: string): AppState {
+/** URL クエリ → 状態。不正値は既定値にフォールバック。seed 未指定時は seedFallback (UI ではランダム) */
+export function parseState(search: string, seedFallback = DEFAULT_STATE.seed): AppState {
   const q = new URLSearchParams(search);
   const p = q.get("p");
   const preset: PresetKey =
@@ -79,7 +79,7 @@ export function parseState(search: string): AppState {
   }
   return {
     preset,
-    seed: num(q.get("s"), DEFAULT_STATE.seed, LIMITS.seed.min, LIMITS.seed.max, true),
+    seed: num(q.get("s"), seedFallback, LIMITS.seed.min, LIMITS.seed.max, true),
     scale: num(q.get("k"), DEFAULT_STATE.scale, LIMITS.scale.min, LIMITS.scale.max),
     palette,
     w: num(q.get("w"), defW, sizeLo, sizeHi, unit === "px"),
@@ -94,7 +94,7 @@ export function parseState(search: string): AppState {
 export function serializeState(s: AppState): string {
   const q = new URLSearchParams();
   if (s.preset !== DEFAULT_STATE.preset) q.set("p", s.preset);
-  if (s.seed !== DEFAULT_STATE.seed) q.set("s", String(s.seed));
+  q.set("s", String(s.seed)); // シードは既定がランダムなので常に書く
   if (s.scale !== DEFAULT_STATE.scale) q.set("k", String(+s.scale.toFixed(2)));
   if (s.palette) {
     const def = defaultPalette(s.preset);

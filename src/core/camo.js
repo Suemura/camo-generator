@@ -1417,8 +1417,8 @@ function cleanupSlivers(index, w, h, wrap=false){
     }
   }
 }
-// 面積 < minArea の連結成分を近傍多数色へ併合
-function cleanupFragments(index, w, h, minArea, wrap=false){
+// 面積 < minArea の連結成分を近傍多数色へ併合。nColors は index に現れる色数 (既定 4 = クイルト系)
+function cleanupFragments(index, w, h, minArea, wrap=false, nColors=4){
   const seen = new Uint8Array(w*h);
   // 4近傍インデックス (wrap 時は境界をまたいで連結 → 継ぎ目で欠片が二重に数えられない)
   const nb = (i) => {
@@ -1443,15 +1443,135 @@ function cleanupFragments(index, w, h, minArea, wrap=false){
       for(const j of nb(i)) if(!seen[j] && index[j]===col){ seen[j]=1; stack.push(j); }
     }
     if(cells.length >= minArea) continue;
-    const cnt = [0,0,0,0];
+    const cnt = new Int32Array(nColors);
     for(const i of cells){
       for(const j of nb(i)) if(index[j]!==col) cnt[index[j]]++;
     }
     let best = 0;
-    for(let c2=1;c2<4;c2++) if(cnt[c2]>cnt[best]) best = c2;
+    for(let c2=1;c2<nColors;c2++) if(cnt[c2]>cnt[best]) best = c2;
     if(cnt[best]===0) continue;
     for(const i of cells) index[i] = best;
   }
+}
+
+/* ================= 斑点配置 (フロッグスキン系) =================
+   実物構造: 地色の上に、版 (色) ごとに独立した丸い斑点をローラー捺染で刷り重ねたもの。
+   同じ版の斑点同士は重ならず、後の版 (暗色) は前の版の上に部分的に乗る。
+   ブロブ図案 (M81 系) のように色領域が互いを「切り合う」構造ではないので、
+   ソース図案を継ぎ合わせるクイルトではなく、斑点を 1 つずつ置く手続き生成が合う。
+   輪郭は極座標の低次高調波で作る解析形状なので、階段・欠片・市松ノイズは構造的に出ない。 */
+
+// 斑点 1 個の輪郭: r(θ) = R·(1 + Σ_k a_k cos(kθ + φ_k)), k = 2..5。
+//   a2 = 楕円率 (実物の斑点は 1.3〜2 倍に伸びた豆型が多い)、a3 = 三葉・くびれ (豆型の非対称)、
+//   a4 / a5 = 小さな凹凸。高調波は 5 次で止め、輪郭が入り組まない「丸み」を保つ
+//   (M81 の枝分かれや陸自 2 型の斑点分岐は作らない。フロッグスキンの識別点は輪郭の単純さ)。
+function makeSpot(rng, cx, cy, R, L){
+  const a = [0, 0, randRange(rng, L.elong[0], L.elong[1]), randRange(rng, L.lobe[0], L.lobe[1]),
+             randRange(rng, 0, L.wobble ?? 0.06), randRange(rng, 0, (L.wobble ?? 0.06) * 0.6)];
+  // 長軸の向き: L.orient (rad) が指定されていればその方向 ± L.orientJitter に揃える。
+  // 捺染はロール方向に図案が流れるため、実物のブラウン斑は縦長 (布の経方向) に偏る
+  const ph = [0, 0, randRange(rng, 0, Math.PI*2), randRange(rng, 0, Math.PI*2),
+              randRange(rng, 0, Math.PI*2), randRange(rng, 0, Math.PI*2)];
+  if(L.orient !== undefined){
+    const j = L.orientJitter ?? 0.5;
+    ph[2] = -2 * (L.orient + randRange(rng, -j, j));   // a2 cos(2θ+φ2) は θ = -φ2/2 で最大
+  }
+  let sum = 0; for(let k=2;k<=5;k++) sum += a[k];
+  // 角度 LUT: 画素ごとの cos 計算 (4 項) を省く。分割数は輪郭の周長に比例させ、
+  // 1 ステップが 1px 未満になるようにする。固定 256 分割だと高解像度 (R が数百 px) で
+  // 輪郭に多角形の折れが見える (2048px の等倍クロップで確認)
+  const N = Math.min(8192, Math.max(256, 1 << Math.ceil(Math.log2(7 * R + 1))));
+  const lut = new Float32Array(N);
+  for(let i=0;i<N;i++){
+    const th = i * Math.PI*2 / N;
+    let f = 1; for(let k=2;k<=5;k++) f += a[k] * Math.cos(k*th + ph[k]);
+    lut[i] = R * f;
+  }
+  return {cx, cy, R, rMax: R*(1+sum), rMin: R*(1-sum), lut};
+}
+// 斑点をトーラス上に塗る。塗った画素数を返す (面積目標の進捗に使う)
+function stampSpot(out, w, h, s, color, wrap){
+  const x0 = Math.floor(s.cx - s.rMax), x1 = Math.ceil(s.cx + s.rMax);
+  const y0 = Math.floor(s.cy - s.rMax), y1 = Math.ceil(s.cy + s.rMax);
+  const N = s.lut.length, rMax2 = s.rMax*s.rMax, rMin2 = s.rMin*s.rMin;
+  let n = 0;
+  for(let y=y0;y<=y1;y++){
+    const yy = wrap ? wrapI(y, h) : y;
+    if(yy < 0 || yy >= h) continue;
+    const dy = y - s.cy;
+    for(let x=x0;x<=x1;x++){
+      const xx = wrap ? wrapI(x, w) : x;
+      if(xx < 0 || xx >= w) continue;
+      const dx = x - s.cx, d2 = dx*dx + dy*dy;
+      if(d2 > rMax2) continue;
+      if(d2 > rMin2){
+        let th = Math.atan2(dy, dx); if(th < 0) th += Math.PI*2;
+        const r = s.lut[Math.min(N-1, (th * N / (Math.PI*2)) | 0)];
+        if(d2 > r*r) continue;
+      }
+      out[yy*w + xx] = color; n++;
+    }
+  }
+  return n;
+}
+// P.layers を版の順に処理する。各層: color (index 値) / frac (塗る面積比。後の版に覆われる分を含む) /
+// r [min,max] (平均半径、512px・scale 1 基準 px) / elong / lobe (高調波振幅の範囲) /
+// gap (同層の中心間距離の下限 = (R1+R2)·(1+gap)。負なら重なって融合する) /
+// over (他の斑点層との重なり許容 = (R1+R2)·(1-over) 未満に近づかない。1 で無制限) /
+// patch: true なら「地の色むら」扱いで、他層の間隔制約に参加しない
+export function genSpots(w, h, seed, scale, P, opt={}){
+  const wrap = opt.tileable !== false;
+  const progress = typeof opt.progress === 'function' ? opt.progress : null;
+  const rng = mulberry32(seed ^ 0x5b0d);
+  const out = new Uint8Array(w*h);            // 0 = 地色
+  const u = (w/512) / scale;                  // 特徴サイズの単位 (scale 大 = 模様細かい、他手法と同じ規約)
+  const dist2 = (ax, ay, bx, by) => {
+    const dx = wrap ? wrapD(ax-bx, w) : ax-bx, dy = wrap ? wrapD(ay-by, h) : ay-by;
+    return dx*dx + dy*dy;
+  };
+  const placed = [];                          // {cx, cy, R, li, patch}
+  const layers = P.layers;
+  for(let li=0; li<layers.length; li++){
+    const L = layers[li];
+    if(progress) progress(li / layers.length);
+    const target = L.frac * w * h;
+    const rLo = L.r[0]*u, rHi = L.r[1]*u;
+    const gap = L.gap ?? 0.1, over = L.over ?? 0.4;
+    let painted = 0, fails = 0;
+    // 候補 8 点から「既存斑点との最短距離が最大」のものを採る (Mitchell's best-candidate)。
+    // 一様なダーツ投げより間隔が均され、捺染図案の「斑点が散在するが偏らない」配置になる
+    while(painted < target && fails < 400){
+      const R = randRange(rng, rLo, rHi);
+      let best = null, bestD = -1;
+      for(let c=0;c<8;c++){
+        const cx = rng()*w, cy = rng()*h;
+        let ok = true, minD = Infinity;
+        for(const q of placed){
+          const d2 = dist2(cx, cy, q.cx, q.cy), lim = R + q.R;
+          let need;
+          if(q.li === li) need = lim*(1+gap);
+          else if(L.patch || q.patch) continue;    // 地の色むら層は間隔制約に参加しない
+          else need = lim*(1-over);
+          if(need > 0 && d2 < need*need){ ok = false; break; }
+          if(d2 < minD) minD = d2;
+        }
+        if(ok && minD > bestD){ bestD = minD; best = {cx, cy}; }
+      }
+      if(!best){ fails++; continue; }
+      const s = makeSpot(rng, best.cx, best.cy, R, L);
+      painted += stampSpot(out, w, h, s, L.color, wrap);
+      placed.push({cx: s.cx, cy: s.cy, R, li, patch: !!L.patch});
+    }
+  }
+  // 後の版の斑点 2 個が前の版の斑点を挟むと、前の色が細い三日月や微小片として残る
+  // (捺染の実物では版ずれ以外にこの形は出ない)。P.minFrag (512px・scale 1 基準の px²) 未満の欠片は
+  // 近傍多数色へ併合する。それ以外の後処理 (平滑化・多数決) は要らない: 輪郭は解析形状で最初から滑らか
+  // 2 パス: cleanupFragments は 1 走査で併合先を決めるため、「欠片 A を欠片 B の色へ併合 → 直後に B 自体が
+  // 別の色へ併合」の順で A の画素が 1 px 取り残されることがある (2048px・scale 0.7 で実際に発生)。
+  // 2 パス目がその取り残しを拾う
+  if(P.minFrag) for(let p=0;p<2;p++) cleanupFragments(out, w, h, P.minFrag * u * u, wrap, P.colors.length);
+  if(progress) progress(1);
+  return {type:'spots', w, h, index: out};
 }
 
 /* ================= プリセット ================= */
@@ -1650,6 +1770,41 @@ export const PRESETS = {
       {name:'ブラック',      hex:'#1d1f23'},
     ],
   },
+  frogskin: {
+    // 米軍 M1942 フロッグスキン (通称ダックハンター、1942〜) のグリーン面。実物の特徴:
+    //   - 地色 (ライトグリーン) の上に、丸みのある独立した斑点が散る。斑点の輪郭は単純で、
+    //     M81 のような枝分かれ・切り合いがない → クイルトではなく斑点を 1 つずつ置く genSpots
+    //   - 版は 4 つ。ライム (地色よりやや暗い大きな色むら。斑点というより「地の二層目」) →
+    //     タン (小さく少ない淡い斑点) → ダークグリーン (中サイズ) → ブラウン (最大。全面積の 3 割)。
+    //     後の版が前の版に部分的に乗る (ブラウンがグリーンの縁に被る) のは捺染の重ね刷りそのもの
+    //   - 参照画像 (refs/frogskin.jpg) は CC BY-SA のため量子化したソース図案はアプリに同梱しない。
+    //     形状はここで手続き生成し、参照画像は目視比較とパレット実測にだけ使う
+    name: 'フロッグスキン風 (M1942)', kind: 'spots', ref: 'frogskin',
+    // r は「512px・scale 1.0」基準の平均半径 px。参照画像 (610px 幅) を 512px に cover した寸法で、
+    // ブラウン斑の外接矩形の中央値 37×52 → 最大 70×110 (半径換算 16〜34)、グリーン斑 38×47 (11〜22)、
+    // タン斑はその半分程度、ライムの色むらは斑点の 2 倍前後で互いに融合する (gap < 0)。
+    // frac は「その版が塗る面積比」(後の版に覆われる分を含む)。参照画像の量子化 (k=8, blur 2) の可視面積比
+    // ブラウン 0.30 / グリーン 0.15 / ライム + タン 0.24 / 地 0.32 に、重ね刷りで隠れる分を足した値
+    // orient π/2: ブラウン斑・グリーン斑は縦長に偏る (参照の外接矩形 49×94 / 47×95 / 69×109。捺染のロール方向)
+    layers: [
+      {color: 1, frac: 0.40, r: [30, 60], elong: [0.10, 0.40], lobe: [0.10, 0.25], gap: -0.35, patch: true},
+      {color: 2, frac: 0.05, r: [7, 13],  elong: [0.05, 0.30], lobe: [0.05, 0.15], gap: 0.3, over: 0.6},
+      {color: 3, frac: 0.18, r: [14, 28], elong: [0.15, 0.40], lobe: [0.08, 0.25], wobble: 0.10, gap: 0.15, over: 0.6, orient: Math.PI/2, orientJitter: 0.9},
+      {color: 4, frac: 0.29, r: [22, 42], elong: [0.20, 0.40], lobe: [0.10, 0.25], wobble: 0.10, gap: 0.12, over: 0.6, orient: Math.PI/2, orientJitter: 0.5},
+    ],
+    // 重ね刷りで挟まれた薄片 (三日月・微小片) の除去閾値。512px・scale 1 基準の px²
+    minFrag: 40,
+    // 実測: node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2
+    // (布地の写真で織り目と陰影が各版の色を 2〜3 クラスタに割るため k を多めに取り、
+    //  役割ごとに内部画素数が最大のクラスタを採用。--blur 無しではブラウンが 3 分裂して代表色が定まらない)
+    colors: [
+      {name:'ライトグリーン', hex:'#93a587'},
+      {name:'ライム',        hex:'#85926c'},
+      {name:'タン',          hex:'#978d70'},
+      {name:'ダークグリーン', hex:'#576b44'},
+      {name:'ブラウン',      hex:'#7e6043'},
+    ],
+  },
 };
 
 /* ================= 生成入口 ================= */
@@ -1660,6 +1815,7 @@ export function generate(key, w, h, seed, scale, opt={}){
   switch(P.kind){
     case 'quilt':  return genQuilt(w, h, seed, scale, P, opt);
     case 'growth': return genGrowth(w, h, seed, scale, P, opt);
+    case 'spots':  return genSpots(w, h, seed, scale, P, opt);
     default: throw new Error('unknown kind: ' + P.kind);
   }
 }

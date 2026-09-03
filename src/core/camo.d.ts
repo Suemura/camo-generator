@@ -9,11 +9,12 @@ export type PresetKey =
   | "ucp"
   | "dcu"
   | "dbdu"
-  | "jgsdf2";
+  | "jgsdf2"
+  | "frogskin";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth";
+  kind: "quilt" | "growth" | "spots";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;

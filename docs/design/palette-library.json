@@ -2410,5 +2410,100 @@
     },
     "note": "6 カラーデザート (DBDU) の小石の縁。実物では小石の全周ではなく片側に寄って三日月状に出る",
     "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は Natick color designation (Evaluation of Desert Camouflage Uniforms by Ground Observers, U.S. Army Belvoir RD&E Center / Natick RD&E Center, §2.1 Test Uniforms, https://commons.wikimedia.org/wiki/File:Evaluation_of_Desert_Camouflage_Uniforms_by_Ground_Observers.pdf)"
+  },
+  {
+    "id": "frogskin-lgreen",
+    "name": "フロッグスキン ライトグリーン",
+    "std": "フロッグスキン (実測)",
+    "code": "m1942-1",
+    "hex": "#93a587",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-frogskin",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "M1942 フロッグスキン グリーン面の地色。最大面積を占める淡い緑",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2。参照画像は Wikimedia Commons 「Frog Skin camouflage pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "frogskin-lime",
+    "name": "フロッグスキン ライム",
+    "std": "フロッグスキン (実測)",
+    "code": "m1942-2",
+    "hex": "#85926c",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-frogskin",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "地色の上に大きく広がる二層目の緑。斑点ではなく地の色むらとして刷られる",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2。参照画像は Wikimedia Commons 「Frog Skin camouflage pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "frogskin-tan",
+    "name": "フロッグスキン タン",
+    "std": "フロッグスキン (実測)",
+    "code": "m1942-3",
+    "hex": "#978d70",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-frogskin",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "最小面積の淡い斑。実物では褐色の斑に沿った細い三日月として現れることが多い",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2。参照画像は Wikimedia Commons 「Frog Skin camouflage pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "frogskin-dgreen",
+    "name": "フロッグスキン ダークグリーン",
+    "std": "フロッグスキン (実測)",
+    "code": "m1942-4",
+    "hex": "#576b44",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-frogskin",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "中サイズの濃緑の斑。ブラウンの斑と接して対になることが多い",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2。参照画像は Wikimedia Commons 「Frog Skin camouflage pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "frogskin-brown",
+    "name": "フロッグスキン ブラウン",
+    "std": "フロッグスキン (実測)",
+    "code": "m1942-5",
+    "hex": "#7e6043",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-frogskin",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "最大の斑で全面積の約 3 割。捺染のロール方向 (布の経方向) に縦長に伸びる",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2。参照画像は Wikimedia Commons 「Frog Skin camouflage pattern.jpg」CC BY-SA 3.0)"
   }
 ]

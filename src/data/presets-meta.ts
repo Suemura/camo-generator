@@ -63,6 +63,13 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "woodland",
     svg: false,
   },
+  frogskin: {
+    label: "フロッグスキン風 (M1942)",
+    note: "1942〜 5 色。丸い斑点 (グリーン面)",
+    country: "米国",
+    group: "woodland",
+    svg: false,
+  },
   marpat: {
     label: "デジタル・ウッドランド風",
     note: "MARPAT 系 4 色。ピクセル",

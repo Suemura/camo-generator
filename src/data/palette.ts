@@ -52,6 +52,7 @@ export const USE_LABEL: Record<string, string> = {
   "camo-3color-desert": "3 色デザート",
   "camo-6color-desert": "6 色デザート (チョコチップ)",
   "camo-jgsdf2": "陸自迷彩 2 型",
+  "camo-frogskin": "フロッグスキン (M1942)",
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

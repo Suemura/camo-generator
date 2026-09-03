@@ -1,6 +1,6 @@
 # パレットライブラリ 出典一覧
 
-`palette-library.json` に収録した 132 色 (第1弾 50 色 + 第2弾 70 色 + 第3弾 8 色 + 第4弾 4 色) の hex 値の出典と、採用方針・注意事項をまとめる。仕様は `docs/02-spec.md` §3.3、迷彩プリセット追加時の登録手順は `docs/04-add-preset.md` §3 を参照。
+`palette-library.json` に収録した 137 色 (第1弾 50 色 + 第2弾 70 色 + 第3弾 8 色 + 第4弾 4 色 + 第5弾 5 色) の hex 値の出典と、採用方針・注意事項をまとめる。仕様は `docs/02-spec.md` §3.3、迷彩プリセット追加時の登録手順は `docs/04-add-preset.md` §3 を参照。
 
 ## 収録方針
 
@@ -107,6 +107,19 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 参照画像が布地の写真なので、パレット実測にも `--flatten`（周辺減光の平坦化）と `--core`（領域内部の中央値）を使った。コマンドは `node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core --flatten=80`。詳細は `docs/01-tech-verification.md` v25
 - 用途タグ `camo-jgsdf2`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「陸自迷彩 2 型」を追加した
 - 近接する既存エントリ: `jgsdf2-green` #5e775c は車両色 `jsdf-dgreen-3414` #434941 と 20 以上離れており別色。`jgsdf2-brown` #74524e ↔ `jsdf-brown-3606` #5c5243 も同様（生地の染色色と塗料色の違い）
+
+## 第5弾（迷彩プリセット追加に伴う実測色: フロッグスキン）
+
+アプリにフロッグスキン風（M1942、Issue #29）のプリセットを追加したのに合わせ、既定色 5 色を追記し 137 色とした。
+
+### 方法
+
+- 第3弾・第4弾と同じく `std` は「フロッグスキン (実測)」、hex は `src/core/camo.js` の `PRESETS.frogskin.colors` と完全一致させている
+- **公的な色番号は見つからなかった**。M1942 の捺染色は当時の Quartermaster Corps の仕様書で定義されているが、Natick color designation（DCU / DBDU にある 3 桁番号）に相当する公開データは存在しない。したがって `code` には index 値の順に `m1942-1`〜`m1942-5` を振った
+- 参照画像が布地の接写写真なので、パレット実測に `--blur`（織り目の平坦化）と `--core`（領域内部の中央値）を使った。コマンドは `node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2`。**k を色数より多く取る**のは、織り目と陰影が 1 つの版の色を 2〜3 クラスタに割るため。役割ごとに内部画素数が最大のクラスタを採用した。`--blur` 無しではブラウンが 3 分裂して代表色が定まらない。詳細は `docs/01-tech-verification.md` v26
+- 用途タグ `camo-frogskin`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「フロッグスキン (M1942)」を追加した
+- 近接する既存エントリ: `frogskin-dgreen` #576b44 は `jgsdf2-green` #5e775c と 20 以上離れており別色。`frogskin-brown` #7e6043 も DCU / DBDU の褐色系（#8f590b / #704c44）とは十分離れている
+- 参照画像は CC BY-SA 3.0 のため、この画像から派生したソースマップはアプリに同梱していない（形状は手続き生成）。実測した hex は「事実の記述」であって画像の派生物ではないという整理で、DBDU（第3弾）と同じ扱い
 
 ## 出典一覧
 
@@ -244,6 +257,11 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `dbdu-lbrown381` | DBDU (実測) Light Brown 381 | #9a766b | 同上 |
 | `dbdu-dbrown382` | DBDU (実測) Dark Brown 382 | #704c44 | 同上 |
 | `dbdu-black383` | DBDU (実測) Black 383 | #1d1f23 | 同上 |
+| `frogskin-lgreen` | フロッグスキン (実測) m1942-1 | #93a587 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2`。参照画像は Wikimedia Commons [File:Frog Skin camouflage pattern.jpg](https://commons.wikimedia.org/wiki/File:Frog_Skin_camouflage_pattern.jpg) CC BY-SA 3.0) |
+| `frogskin-lime` | フロッグスキン (実測) m1942-2 | #85926c | 同上 |
+| `frogskin-tan` | フロッグスキン (実測) m1942-3 | #978d70 | 同上 |
+| `frogskin-dgreen` | フロッグスキン (実測) m1942-4 | #576b44 | 同上 |
+| `frogskin-brown` | フロッグスキン (実測) m1942-5 | #7e6043 | 同上 |
 
 ## 注意事項
 

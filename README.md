@@ -78,7 +78,13 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 - 実物リファレンスは**開発時専用**。アプリには同梱せず、UI の「実物比較」モードは廃止した。比較は `render.mjs --compare`、パレット実測は `extract-palette.mjs`
 - 自由ライセンス（Wikimedia Commons 等）の画像は `refs/<presetKey>.<ext>` に置いて git 管理し、下記クレジット節に出典・作者・ライセンスを書く
 - 権利上再配布できない画像は `mkdir -p refs/private` して `refs/private/<presetKey>.<ext>` に置く。`.gitignore` 対象で、`.githooks/pre-push` / Claude Code の PreToolUse フック / CI・Deploy の 4 層が混入を止める。**`git add -f` しないこと**
-- 新プリセット追加の 4 点セット: `PRESETS`（`src/core/camo.js`）/ `PRESET_META`（`src/data/presets-meta.ts`、`group` と `country` を含む）/ `refs/<key>.<ext>` / 決定性スナップショット（`pnpm test -u`）。加えてクレジット節の更新
+- 新プリセット追加の 6 点セット: `PRESETS`（`src/core/camo.js`）/ `PRESET_META`（`src/data/presets-meta.ts`、`group` と `country` を含む）/ `refs/<key>.<ext>` / 決定性スナップショット（`pnpm test -u`）/ `prototype/refs.js` の data URI / `node prototype/build.mjs` の再ビルド。加えてクレジット節の更新
+
+### 検証プロトタイプ（`prototype/`）
+
+`prototype/index.html` は `app-template.html` に `src/core/*` をインライン展開した単一ファイルの精度検証環境で、生成結果と実物リファレンスを左右に並べて比較できる。生成ロジックは `src/core/camo.js` の 1 本が正本で、本アプリ（`src/lib/generate.ts` が ESM で import）とプロトタイプ（ビルド時にインライン展開）が同じ実装を共有する。二重実装はない。
+
+ただしプロトタイプは `camo.js` の**スナップショット**なので、生成コアを変えたら `node prototype/build.mjs` で再ビルドする。忘れると古い実装が焼き付いたまま残るため、`tests/prototype-sync.test.ts` が `index.html` と `src/core/*` の現状を byte 比較して落とす。
 
 ## 進め方と進捗
 

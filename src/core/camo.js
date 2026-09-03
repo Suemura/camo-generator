@@ -298,6 +298,7 @@ function modeFilter(index, w, h, radius, passes, nColors, wrap=false){
   const hw = new Int32Array(2*radius+1);
   for(let dy=-radius;dy<=radius;dy++) hw[dy+radius] = Math.floor(Math.sqrt(radius*radius - dy*dy));
   const counts = new Int32Array(nColors);
+  const rows = new Int32Array(2*radius+1);   // 各 dy の行ポインタ (境界外は -1)。行ごとに再利用
   const rowAt = (y) => {
     if(wrap) return wrapI(y, h);
     return (y<0||y>=h) ? -1 : y;
@@ -305,8 +306,6 @@ function modeFilter(index, w, h, radius, passes, nColors, wrap=false){
   for(let p=0;p<passes;p++){
     const next = new Uint8Array(cur.length);
     for(let y=0;y<h;y++){
-      // 各 dy の行ポインタ (境界外は -1)
-      const rows = new Int32Array(2*radius+1);
       for(let dy=-radius;dy<=radius;dy++) rows[dy+radius] = rowAt(y+dy);
       // x=0 の窓を初期化
       counts.fill(0);

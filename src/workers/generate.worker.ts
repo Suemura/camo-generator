@@ -37,7 +37,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
     const msg: WorkerResponse = { id, res };
     (self as unknown as Worker).postMessage(msg, transfer);
   } catch (err) {
-    const msg: WorkerResponse = { id, error: (err as Error).message };
+    const msg: WorkerResponse = { id, error: err instanceof Error ? err.message : String(err) };
     (self as unknown as Worker).postMessage(msg);
   }
 };

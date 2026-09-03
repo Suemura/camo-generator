@@ -84,10 +84,10 @@ export function generateAsync(req: GenerateRequest): Promise<GenResult> {
     pending.set(id, { resolve, reject });
     const msg: WorkerRequest = { id, req };
     w.postMessage(msg);
-  }).catch((e) => {
-    // Worker 側の失敗 (メモリ不足など) は 1 回だけメインスレッドで再試行
-    if (workerBroken) return generateOnMain(req);
-    throw e;
+  }).catch(() => {
+    // Worker 側で失敗したら (Worker 破損・巨大配列の確保失敗など) 1 回だけメインスレッドで再試行する。
+    // メインでも同じ失敗なら二度目の例外がそのまま呼び出し側へ上がる
+    return generateOnMain(req);
   });
 }
 

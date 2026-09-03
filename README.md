@@ -11,7 +11,7 @@
 - シード値により、同じアルゴリズムから無数のバリエーションを決定的に再現できる
 - 各パターンのパレット（例: ウッドランドの緑・茶・サンド・黒）を自由な色にその場で差し替えられる
 - 生成結果を PNG / JPG / WebP / SVG（デジタル系のみ）で任意サイズ・実寸（mm / inch × DPI、PNG に DPI 埋込）でエクスポートできる
-- 全状態が URL に入るので、リンク 1 本で同じ模様を共有・再現できる。120 色の規格色ライブラリ（FS 595 / RAL / BS 381C / RLM …）と画像からのパレット抽出
+- 全状態が URL に入るので、リンク 1 本で同じ模様を共有・再現できる。128 色の規格色ライブラリ（FS 595 / RAL / BS 381C / RLM … + 各プリセットの実測色）と画像からのパレット抽出
 - 実物リファレンス画像との目視比較は開発時専用（`node tools/render.mjs --compare`）。アプリには同梱しない
 
 ## 生成手法（フェーズ1 で確立）
@@ -50,7 +50,9 @@ prototype/          フェーズ1 プロトタイプ (参照のみ。build.mjs �
 docs/
   01-tech-verification.md  フェーズ1 検証記録 (手法変遷・自己改善ループ全履歴)
   02-spec.md               フェーズ2 仕様設計 (機能仕分け・画面・技術選定・Cloudflare・デザインシステム)
-  design/                  spacious トークン原本 / パレットライブラリ
+  03-deploy.md             自動デプロイの運用 (GitHub Actions / Cloudflare)
+  04-add-preset.md         迷彩プリセット追加ガイド (7 点セット・カラーライブラリ登録・検証・PR・マージまで)
+  design/                  spacious トークン原本 / パレットライブラリ (palette-library.json + 出典 palette-library-sources.md)
 .claude/skills/design-system/SKILL.md  LLM 向けデザインルール (spacious, typeui.sh で取得)
 wrangler.jsonc      Cloudflare Workers (Static Assets) 設定
 ```
@@ -78,7 +80,7 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 - 実物リファレンスは**開発時専用**。アプリには同梱せず、UI の「実物比較」モードは廃止した。比較は `render.mjs --compare`、パレット実測は `extract-palette.mjs`
 - 自由ライセンス（Wikimedia Commons 等）の画像は `refs/<presetKey>.<ext>` に置いて git 管理し、下記クレジット節に出典・作者・ライセンスを書く
 - 権利上再配布できない画像は `mkdir -p refs/private` して `refs/private/<presetKey>.<ext>` に置く。`.gitignore` 対象で、`.githooks/pre-push` / Claude Code の PreToolUse フック / CI・Deploy の 4 層が混入を止める。**`git add -f` しないこと**
-- 新プリセット追加の 6 点セット: `PRESETS`（`src/core/camo.js`）/ `PRESET_META`（`src/data/presets-meta.ts`、`group` と `country` を含む）/ `refs/<key>.<ext>` / 決定性スナップショット（`pnpm test -u`）/ `prototype/refs.js` の data URI / `node prototype/build.mjs` の再ビルド。加えてクレジット節の更新
+- 新プリセット追加の手順は `docs/04-add-preset.md`（7 点セット: `PRESETS` / `PRESET_META` / `refs/<key>.<ext>` / パレット既定値の実測 / カラーライブラリ登録 / 決定性スナップショット / 検証プロトタイプ。加えてクレジット節の更新と PR への検証画像貼付）
 
 ### 検証プロトタイプ（`prototype/`）
 

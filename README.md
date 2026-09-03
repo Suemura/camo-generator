@@ -96,5 +96,6 @@ node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG �
 
 ## クレジット・ライセンス注記
 
+- 3D プレビューの環境光 HDRI は Poly Haven「Kloofendal 48d Partly Cloudy (Pure Sky)」（Greg Zaal / Jarod Guest、CC0）、布地の normal / roughness マップは ambientCG「Fabric 036」「Fabric 062」（CC0）を 512px に縮小して `public/3d/` に同梱。3D 描画は three.js（MIT）
 - 実物リファレンス画像および M81 ソースマップは Wikimedia Commons 由来（US Woodland は米政府図案でパブリックドメイン。各画像のライセンスは Commons の該当ファイルページに従う）
 - `experimental/` の一部は [camogen](https://github.com/glederrey/camogen) (MIT) のアルゴリズムを参考にした

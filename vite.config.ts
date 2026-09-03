@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   css: { preprocessorOptions: { scss: { api: "modern-compiler" } } },
-  build: { target: "es2022", sourcemap: true },
+  // chunkSizeWarningLimit: three.js (3D プレビュー) は動的 import の別チャンクで ~700KB。初期バンドルには入らない
+  build: { target: "es2022", sourcemap: true, chunkSizeWarningLimit: 800 },
   worker: { format: "es" }, // worker 内の動的 import (digsrc) を分割チャンクにする
   // 生成テストは CPU 律速で GitHub Actions ランナーでは 5〜12 秒かかる（既定 5 秒だと落ちる）
   test: { environment: "node", include: ["tests/**/*.test.ts"], testTimeout: 60_000 },

@@ -47,6 +47,31 @@ export function About() {
         </li>
       </ul>
 
+      <h2>3D プレビューのアセット</h2>
+      <p>
+        「3D」表示モードで使う環境光と布地の質感マップはいずれも CC0 (パブリックドメイン相当) です。
+      </p>
+      <ul className={styles.credits}>
+        <li>
+          環境光 (HDRI): <em>Kloofendal 48d Partly Cloudy (Pure Sky)</em> — Greg Zaal / Jarod Guest,{" "}
+          <a href="https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky">Poly Haven</a>{" "}
+          (CC0)
+        </li>
+        <li>
+          布地 (平織り): <em>Fabric 036</em> —{" "}
+          <a href="https://ambientcg.com/a/Fabric036">ambientCG</a> (CC0)。球・布モデルの normal /
+          roughness
+        </li>
+        <li>
+          布地 (リップストップ): <em>Fabric 062</em> —{" "}
+          <a href="https://ambientcg.com/a/Fabric062">ambientCG</a> (CC0)。ポーチモデルの normal /
+          roughness
+        </li>
+        <li>
+          3D 描画は <a href="https://threejs.org/">three.js</a> (MIT)
+        </li>
+      </ul>
+
       <h2>アルゴリズムの出典</h2>
       <ul>
         <li>M81 ソースマップは米政府図案 (パブリックドメイン) のインデックス化データ</li>

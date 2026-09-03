@@ -35,7 +35,7 @@ cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.h
   - プリセットは `PRESETS` に集約。`kind` で生成関数にディスパッチ
   - `generate(key, w, h, seed, scale, opt)`。`opt.tileable`（既定 true）/ `opt.progress(0..1)` / `opt.baseMax`（長辺がこれを超えると縮小生成 → 拡大 → 実寸で後処理。v17）
 - `src/core/m81src.js` / `digsrc.js` — M81 / AOR1 / AOR2 実物図案の 4値インデックスマップ（RLE + base64）。再生成は docs 記載の Python 手順。**`digsrc.js`（280KB）は camo.js から静的 import しない**。利用側が動的 import して `registerSources()` で渡す（ブラウザは `src/lib/generate.ts` の `ensureSources`、Node は `tools/render.mjs` / テストで先頭登録）
-- `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means。`src/data/` — プリセット表示メタ、120 色ライブラリ、リファレンス画像（動的 import）
+- `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means、3D プレビュー（`scene3d.ts` が three 依存を閉じ込め、`Preview3D` が動的 import）。`src/data/` — プリセット表示メタ、120 色ライブラリ、リファレンス画像（動的 import）
 - `src/styles/tokens/` がデザイントークン（§デザイン参照）、`src/styles/ui.scss` が共通クラス。コンポーネントの色・余白は `var(--…)` のみ、生値禁止。新しい余白値が要るときは `_semantic.scss` の `$static` に追加してから使う（未定義 var は無効値になり潰れる）
 - `tools/render.mjs` — Node レンダリングハーネス。`tools/gen-tokens.mjs` — トークン生成
 - `prototype/app-template.html` — フェーズ1 UI（参照のみ）。`//__INLINE_CAMO__` / `//__INLINE_REFS__` マーカーに build.mjs がインライン展開する。**index.html を直接編集しない**（ビルドで上書きされる）
@@ -50,7 +50,7 @@ cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.h
 
 ## UI の実画面確認
 
-`pnpm dev --port 5199` を起動し、Playwright（`channel: "chrome"` でシステムの Chrome を使う、ブラウザダウンロード不要）でスクリーンショットと書き出しファイルを検証する。デスクトップ 1440 / モバイル 390、ライト / ダーク、書き出した PNG の pHYs と SVG の rect 数を見る。
+`pnpm dev --port 5199` を起動し、Playwright（`channel: "chrome"` でシステムの Chrome を使う、ブラウザダウンロード不要）でスクリーンショットと書き出しファイルを検証する。デスクトップ 1440 / モバイル 390、ライト / ダーク、書き出した PNG の pHYs と SVG の rect 数を見る。3D モード追加後は、各表示モード（単一 / タイル 2×2 / 実物比較 / 3D）とモデル切り替え、WebGL 非対応時のフォールバック（Chrome の `--disable-webgl --disable-webgl2` で再現）も確認する。
 
 ## 検証ワークフロー（重要）
 

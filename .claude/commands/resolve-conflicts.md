@@ -37,6 +37,7 @@ git merge origin/main
 
 **両側の変更意図を理解してから統合する**こと。機械的にどちらか一方を採用しない。定番パターン:
 
+- **`.gitattributes` で自動解決されるもの**: `tests/__snapshots__/*.snap` と `prototype/refs.js` は `merge=union`（両側の行が残る）、`prototype/index.html` は `merge=ours`。コンフリクトとして出てこないが**内容が正しいとは限らない** — union は行を並べるだけなので解消後に `pnpm test` で検証し、`prototype/index.html` は `node prototype/build.mjs` で再生成する。`merge=ours` には `git config merge.ours.driver true` が要るので、worktree では先に `pnpm install` を走らせる
 - **CLAUDE.md / README.md / docs/**: 両側の追記を統合する。セクション単位で両方を残し、重複記述は一本化。`docs/01-tech-verification.md` は時系列の検証記録なので、両側の追記を**時系列順に両方残す**（片方を捨てると検証履歴が欠ける）
 - **pnpm-lock.yaml**: 手で編集しない。`git checkout --theirs pnpm-lock.yaml`（origin/main 側を採用）した上で、自ブランチが依存を追加している場合のみ `pnpm install` で再解決する。依存追加がなければ theirs 採用のみでよい
 - **package.json**: scripts / dependencies を両側マージ。lockfile と整合させる

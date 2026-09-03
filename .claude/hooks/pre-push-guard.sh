@@ -20,6 +20,15 @@ if command -v jq > /dev/null 2>&1; then
 fi
 cd "${work_dir:-${CLAUDE_PROJECT_DIR:-.}}" || exit 0
 
+# settings の `if: "Bash(git push*)"` は複合コマンド（for ループ・パイプ・サブシェル等）を
+# 解析できないと保守的に発火するため、push と無関係なコマンドもここに流れてくる。
+# 自前で `git push` を含むかを確認して素通りさせる。これが無いと main チェックアウト中に
+# `main` の文字を含まないあらゆるコマンドが下の case で exit 2 され、作業が止まる。
+case "$command" in
+  *"git push"*) ;;
+  *) exit 0 ;;
+esac
+
 # main への暗黙 push ブロック（削除・main 明示指定は素通り）
 case "$command" in
   *--delete*|*" -d "*|*" -d")

@@ -11,7 +11,7 @@
 - シード値により、同じアルゴリズムから無数のバリエーションを決定的に再現できる
 - 各パターンのパレット（例: ウッドランドの緑・茶・サンド・黒）を自由な色にその場で差し替えられる
 - 生成結果を PNG / JPG / WebP / SVG（デジタル系のみ）で任意サイズ・実寸（mm / inch × DPI、PNG に DPI 埋込）でエクスポートできる
-- 全状態が URL に入るので、リンク 1 本で同じ模様を共有・再現できる。138 色の規格色ライブラリ（FS 595 / RAL / BS 381C / RLM … + 各プリセットの実測色）と画像からのパレット抽出
+- 全状態が URL に入るので、リンク 1 本で同じ模様を共有・再現できる。100 色以上の規格色ライブラリ（FS 595 / RAL / BS 381C / RLM … + 各プリセットの実測色）と画像からのパレット抽出
 - 実物リファレンス画像との目視比較は開発時専用（`node tools/render.mjs --compare`）。アプリには同梱しない
 
 ## 生成手法（フェーズ1 で確立）
@@ -43,6 +43,7 @@ tools/
 refs/               実物リファレンス画像 (開発時専用、アプリ非同梱。refs/README.md)
   <presetKey>.<ext>   自由ライセンス (Wikimedia Commons)。git 管理、出典は本 README のクレジット節
   private/            再配布不可の画像。gitignore + 4 層の push 防止で絶対にコミットしない
+.gitattributes      マージ方針 (snap / refs.js は union、prototype/index.html は ours)
 .githooks/pre-push  refs/private/ を含む push を拒否 (pnpm install の prepare が core.hooksPath を設定)
 tests/              Vitest (決定性・回帰スナップショット)
 prototype/          フェーズ1 プロトタイプ (参照のみ。build.mjs は src/core を読む)

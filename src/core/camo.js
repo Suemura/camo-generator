@@ -625,6 +625,7 @@ export function registerSources(mod){
 /** プリセットの実物マップが登録済みか (未登録なら generate() 前に registerSources が必要) */
 export function hasSources(key){
   const P = PRESETS[key];
+  if(!P) return false;               // 未知キーは「登録なし」扱い (事前チェック用途なので投げない)
   return P.kind !== 'quilt' || !!SRCS[P.src];
 }
 function pasteBlob(out, w, h, p, cx, cy, bb, rad, srcGet, wrap=false, tstate=null){

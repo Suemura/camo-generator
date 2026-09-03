@@ -21,7 +21,13 @@ let sourcesLoading: Promise<void> | null = null;
 /** AOR 実物マップ (約 280KB) は必要になった時だけ読む */
 export function ensureSources(preset: PresetKey): Promise<void> {
   if (hasSources(preset)) return Promise.resolve();
-  sourcesLoading ??= import("@/core/digsrc.js").then((m) => registerSources(m));
+  sourcesLoading ??= import("@/core/digsrc.js")
+    .then((m) => registerSources(m))
+    .catch((e) => {
+      // 取得失敗 (オフライン・デプロイ直後のハッシュずれ等) はキャッシュを捨てて次回再試行できるようにする
+      sourcesLoading = null;
+      throw e;
+    });
   return sourcesLoading;
 }
 

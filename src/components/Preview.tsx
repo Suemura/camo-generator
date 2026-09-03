@@ -10,19 +10,24 @@ import styles from "./Preview.module.scss";
 
 export type ViewMode = "single" | "tile" | "compare";
 const PREVIEW_EDGE = 768;
+const COARSE_EDGE = 192; // まず粗い結果を即表示してフリーズ感を消す
 
 interface Props {
   state: AppState;
   mode: ViewMode;
   onMode: (m: ViewMode) => void;
   busy?: string | null;
+  /** 書き出し等の外部処理の進捗 0..1 (null で非表示) */
+  busyProgress?: number | null;
 }
 
-export function Preview({ state, mode, onMode, busy }: Props) {
+export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [res, setRes] = useState<(GenResult & { preset: string; colors: number }) | null>(null);
   const [ms, setMs] = useState(0);
   const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [coarse, setCoarse] = useState(false);
   const [refSrc, setRefSrc] = useState<string | null>(null);
   const out = outputPx(state);
   const pal = effectivePalette(state);
@@ -32,19 +37,28 @@ export function Preview({ state, mode, onMode, busy }: Props) {
     let alive = true;
     const t = setTimeout(async () => {
       setGenerating(true);
-      const sz = previewSize(out.w, out.h, PREVIEW_EDGE);
-      const t0 = performance.now();
-      const r = await generateAsync({
+      setProgress(0);
+      const tag = { preset: state.preset, colors: PRESETS[state.preset].colors.length };
+      const req = {
         preset: state.preset,
-        w: sz.w,
-        h: sz.h,
         seed: state.seed,
         scale: state.scale,
         tileable: state.tileable,
-      });
+      };
+      // 1. 粗いプレビュー (数十 ms) を先に出してフリーズ感を消す
+      const cz = previewSize(out.w, out.h, COARSE_EDGE);
+      const coarseRes = await generateAsync({ ...req, w: cz.w, h: cz.h });
+      if (!alive) return;
+      setRes({ ...coarseRes, ...tag });
+      setCoarse(true);
+      // 2. 本プレビュー (進捗つき)
+      const sz = previewSize(out.w, out.h, PREVIEW_EDGE);
+      const t0 = performance.now();
+      const r = await generateAsync({ ...req, w: sz.w, h: sz.h }, (f) => alive && setProgress(f));
       if (!alive) return;
       setMs(Math.round(performance.now() - t0));
-      setRes({ ...r, preset: state.preset, colors: PRESETS[state.preset].colors.length });
+      setRes({ ...r, ...tag });
+      setCoarse(false);
       setGenerating(false);
     }, 120);
     return () => {
@@ -113,10 +127,21 @@ export function Preview({ state, mode, onMode, busy }: Props) {
       <div className={`${styles.stage} ${mode === "compare" ? styles.split : ""}`}>
         <div className={styles.frame} style={{ aspectRatio: `${out.w} / ${out.h}` }}>
           <canvas ref={canvas} className={styles.canvas} aria-label="生成された迷彩" />
-          {(generating || busy) && (
-            <div className={styles.overlay} role="status">
+          {busy && (
+            <div className={styles.overlay} role="status" aria-live="polite">
               <span className={styles.spinner} aria-hidden="true" />
-              {busy ?? "生成中…"}
+              <span>{busy}</span>
+              {busyProgress != null && (
+                <span className={styles.bar} aria-hidden="true">
+                  <span style={{ width: `${Math.round(busyProgress * 100)}%` }} />
+                </span>
+              )}
+            </div>
+          )}
+          {!busy && generating && (
+            <div className={styles.badge} role="status" aria-live="polite">
+              <span className={styles.spinner} aria-hidden="true" />
+              {coarse ? `高解像度を生成中 ${Math.round(progress * 100)}%` : "生成中…"}
             </div>
           )}
         </div>

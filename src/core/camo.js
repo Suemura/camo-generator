@@ -588,7 +588,10 @@ export function genGrowth(w, h, seed, scale, P, opt={}){
   const rng = mulberry32(seed ^ 0x9e37);
   const grid = new Uint8Array(gw*gh); // 0 = 最明色
   const A = gw*gh, k = scale*scale;
+  const progress = typeof opt.progress === 'function' ? opt.progress : null;
+  let li = 0;
   for(const L of P.layers){
+    if(progress) progress(0.8 * (li++) / P.layers.length);
     growLayer(grid, gw, gh, rng, {
       color: L.color, ratio: L.ratio, canEat: new Set(L.eat),
       seedNear: L.seedNear, stratify: L.stratify,
@@ -619,6 +622,7 @@ export function genGrowth(w, h, seed, scale, P, opt={}){
       index[y*w+x] = grid[gx + gy*gw];
     }
   }
+  if(progress) progress(1);
   return {type:'digital', w, h, index, grid:{gw, gh, cellPx, cellColor: grid}};
 }
 
@@ -761,6 +765,14 @@ function pasteBlobTorus(out, w, h, p, cx, cy, bb, rad, srcGet, state){
 }
 export function genQuilt(w, h, seed, scale, P, opt={}){
   const wrap = opt.tileable !== false;   // キャンバスをトーラスとして扱う (シームレスタイル)
+  const progress = typeof opt.progress === 'function' ? opt.progress : null;
+  // 多段解像度 (v17): ソース図案は 800px 程度なので、長辺 baseMax を超える出力は
+  // 縮小キャンバスで形状を決めてから index を拡大し、平滑化・欠片除去だけ実寸で行う。
+  // 情報量は同じ (どちらも同じソース px を nearest 参照する) で、パッチ探索コストが 1/f² になる。
+  const fullW = w, fullH = h;
+  const baseMax = opt.baseMax ?? 1024;
+  const f = Math.max(w, h) > baseMax ? Math.max(w, h) / baseMax : 1;
+  if(f > 1){ w = Math.max(64, Math.round(fullW / f)); h = Math.max(64, Math.round(fullH / f)); }
   const load = SRCS[P.src];
   if(!load) throw new Error(`source map '${P.src}' not registered: call registerSources() first`);
   const SRC = load();
@@ -817,6 +829,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   const R = (P.patchR ?? 185) / k;             // パッチ基準半径 (target px)
   const nPatch = Math.ceil(2.2 * (w*h) / (Math.PI*R*R));
   for(let pi=0; pi<nPatch; pi++){
+    if(progress) progress(0.75 * pi / nPatch);
     // キャンバス現況の色比 → 不足色をパッチ選択で補う (未塗布は除外)
     const cur = [0,0,0,0]; let cn = 0;
     for(let i=0;i<w*h;i+=997){ if(out[i]<4){ cur[out[i]]++; cn++; } }
@@ -926,15 +939,27 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
       }
     }
   }
+  if(progress) progress(0.8);
   let sm = out;
+  // 実寸への拡大 (nearest)。拡大後の階段幅は 1/kFull px
+  let kFull = k;
+  if(f > 1){
+    const big = new Uint8Array(fullW * fullH);
+    for(let y=0;y<fullH;y++){
+      const sy = Math.min(h-1, (y * h / fullH) | 0) * w;
+      for(let x=0;x<fullW;x++) big[y*fullW + x] = out[sy + Math.min(w-1, (x * w / fullW) | 0)];
+    }
+    sm = big; w = fullW; h = fullH; kFull = k / f;
+  }
   if(P.organic !== false){
     // 有機系: nearest サンプリング起因のギザ除去 (必要最小限)
     let smoothR = 0;
-    if(k > 1.05) smoothR = Math.max(1, Math.round(1.2*(w/512)));       // 縮小: エイリアス除去
+    if(kFull > 1.05) smoothR = Math.max(1, Math.round(1.2*(w/512)));       // 縮小: エイリアス除去
     // 拡大: 階段除去。階段幅は 1/k px なので半径は 1/k に比例させる
     // (v16 以前は ×(w/512) が掛かり二重スケールで 4096px で半径 54 → 数分かかった)
-    else if(k < 0.95) smoothR = Math.max(1, Math.round(1.2/k));
-    if(smoothR) sm = modeFilter(out, w, h, smoothR, 1, 4, wrap);
+    else if(kFull < 0.95) smoothR = Math.max(1, Math.round(1.2/kFull));
+    if(smoothR) sm = modeFilter(sm, w, h, smoothR, 1, 4, wrap);
+    if(progress) progress(0.92);
     // 微小フラグメント除去 (画面上で点に見えるサイズの絶対下限つき)
     const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),
                                         110 * (w/512)*(w/512) / (scale*scale)));
@@ -943,6 +968,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     // デジタル系: ピクセル輪郭を保持。サブセルの欠片だけ除去
     cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)), wrap);
   }
+  if(progress) progress(1);
   return {type:'organic', w, h, index: sm};
 }
 // 面積 < minArea の連結成分を近傍多数色へ併合
@@ -1076,6 +1102,7 @@ export const PRESETS = {
 
 /* ================= 生成入口 ================= */
 // opt.tileable (既定 true): 出力を上下左右に並べても境界が連続するトーラス生成
+// opt.progress(fraction 0..1): 進捗コールバック (UI 表示用)。opt.baseMax: 多段解像度の基準長辺 (既定 1024)
 export function generate(key, w, h, seed, scale, opt={}){
   const P = PRESETS[key];
   switch(P.kind){

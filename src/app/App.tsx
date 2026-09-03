@@ -44,6 +44,7 @@ function Generator() {
   const [librarySlot, setLibrarySlot] = useState<number | null>(null);
   const [extractOpen, setExtractOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [busyProgress, setBusyProgress] = useState<number | null>(null);
   // ライブラリから選んだ色の id (スロット別)。同 hex が複数規格にある場合の表示名確定用
   const [slotIds, setSlotIds] = useState<(string | undefined)[]>([]);
 
@@ -60,17 +61,22 @@ function Generator() {
   const renderFull = useCallback(async () => {
     const px = outputPx(state);
     setBusy(`${px.w}×${px.h} px を生成中…`);
+    setBusyProgress(0);
     try {
-      return await generateAsync({
-        preset: state.preset,
-        w: px.w,
-        h: px.h,
-        seed: state.seed,
-        scale: state.scale,
-        tileable: state.tileable,
-      });
+      return await generateAsync(
+        {
+          preset: state.preset,
+          w: px.w,
+          h: px.h,
+          seed: state.seed,
+          scale: state.scale,
+          tileable: state.tileable,
+        },
+        setBusyProgress,
+      );
     } finally {
       setBusy(null);
+      setBusyProgress(null);
     }
   }, [state]);
 
@@ -143,7 +149,7 @@ function Generator() {
         onCopyLink={onCopyLink}
         onShare={shareAvailable ? onShare : undefined}
       />
-      <Preview state={state} mode={mode} onMode={setMode} busy={busy} />
+      <Preview state={state} mode={mode} onMode={setMode} busy={busy} busyProgress={busyProgress} />
       <aside className={styles.panel} aria-label="設定">
         <div className={`${styles.tabs} seg`} role="tablist" aria-label="設定カテゴリ">
           <button

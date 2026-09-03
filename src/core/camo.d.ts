@@ -11,6 +11,10 @@ export interface Preset {
 export interface GenerateOptions {
   /** true (既定): 上下左右に並べても継ぎ目が出ないトーラス生成。false: フェーズ1 と同じ非タイル生成 */
   tileable?: boolean;
+  /** 進捗 0..1 (単調増加、最後に 1) */
+  progress?: (fraction: number) => void;
+  /** 多段解像度の基準長辺 (既定 1024)。これを超える出力は縮小生成 → 拡大 → 実寸で後処理 */
+  baseMax?: number;
 }
 export interface GenResult {
   w: number;

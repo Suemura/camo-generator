@@ -35,7 +35,11 @@ export function ensureSources(preset: PresetKey): Promise<void> {
 let worker: Worker | null = null;
 let workerBroken = false;
 let seq = 0;
-const pending = new Map<number, { resolve: (r: GenResult) => void; reject: (e: Error) => void }>();
+export type Progress = (fraction: number) => void;
+const pending = new Map<
+  number,
+  { resolve: (r: GenResult) => void; reject: (e: Error) => void; onProgress?: Progress }
+>();
 
 function getWorker(): Worker | null {
   if (workerBroken || typeof Worker === "undefined") return null;
@@ -51,6 +55,10 @@ function getWorker(): Worker | null {
   worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
     const p = pending.get(e.data.id);
     if (!p) return;
+    if ("progress" in e.data) {
+      p.onProgress?.(e.data.progress);
+      return;
+    }
     pending.delete(e.data.id);
     if ("error" in e.data) p.reject(new Error(e.data.error));
     else p.resolve(e.data.res);
@@ -66,28 +74,34 @@ function getWorker(): Worker | null {
   return worker;
 }
 
-async function generateOnMain(req: GenerateRequest): Promise<GenResult> {
+async function generateOnMain(req: GenerateRequest, onProgress?: Progress): Promise<GenResult> {
   await ensureSources(req.preset);
   return new Promise((resolve) => {
     // 描画フレームを 1 つ譲ってから実行 (進捗表示を描かせる)
     setTimeout(() => {
-      resolve(generate(req.preset, req.w, req.h, req.seed, req.scale, { tileable: req.tileable }));
+      resolve(
+        generate(req.preset, req.w, req.h, req.seed, req.scale, {
+          tileable: req.tileable,
+          progress: onProgress,
+        }),
+      );
     }, 0);
   });
 }
 
-export function generateAsync(req: GenerateRequest): Promise<GenResult> {
+/** 生成 (Worker)。onProgress は 0..1 で単調増加、完了時に 1 */
+export function generateAsync(req: GenerateRequest, onProgress?: Progress): Promise<GenResult> {
   const w = getWorker();
-  if (!w) return generateOnMain(req);
+  if (!w) return generateOnMain(req, onProgress);
   const id = ++seq;
   return new Promise<GenResult>((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    pending.set(id, { resolve, reject, onProgress });
     const msg: WorkerRequest = { id, req };
     w.postMessage(msg);
   }).catch(() => {
     // Worker 側で失敗したら (Worker 破損・巨大配列の確保失敗など) 1 回だけメインスレッドで再試行する。
     // メインでも同じ失敗なら二度目の例外がそのまま呼び出し側へ上がる
-    return generateOnMain(req);
+    return generateOnMain(req, onProgress);
   });
 }
 

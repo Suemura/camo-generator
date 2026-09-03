@@ -83,13 +83,13 @@ CCE の 4 色は 2026-09-04 時点で未登録（残課題、§9）。
 1. `src/data/palette-library.json` にエントリを追加（末尾追記。既存エントリの順序は変えない）
 2. `docs/design/palette-library.json` を同じ内容にする（`src/data` 側のコピー元。`src/data` 側は Biome が整形するため byte 一致はしない。JSON としてパースして等価かを確認する）
 3. `src/data/palette.ts` の `USE_LABEL` に `camo-<key>` のラベルを追加（用途タブの見出しになる。無いとタグ名がそのまま表示される）
-4. `docs/design/palette-library-sources.md` の「出典一覧」表に行を追加し、冒頭の総数（「128 色」等）を更新
+4. `docs/design/palette-library-sources.md` の「出典一覧」表に行を追加（**総数は書かない**。「100 色以上」で足りる。数値を書くと追加のたびに 4 箇所を直す羽目になり、直し漏れで嘘になる）
 
-総数を書いている場所も直す: README 冒頭（「〜色の規格色ライブラリ」）と CLAUDE.md「アーキテクチャ」（「〜色ライブラリ」）。
+総数（「132 色」等）はどこにも書かない。README・CLAUDE.md・`docs/02-spec.md`・`palette-library-sources.md` の 4 箇所に散り、色を 1 つ足すたびに全部を直す羽目になる（実際に直し漏れて食い違った）。「100 色以上」で必要な情報は伝わる。
 
 ### 3.4 確認
 
-`pnpm dev --port 5199` + Playwright（`channel: "chrome"`）でカラーライブラリのドロワーを開き、総数・検索（プリセット名で件数が合うか）・用途タブに新ラベルが出ることを 1440 / light で確認する。
+`pnpm dev --port 5199` + Playwright（`channel: "chrome"`）でカラーライブラリのドロワーを開き、検索（プリセット名で件数が合うか）・用途タブに新ラベルが出ることを 1440 / light で確認する。
 
 ## 4. 検証（生成品質）
 
@@ -164,9 +164,22 @@ PR を作ったら終わりではない。ユーザーが Artifact で確認し�
 
 ## 8. 並列 Issue との統合とマージ
 
-複数のサブ Issue を並列に進めると、`camo.js` の同じ位置への関数追加や `01-tech-verification.md` の節番号、スナップショットでコンフリクトする。
+複数のサブ Issue を並列に進めると、「一覧の末尾に 1 行足す」型の変更がぶつかってコンフリクトする。
+機械的に解けるものは `.gitattributes` で自動解決してあるので、手で解くのは残りだけでよい。
 
-- `/resolve-conflicts <PR>` で origin/main をマージ取り込みする（rebase しない）。`camo.js` は**両側の関数を残す**（DBDU の `applyChips` と CCE の `cleanupSlivers`）。`01-tech-verification.md` は時系列に両方残し、自分の節番号を繰り下げる
+| ファイル | マージ方針 |
+| --- | --- |
+| `tests/__snapshots__/*.snap` | `merge=union`（自動）。両側の行が残る。解消後に `pnpm test` で妥当性を検証する |
+| `prototype/refs.js` | `merge=union`（自動） |
+| `prototype/index.html` | `merge=ours`（自動）。**マージ後に必ず `node prototype/build.mjs` で再生成する**（`tests/prototype-sync.test.ts` が忘れを検出する） |
+| `src/core/camo.js` / `presets-meta.ts` / `palette.ts` / `camo.d.ts` | 手で解く。**両側を残す**（DBDU の `applyChips` と CCE の `cleanupSlivers`、`PRESETS` の両エントリなど） |
+| `docs/01-tech-verification.md` | 手で解く。時系列に両方残し、自分の節番号を繰り下げる |
+| `README.md` / `CLAUDE.md` / その他 docs | 手で解く。両側の記述を統合する |
+
+`merge=ours` は git 組み込みではないため `git config merge.ours.driver true` が要る。`pnpm install` の
+`prepare` が設定するので、worktree を作ったら一度 `pnpm install` すること。
+
+- `/resolve-conflicts <PR>` で origin/main をマージ取り込みする（rebase しない）
 - スナップショットは手で統合せず、マージ後に `pnpm test -u`。**自分のプリセットのハッシュが相手側の共通ロジック変更で変わる**ことがある（DBDU は CCE 側の 1px 筋除去で変わった）。`--compare` / `--tile` で劣化がないことを目視し、vN 節に「統合」小節として書く
 - マージ後にプロトタイプを再ビルドし、Artifact を再デプロイする
 - **マージはユーザーが PR を特定して明示的に依頼したときだけ**。「精度検証 OK、マージして」が合図。`/land <N>` の中で `AskUserQuestion` により PR 番号・タイトル・マージ方式を提示して承認を得る。「デプロイして」「進めて」からマージを推測しない（`.claude/rules/workflow-orchestration.md`）
@@ -178,7 +191,7 @@ PR を作ったら終わりではない。ユーザーが Artifact で確認し�
 - [ ] リファレンス画像を用意し、ライセンスと派生物の扱いを判断した（refs/ なら README クレジット節を更新）
 - [ ] PRESETS / PRESET_META を追加し、名称は「〜風」表記
 - [ ] colors は extract-palette.mjs の実測値
-- [ ] カラーライブラリに登録した（palette-library.json ×2 / USE_LABEL / palette-library-sources.md / 総数表記）
+- [ ] カラーライブラリに登録した（palette-library.json ×2 / USE_LABEL / palette-library-sources.md の出典表）
 - [ ] render.mjs: 3 シード × 4 スケール / --compare / --tile / --size=2048 --crop=512 を目視、既知アーティファクトなし
 - [ ] 既存プリセットのスナップショットが不変（差分は新プリセットの 1 行のみ）。共通ロジックを変えた場合はその旨を明記
 - [ ] docs/01-tech-verification.md に vN 節を追記してから pnpm test -u

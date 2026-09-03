@@ -44,6 +44,7 @@ tools/
 refs/               実物リファレンス画像 (開発時専用、アプリ非同梱。refs/README.md)
   <presetKey>.<ext>   自由ライセンス (Wikimedia Commons)。git 管理、出典は本 README のクレジット節
   private/            再配布不可の画像。gitignore + 4 層の push 防止で絶対にコミットしない
+.gitattributes      マージ方針 (snap / refs.js は union、prototype/index.html は ours)
 .githooks/pre-push  refs/private/ を含む push を拒否 (pnpm install の prepare が core.hooksPath を設定)
 tests/              Vitest (決定性・回帰スナップショット)
 prototype/          フェーズ1 プロトタイプ (参照のみ。build.mjs は src/core を読む)

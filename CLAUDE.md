@@ -94,6 +94,7 @@ Issue → PR の定型フローは commands / agents / hooks で自走する。�
 - エージェント: `planner`（計画 + Sprint Contract）/ `pr-reviewer` → `pr-comment-resolver`（PR 作成後に自動起動）/ `reviewer`（PR を作らないタスクの独立レビュー）/ `docs-sync`（起動条件は `rules/self-review.md`）
 - フック: Stop 時に `src/ tests/ tools/` のソース変更があれば `pnpm check` / `pnpm typecheck` / `pnpm test` を実行し失敗を差し戻す。`gh pr create` 成功で自動レビューフローを指示。`git push*` の前に `refs/private/` の混入を検査してブロック（`pre-push-guard.sh`）。Write/Edit 後に Biome 整形。SessionStart でマージ済み worktree を通知
 - ルール: `rules/workflow-orchestration.md`（planner / subagent / 検証）、`rules/self-review.md`（独立レビューの二本立て・docs-sync ホワイトリスト）
+- マージ方針: リポジトリ直下の `.gitattributes` が、行単位で独立したファイル（`tests/__snapshots__/*.snap` / `prototype/refs.js`）を `merge=union`、ビルド成果物 `prototype/index.html` を `merge=ours` にしている。並列でプリセットを追加したときの「一覧の末尾を取り合う」衝突を機械的に消すため。`merge=ours` には `git config merge.ours.driver true` が要るので、worktree を作ったら `pnpm install`（`prepare` が設定する）を必ず走らせる。詳細は `docs/04-add-preset.md` §8
 - 完了条件は上記 3 コマンド成功。生成結果が変わる変更は加えて「検証ワークフロー」（render 目視 → `docs/01-tech-verification.md` 追記 → プロトタイプ再ビルド + Artifact 再デプロイ → `pnpm test -u`）。スナップショット更新と手動デプロイは ask 権限
 - デプロイは main マージで GitHub Actions が自動実行する（`docs/03-deploy.md`）。`/land` でマージしたら Actions の「Deploy」が成功したことを確認する
 - **main へのマージ（`gh pr merge`）は自己判断で行わない（最重要）**。ユーザーが「マージして」「land して」と PR を特定して明示的に依頼した場合に限り、実行直前に `AskUserQuestion` で PR 番号・タイトル・マージ方式を示して承認を得てから実行する。「デプロイして」「反映して」「進めて」等の間接的な依頼からマージを推測してはならない（その場合は「マージが必要。実行してよいか」を確認して止まる）。permissions の ask ダイアログは承認の代替にならない

@@ -1060,6 +1060,8 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     let smoothR = 0;
     // 異方サンプリング時の階段幅は軸別レートの小さい方で決まる (srcAspect=1 なら kFull と同値)
     const kFullMin = kFull / sA;
+    // 縮小側は kFull（正規化しない）で判定: srcAspect>1 で軸別レートが分岐しても
+    // 大きい方 (kmY=km=kFullと同スケール) がエイリアス発生源のため、正規化すると閾値が甘くなる
     if(kFull > 1.05) smoothR = Math.max(1, Math.round(1.2*(w/512)));       // 縮小: エイリアス除去
     // 拡大: 階段除去。階段幅は 1/k px なので半径は 1/k に比例させる
     // (v16 以前は ×(w/512) が掛かり二重スケールで 4096px で半径 54 → 数分かかった)

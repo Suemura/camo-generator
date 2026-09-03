@@ -34,7 +34,7 @@ PR: $ARGUMENTS
 - 指摘が**妥当**か判断する（コードの文脈、CLAUDE.md の不変条件、技術的正当性を考慮）
 - **妥当な場合**: コードを修正し、コメントに対応した旨を返信
 - **妥当でない場合**: 理由を説明する返信を投稿（コードは変更しない）
-- **生成結果が変わる修正**（`src/core/camo.js` のパラメータ・処理順・後処理）: 明らかなバグ修正以外は独断で行わず [確認] で返す。パレット既定値・面積比・後処理パラメータは実物参照からの実測値であり、レビュー指摘の印象で動かさない。修正する場合は `docs/01-tech-verification.md` に追記してから `pnpm test -u` し、返信にその旨を明記する
+- **生成結果が変わる修正**（`src/core/camo.js` のパラメータ・処理順・後処理）: 明らかなバグ修正以外は独断で行わず [確認] で返す。パレット既定値・面積比・後処理パラメータは実物参照からの実測値であり、レビュー指摘の印象で動かさない。修正する場合は `docs/tech-verification/` に新規エントリを追加（索引 `docs/01-tech-verification.md` に 1 行足す）してから `pnpm test -u` し、返信にその旨を明記する
 
 #### 質問の場合
 
@@ -69,7 +69,7 @@ gh api repos/{OWNER}/{REPO}/pulls/{PR_NUMBER}/comments/{COMMENT_ID}/replies \
 - 修正はレビュー指摘の範囲に留め、関係のないコード変更は行わない
 - 修正後は `pnpm check --write` を実行してコードを整える（`src/core` と `prototype` は Biome 対象外）
 - **`src/` `tests/` `tools/` のソースを修正した場合は `pnpm check` / `pnpm typecheck` / `pnpm test` の 3 点を必ず実行し、すべて成功してからコミットする**（PR 前の reviewer レビューは行わない設計のため、ここが push 前の最終検証になる）
-- 生成結果が変わる修正を行った場合は `node tools/render.mjs <outdir> 1234` 等で PNG を出力して目視確認し、`docs/01-tech-verification.md` に追記する
+- 生成結果が変わる修正を行った場合は `node tools/render.mjs <outdir> 1234` 等で PNG を出力して目視確認し、`docs/tech-verification/` に新規エントリを追加（索引 `docs/01-tech-verification.md` に 1 行足す）する
 - 修正をコミット・プッシュして PR に反映する（コミットメッセージは既存履歴に合わせて日本語）
 
 ## 出力

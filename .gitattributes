@@ -1,0 +1,15 @@
+# 並行してプリセットを追加すると「一覧の末尾に 1 行足す」型の衝突が毎回出るため、
+# 内容が行単位で独立しているファイルと、再生成すれば必ず正しくなる生成物に
+# マージ方針を指定する。運用は docs/04-add-preset.md「マージ時の衝突」を参照。
+
+# 1 行 = 1 エントリで、行同士が独立している。別プリセットの追加どうしなら両方残すのが正解。
+# 同じキーを両側で変えた場合は重複行が残るが pnpm test が即落ちるので検知できる。
+tests/__snapshots__/*.snap  merge=union
+prototype/refs.js           merge=union
+docs/01-tech-verification.md merge=union
+
+# ビルド成果物。衝突を人が解くことに意味がないので ours を残し、マージ後に
+# `node prototype/build.mjs` で再生成する（tests/prototype-sync.test.ts が忘れを検出する）。
+# merge=ours は組み込みではないので package.json の prepare が
+# `git config merge.ours.driver true` を設定している。
+prototype/index.html        merge=ours

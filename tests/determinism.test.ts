@@ -1,5 +1,5 @@
 // 決定性テスト: 同一シード → 同一 index マップ。生成結果が変わればここが落ちる。
-// 意図した変更なら docs/01-tech-verification.md に追記してスナップショットを更新する (vitest -u)。
+// 意図した変更なら docs/tech-verification/ に新規エントリを追加してスナップショットを更新する (vitest -u)。
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { generate, PRESETS, type PresetKey, registerSources } from "../src/core/camo.js";

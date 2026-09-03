@@ -89,7 +89,7 @@ color: blue
 - [ ] `pnpm typecheck` が成功する
 - [ ] `pnpm test` が成功する（`src/lib/` のロジック変更時はテストの追加・更新を含む）
 - [ ] `pnpm build` が成功する
-- [ ] （生成結果が変わる場合）`node tools/render.mjs` を複数シード × 複数スケールで実行して目視確認し、`docs/01-tech-verification.md` に追記した上で `pnpm test -u` している
+- [ ] （生成結果が変わる場合）`node tools/render.mjs` を複数シード × 複数スケールで実行して目視確認し、`docs/tech-verification/` に新規エントリを追加（索引 `docs/01-tech-verification.md` に 1 行足す）した上で `pnpm test -u` している
 
 #### 品質要件
 

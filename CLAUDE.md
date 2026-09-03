@@ -30,7 +30,7 @@ node prototype/build.mjs              # 検証プロトタイプ index.html の�
 ```
 
 検証は「`render.mjs --compare` でレンダ → 実物リファレンスと目視比較」が基本ループ。リファレンス画像はアプリに同梱しない（UI の実物比較は廃止。`refs/README.md`）。Vitest は生成結果の**変化検知**のみ（品質は測れない）。
-スナップショットが落ちたら生成結果が変わった証拠。意図した変更なら `docs/01-tech-verification.md` に追記して `pnpm test -u`。
+スナップショットが落ちたら生成結果が変わった証拠。意図した変更なら `docs/tech-verification/` に新規エントリを追加（索引 `docs/01-tech-verification.md` に 1 行足す）して `pnpm test -u`。
 
 ## アーキテクチャ
 
@@ -65,11 +65,11 @@ node prototype/build.mjs              # 検証プロトタイプ index.html の�
 
 生成品質の変更を入れたら必ず:
 1. `node tools/render.mjs <outdir> <seed> [scale]` を複数シード（1234 / 777 / 211025 など）× 複数スケール（0.7 / 1.0 / 1.5 / 2.0）で実行
-2. 出力 PNG を Read で目視し、`docs/01-tech-verification.md` 記載の既知アーティファクト（ブロック感・境界急変・切断面・鏡映対称・市松ノイズ・微小点）が再発していないか確認
-3. 変更内容と判断を `docs/01-tech-verification.md` に追記
+2. 出力 PNG を Read で目視し、`docs/tech-verification/` 記載の既知アーティファクト（ブロック感・境界急変・切断面・鏡映対称・市松ノイズ・微小点）が再発していないか確認
+3. 変更内容と判断を `docs/tech-verification/YYYY-MM-DD-issue-NN-<slug>.md` に**新規ファイルとして**書き、索引 `docs/01-tech-verification.md` の一覧に 1 行足す（既存ファイルに追記しない。並列作業で末尾を取り合わないため。新しい番号 vNN は振らない）
 4. **検証プロトタイプを更新**（下記「検証プロトタイプ（Artifact）」）
 
-過去に解消済みの問題と対策の全履歴が同ドキュメントにある。**同じ轍を踏む前に必ず読むこと**。
+過去に解消済みの問題と対策の全履歴が `docs/tech-verification/` にある（索引は `docs/01-tech-verification.md`）。**同じ轍を踏む前に必ず読むこと**。
 
 ## 検証プロトタイプ（Artifact）— 新迷彩の追加・精度改善では必須
 
@@ -93,7 +93,8 @@ Issue → PR の定型フローは commands / agents / hooks で自走する。�
 - エージェント: `planner`（計画 + Sprint Contract）/ `pr-reviewer` → `pr-comment-resolver`（PR 作成後に自動起動）/ `reviewer`（PR を作らないタスクの独立レビュー）/ `docs-sync`（起動条件は `rules/self-review.md`）
 - フック: Stop 時に `src/ tests/ tools/` のソース変更があれば `pnpm check` / `pnpm typecheck` / `pnpm test` を実行し失敗を差し戻す。`gh pr create` 成功で自動レビューフローを指示。`git push*` の前に `refs/private/` の混入を検査してブロック（`pre-push-guard.sh`）。Write/Edit 後に Biome 整形。SessionStart でマージ済み worktree を通知
 - ルール: `rules/workflow-orchestration.md`（planner / subagent / 検証）、`rules/self-review.md`（独立レビューの二本立て・docs-sync ホワイトリスト）
-- 完了条件は上記 3 コマンド成功。生成結果が変わる変更は加えて「検証ワークフロー」（render 目視 → `docs/01-tech-verification.md` 追記 → プロトタイプ再ビルド + Artifact 再デプロイ → `pnpm test -u`）。スナップショット更新と手動デプロイは ask 権限
+- マージ方針: リポジトリ直下の `.gitattributes` が、行単位で独立したファイル（`*.snap` / `prototype/refs.js` / 検証記録の索引）を `merge=union`、ビルド成果物 `prototype/index.html` を `merge=ours` にしている。並列でプリセットを追加したときの「一覧の末尾を取り合う」衝突を機械的に消すため。`merge=ours` には `git config merge.ours.driver true` が要るので、worktree を作ったら `pnpm install`（`prepare` が設定する）を必ず走らせる。詳細は `docs/04-add-preset.md` §8
+- 完了条件は上記 3 コマンド成功。生成結果が変わる変更は加えて「検証ワークフロー」（render 目視 → `docs/tech-verification/` へのエントリ追加 → プロトタイプ再ビルド + Artifact 再デプロイ → `pnpm test -u`）。スナップショット更新と手動デプロイは ask 権限
 - デプロイは main マージで GitHub Actions が自動実行する（`docs/03-deploy.md`）。`/land` でマージしたら Actions の「Deploy」が成功したことを確認する
 - **main へのマージ（`gh pr merge`）は自己判断で行わない（最重要）**。ユーザーが「マージして」「land して」と PR を特定して明示的に依頼した場合に限り、実行直前に `AskUserQuestion` で PR 番号・タイトル・マージ方式を示して承認を得てから実行する。「デプロイして」「反映して」「進めて」等の間接的な依頼からマージを推測してはならない（その場合は「マージが必要。実行してよいか」を確認して止まる）。permissions の ask ダイアログは承認の代替にならない
 - **main への直接 push も原則禁止**。作業は必ずブランチ + PR 経由。ユーザーから「main に直接 push して」と明示指示があった場合でも、実行前に `AskUserQuestion` で対象コミット・件数・理由を示して一度確認し、承認後にのみ実行する（`git push origin main` 等は settings の ask 権限と `pre-push-guard.sh`（main チェックアウト中の引数なし push をブロック）で二重に守っているが、ダイアログは確認の代替にならない）

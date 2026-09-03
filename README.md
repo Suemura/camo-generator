@@ -24,7 +24,7 @@
 | **クラスタ成長** | MARPAT (ウッドランド/デザート) / UCP | セルグリッド上で色ごとに面積予算つきシード成長。蛇行ドリフト・seedNear 連鎖・境界ディザ・スペックルで実物のクラスタ構造を再現 |
 | **ノイズ閾値（従来手法）** | （選択肢からは退役） | シード付き値ノイズ + fBm + ドメインワープ + 分位点閾値。到達上限 ~75点。コードは保持し、フェーズ2 のカスタム迷彩生成の基盤候補 |
 
-技術詳細・検証履歴（v1〜v14 の全反復記録）は `docs/01-tech-verification.md` を参照。
+技術詳細・検証履歴は `docs/tech-verification/`（1 エントリ 1 ファイル）。索引は `docs/01-tech-verification.md`。
 
 ## ディレクトリ構成
 
@@ -43,12 +43,14 @@ tools/
 refs/               実物リファレンス画像 (開発時専用、アプリ非同梱。refs/README.md)
   <presetKey>.<ext>   自由ライセンス (Wikimedia Commons)。git 管理、出典は本 README のクレジット節
   private/            再配布不可の画像。gitignore + 4 層の push 防止で絶対にコミットしない
+.gitattributes      マージ方針 (snap / refs.js / 索引は union、prototype/index.html は ours)
 .githooks/pre-push  refs/private/ を含む push を拒否 (pnpm install の prepare が core.hooksPath を設定)
 tests/              Vitest (決定性・回帰スナップショット)
 prototype/          フェーズ1 プロトタイプ (参照のみ。build.mjs は src/core を読む)
   app-template.html / build.mjs / refs.js / index.html / experimental/
 docs/
-  01-tech-verification.md  フェーズ1 検証記録 (手法変遷・自己改善ループ全履歴)
+  01-tech-verification.md  検証記録の索引
+  tech-verification/       検証記録の本体 (1 エントリ 1 ファイル。手法変遷・自己改善ループ全履歴)
   02-spec.md               フェーズ2 仕様設計 (機能仕分け・画面・技術選定・Cloudflare・デザインシステム)
   03-deploy.md             自動デプロイの運用 (GitHub Actions / Cloudflare)
   04-add-preset.md         迷彩プリセット追加ガイド (7 点セット・カラーライブラリ登録・検証・PR・マージまで)

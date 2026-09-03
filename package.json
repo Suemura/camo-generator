@@ -14,7 +14,7 @@
     "render": "node tools/render.mjs",
     "extract-palette": "node tools/extract-palette.mjs",
     "deploy": "pnpm build && wrangler deploy",
-    "prepare": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
+    "prepare": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath .githooks && git config merge.ours.driver true || true"
   },
   "dependencies": {
     "react": "^19.2.8",

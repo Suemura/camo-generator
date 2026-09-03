@@ -37,7 +37,8 @@ git merge origin/main
 
 **両側の変更意図を理解してから統合する**こと。機械的にどちらか一方を採用しない。定番パターン:
 
-- **CLAUDE.md / README.md / docs/**: 両側の追記を統合する。セクション単位で両方を残し、重複記述は一本化。`docs/01-tech-verification.md` は時系列の検証記録なので、両側の追記を**時系列順に両方残す**（片方を捨てると検証履歴が欠ける）
+- **`.gitattributes` で自動解決されるもの**: `tests/__snapshots__/*.snap` / `prototype/refs.js` / `docs/01-tech-verification.md`（索引）は `merge=union`、`prototype/index.html` は `merge=ours`。コンフリクトとして出てこないが、**union は両側の行を機械的に並べるだけ**なので、解消後に順序（索引は日付順）と `pnpm test` での妥当性を必ず確認する。`prototype/index.html` は `node prototype/build.mjs` で再生成する
+- **CLAUDE.md / README.md / docs/**: 両側の追記を統合する。セクション単位で両方を残し、重複記述は一本化。検証記録は `docs/tech-verification/` の 1 エントリ 1 ファイルなので、別エントリどうしなら衝突しない（衝突するのは同じエントリを両側で編集したときだけ）
 - **pnpm-lock.yaml**: 手で編集しない。`git checkout --theirs pnpm-lock.yaml`（origin/main 側を採用）した上で、自ブランチが依存を追加している場合のみ `pnpm install` で再解決する。依存追加がなければ theirs 採用のみでよい
 - **package.json**: scripts / dependencies を両側マージ。lockfile と整合させる
 - **`tests/__snapshots__/determinism.test.ts.snap`**: 手で統合しない。両側が生成結果を変えている場合、マージ後の実際の出力が正なので、解消後に `pnpm test -u` で再生成する。ただし**両側の変更が同じプリセットの生成パラメータに触れている場合は、統合後の見た目を `node tools/render.mjs` で確認し、`docs/01-tech-verification.md` に両者の統合結果を追記してから**更新する

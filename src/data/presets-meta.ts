@@ -35,6 +35,13 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "woodland",
     svg: false,
   },
+  cce: {
+    label: "CCE 風 (フランス)",
+    note: "1990〜 4 色。M81 派生の横長",
+    country: "フランス",
+    group: "woodland",
+    svg: false,
+  },
   dcu: {
     label: "3 カラーデザート風 (DCU)",
     note: "1990〜 3 色。有機形状",

@@ -38,6 +38,7 @@ node prototype/build.mjs              # 検証プロトタイプ index.html の�
   - 手法は3系統: `genQuilt`（ブロブパッチ合成、M81 主力）/ `genGrowth`（クラスタ成長、デジタル系）/ `genWoodland`・`genDigital`（ノイズ閾値、従来手法・比較用）
   - プリセットは `PRESETS` に集約。`kind` で生成関数にディスパッチ
   - `generate(key, w, h, seed, scale, opt)`。`opt.tileable`（既定 true）/ `opt.progress(0..1)` / `opt.baseMax`（長辺がこれを超えると縮小生成 → 拡大 → 実寸で後処理。v17）
+  - クイルト系のソース異方サンプリングは**プリセット側**の `P.srcAspect`（既定 1.0 = 等方、`>1` で横に伸びる。CCE は M81 ソースを 1.5 倍伸長）。`opt` ではない（図案固有の性質なので URL 状態に持たせない）。ノイズ周波数倍率の `P.aspectX` / `aspectY` とは別物
 - `src/core/kmeans.js` — パレット抽出の k-means（依存ゼロ JS + `kmeans.d.ts`）。ブラウザの抽出ワーカーと `tools/extract-palette.mjs` で共用
 - `src/core/m81src.js` / `dcusrc.js` / `digsrc.js` — 実物図案のインデックスマップ（RLE + base64）。M81 ウッドランド（`m81src.js`、4値・24KB）/ DCU（`dcusrc.js`、3値・18KB）は `camo.js` から静的 import。AOR1 / AOR2（`digsrc.js`、4値・280KB）はサイズが大きいため動的 import し、利用側が `registerSources()` で渡す（ブラウザは `src/lib/generate.ts` の `ensureSources`、Node は `tools/render.mjs` / テストで先頭登録）。`dcusrc.js` の再生成は `tools/gen-src.mjs`、m81src / digsrc は docs 記載の Python 手順
 - `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means、3D プレビュー（`scene3d.ts` が three 依存を閉じ込め、`Preview3D` が動的 import）。`src/data/` — プリセット表示メタ（`PRESET_META`: `group` で選択 UI をグループ化、`country`）、120 色ライブラリ

@@ -9,7 +9,9 @@ export type PresetKey =
   | "ucp"
   | "dcu"
   | "dbdu"
-  | "jgsdf2";
+  | "jgsdf2"
+  | "dpm"
+  | "ddpm";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;

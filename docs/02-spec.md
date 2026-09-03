@@ -22,7 +22,7 @@
 
 ### 1.2 今後の開発予定（GitHub Issues に登録済み）
 
-#1 3D プレビュー / #2 有機系 SVG / #3 Web Worker 化 / #4 PBR マップ / #5 布地ポストエフェクト / #6 カスタム迷彩 / #7 MARPAT クイルト化 / #8 パレットファイル出力 / #9 英語 UI / #10 履歴・お気に入り / #11 PWA / #12 実寸スケール校正
+#1 3D プレビュー（段階①実装済）/ #2 有機系 SVG / #3 Web Worker 化 / #4 PBR マップ / #5 布地ポストエフェクト / #6 カスタム迷彩 / #7 MARPAT クイルト化 / #8 パレットファイル出力 / #9 英語 UI / #10 履歴・お気に入り / #11 PWA / #12 実寸スケール校正
 
 ### 1.3 対象外
 
@@ -54,7 +54,7 @@
 │  360px,      │  │        生成キャンバス                    │   │
 │  縦スクロール)│  │                                        │   │
 │              │  └────────────────────────────────────────┘   │
-│              │  表示モード: [単一] [タイル 2×2] [実物比較]      │
+│              │  表示モード: [単一] [タイル 2×2] [実物比較] [3D] │
 │              │  ステータス: 出力 px / 実寸 / 生成時間           │
 └──────────────┴──────────────────────────────────────────────┘
 ```
@@ -104,6 +104,7 @@
 - **画像からパレット抽出 モーダル**: 画像プレビュー、抽出色 k 個（k = スロット数）、スロットへの対応をドラッグで並べ替え、適用
 - **実物比較モード**: プレビューを左右分割し、右に Wikimedia Commons のリファレンス画像（既存 `refs.js`）
 - **タイル 2×2 モード**: 同じ出力を 2×2 に並べて表示。A6 の境界検証をユーザーにも開放する
+- **3D モード**: three.js を選択時のみ動的 import。シームレスプレビュー（768px）を CanvasTexture にして 3 種プリミティブ（球 Ø300mm / 波打ち布 600×600mm / 箱型ポーチ 200×150×80mm、mm 単位シーン）に貼る。HDRI 環境光（Poly Haven CC0）と布地 normal/roughness マップ（ambientCG CC0、512px）を `public/3d/` に同梱。実寸モード使用時は、模様の物理サイズからリピート数を算出して表示。px モードでは長辺 300mm を仮定。パレット変更は再生成せず CanvasTexture を再アップロード。WebGL 非対応時はフォールバック文言を表示
 
 ### 2.6 状態と URL（A1）
 
@@ -122,7 +123,7 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 
 - 不正値は既定値にフォールバックし、URL を正規化して書き戻す
 - プリセット ID は将来も不変とする（過去に共有された URL を壊さない）。パレット ID 同様
-- 表示モード（タイル / 比較）・テーマは URL に含めない（`localStorage`）
+- 表示モード（タイル / 比較 / 3D）・3D モデル選択・テーマは URL に含めない。表示モード・3D モデルの `localStorage` 保持は未実装（別 Issue）
 
 ---
 
@@ -186,7 +187,7 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 
 - 1024px 生成: 300ms 以内（現状同等）
 - 4096px: 進捗表示付きで約 10 秒以内に完了（v17 多段解像度）。生成は Web Worker で UI をブロックしない（Issue #3 対応済）。プレビューは粗い結果を先に出す
-- 初期表示: JS 総量 300KB gzip 以下を目標。`digsrc.js`（AOR 実物マップ、約 280KB）はプリセット選択時に動的 import
+- 初期表示: JS 総量 300KB gzip 以下を目標。`digsrc.js`（AOR 実物マップ、約 280KB）はプリセット選択時に動的 import。three.js（約 135KB gzip）は 3D モード選択時のみ動的ロード
 
 ---
 
@@ -211,12 +212,13 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 src/
   core/            camo.js, m81src.js, digsrc.js (依存ゼロ維持), camo.d.ts
   workers/         palette-extract.worker.ts, (将来) generate.worker.ts
-  lib/             url-state.ts, png-phys.ts, share.ts, kmeans.ts
+  lib/             url-state.ts, png-phys.ts, share.ts, kmeans.ts, scene3d.ts, preview3d-math.ts, webgl.ts
+  components/      ControlPanel/, Preview/, Preview3D/, PaletteLibrary/, ExportPanel/ ...
   data/            palette-library.json, presets-meta.ts (サムネ・表記名)
   styles/          tokens/ (§6), base/, themes/
-  components/      ControlPanel/, Preview/, PaletteLibrary/, ExportPanel/ ...
   app/             App.tsx, About.tsx
 tools/             render.mjs (検証ハーネス、prototype から移動), gen-tokens.mjs
+public/3d/         env.hdr, fabric_normal.jpg, fabric_rough.jpg, ripstop_normal.jpg, ripstop_rough.jpg
 .claude/skills/design-system/SKILL.md   spacious (LLM 向けデザインルール)
 docs/design/spacious-DESIGN.md          spacious トークンの原本
 ```

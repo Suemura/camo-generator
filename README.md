@@ -7,7 +7,7 @@
 
 ## 概要
 
-- ウッドランド (M81) / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP の迷彩に近い模様を計算で生成する
+- ウッドランド (M81) / 3 カラーデザート (DCU) / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP の迷彩に近い模様を計算で生成する
 - シード値により、同じアルゴリズムから無数のバリエーションを決定的に再現できる
 - 各パターンのパレット（例: ウッドランドの緑・茶・サンド・黒）を自由な色にその場で差し替えられる
 - 生成結果を PNG / JPG / WebP / SVG（デジタル系のみ）で任意サイズ・実寸（mm / inch × DPI、PNG に DPI 埋込）でエクスポートできる
@@ -20,7 +20,7 @@
 
 | 手法 | 対象 | 概要 |
 |------|------|------|
-| **ブロブパッチ合成（クイルト）** | M81 ウッドランド / AOR1 / AOR2 | 実物図案のインデックスマップから、有機輪郭のパッチを領域成長型シームで貼り合わせる。局所形状・色・面積比は実物の設計言語そのもの。多数決ミップマップ・フラグメント除去・シェイプ完走成長などの後処理を含む。**主力手法**（ユーザー評価 88+） |
+| **ブロブパッチ合成（クイルト）** | M81 ウッドランド / DCU 3 カラーデザート / AOR1 / AOR2 | 実物図案のインデックスマップから、有機輪郭のパッチを領域成長型シームで貼り合わせる。局所形状・色・面積比は実物の設計言語そのもの。多数決ミップマップ・フラグメント除去・シェイプ完走成長などの後処理を含む。**主力手法**（ユーザー評価 88+） |
 | **クラスタ成長** | MARPAT (ウッドランド/デザート) / UCP | セルグリッド上で色ごとに面積予算つきシード成長。蛇行ドリフト・seedNear 連鎖・境界ディザ・スペックルで実物のクラスタ構造を再現 |
 | **ノイズ閾値（従来手法）** | （選択肢からは退役） | シード付き値ノイズ + fBm + ドメインワープ + 分位点閾値。到達上限 ~75点。コードは保持し、フェーズ2 のカスタム迷彩生成の基盤候補 |
 
@@ -36,6 +36,7 @@ src/
 tools/
   render.mjs        Node レンダリングハーネス (PNG 出力、目視検証ループ用。--compare で refs/ の実物と左右比較)
   extract-palette.mjs  参照画像からパレット既定値を k-means で実測 (UI の抽出と同じ実装)
+  gen-src.mjs       参照画像 → クイルト用インデックスマップ (RLE + base64) を生成 (src/core/*src.js)
   image.mjs         Node 側の画像読込 (sharp を動的 import。refs/ の探索)
   check-private-refs.sh  refs/private/ がリポジトリに混入していないか検査 (pre-push / CI / Claude フックから呼ぶ)
   gen-tokens.mjs    docs/design/spacious-DESIGN.md → _primitives.scss
@@ -68,6 +69,7 @@ pnpm deploy       # 手動デプロイ (wrangler login 済み前提)。通常は
 node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG レンダ (目視検証用)
 node tools/render.mjs <出力dir> <seed> --compare  # 左=生成 / 右=実物リファレンス (refs/) を並べた PNG。精度改善の基本ループ
 node tools/extract-palette.mjs refs/<key>.png 4    # 参照画像からパレット既定値を実測 (PRESETS.colors 用スニペットを出力)
+node tools/gen-src.mjs refs/<key>.png src/core/<key>src.js <k> <PREFIX>   # 参照画像 → クイルト用インデックスマップ (新プリセットの図案化)
 bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検査 (CI と pre-push が自動実行)
 ```
 
@@ -76,7 +78,13 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 - 実物リファレンスは**開発時専用**。アプリには同梱せず、UI の「実物比較」モードは廃止した。比較は `render.mjs --compare`、パレット実測は `extract-palette.mjs`
 - 自由ライセンス（Wikimedia Commons 等）の画像は `refs/<presetKey>.<ext>` に置いて git 管理し、下記クレジット節に出典・作者・ライセンスを書く
 - 権利上再配布できない画像は `mkdir -p refs/private` して `refs/private/<presetKey>.<ext>` に置く。`.gitignore` 対象で、`.githooks/pre-push` / Claude Code の PreToolUse フック / CI・Deploy の 4 層が混入を止める。**`git add -f` しないこと**
-- 新プリセット追加の 4 点セット: `PRESETS`（`src/core/camo.js`）/ `PRESET_META`（`src/data/presets-meta.ts`、`group` と `country` を含む）/ `refs/<key>.<ext>` / 決定性スナップショット（`pnpm test -u`）。加えてクレジット節の更新
+- 新プリセット追加の 6 点セット: `PRESETS`（`src/core/camo.js`）/ `PRESET_META`（`src/data/presets-meta.ts`、`group` と `country` を含む）/ `refs/<key>.<ext>` / 決定性スナップショット（`pnpm test -u`）/ `prototype/refs.js` の data URI / `node prototype/build.mjs` の再ビルド。加えてクレジット節の更新
+
+### 検証プロトタイプ（`prototype/`）
+
+`prototype/index.html` は `app-template.html` に `src/core/*` をインライン展開した単一ファイルの精度検証環境で、生成結果と実物リファレンスを左右に並べて比較できる。生成ロジックは `src/core/camo.js` の 1 本が正本で、本アプリ（`src/lib/generate.ts` が ESM で import）とプロトタイプ（ビルド時にインライン展開）が同じ実装を共有する。二重実装はない。
+
+ただしプロトタイプは `camo.js` の**スナップショット**なので、生成コアを変えたら `node prototype/build.mjs` で再ビルドする。忘れると古い実装が焼き付いたまま残るため、`tests/prototype-sync.test.ts` が `index.html` と `src/core/*` の現状を byte 比較して落とす。
 
 ## 進め方と進捗
 
@@ -114,7 +122,7 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 ## クレジット・ライセンス注記
 
 - 3D プレビューの環境光 HDRI は Poly Haven「Kloofendal 48d Partly Cloudy (Pure Sky)」（Greg Zaal / Jarod Guest、CC0）、布地の normal / roughness マップは ambientCG「Fabric 036」「Fabric 062」（CC0）を 512px に縮小して `public/3d/` に同梱。3D 描画は three.js（MIT）
-- M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）
+- M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）。DCU ソースマップ（`src/core/dcusrc.js`）は `refs/dcu.png` から生成した 3 値インデックス
 - 実物リファレンス画像（`refs/`、開発時専用・アプリ非同梱）の出典。いずれも Wikimedia Commons、パブリックドメイン（米政府著作物）
   - `woodland.png` — [File:"M81" U.S. woodland camouflage pattern swatch.png](https://commons.wikimedia.org/wiki/File:%22M81%22_U.S._woodland_camouflage_pattern_swatch.png)（U.S. Army）
   - `marpat.jpg` — [File:MARPAT woodland pattern.jpg](https://commons.wikimedia.org/wiki/File:MARPAT_woodland_pattern.jpg)（Henrik Clausen 撮影、パブリックドメイン）
@@ -122,4 +130,5 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
   - `aor1.png` — [File:Navy Working Uniform (NWU) Type III camouflage pattern swatch, AOR-1.png](https://commons.wikimedia.org/wiki/File:Navy_Working_Uniform_(NWU)_Type_III_camouflage_pattern_swatch,_AOR-1.png)（U.S. Navy）
   - `aor2.png` — [File:NWU Type III camouflage pattern swatch, AOR-2.png](https://commons.wikimedia.org/wiki/File:NWU_Type_III_camouflage_pattern_swatch,_AOR-2.png)（U.S. Navy）
   - `ucp.jpg` — [File:Universal Camouflage Pattern (UCP).jpg](https://commons.wikimedia.org/wiki/File:Universal_Camouflage_Pattern_(UCP).jpg)（Commons 利用者 Doubleailes、パブリックドメイン）
+  - `dcu.png` — [File:DCU camo swatch.png](https://commons.wikimedia.org/wiki/File:DCU_camo_swatch.png)（U.S. Army）
 - `experimental/` の一部は [camogen](https://github.com/glederrey/camogen) (MIT) のアルゴリズムを参考にした

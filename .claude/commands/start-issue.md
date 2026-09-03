@@ -128,9 +128,19 @@ pnpm test
 1. `node tools/render.mjs <outdir> <seed> [scale]` を複数シード（1234 / 777 / 211025）× 複数スケール（0.7 / 1.0 / 1.5 / 2.0）で実行（出力先はリポジトリ外、例: `/tmp/camo-render/`）
 2. 出力 PNG を Read で目視し、既知アーティファクト（ブロック感・境界急変・切断面・鏡映対称・市松ノイズ・微小点）の再発がないか確認する
 3. `docs/01-tech-verification.md` に変更内容と判断を追記する
-4. その後で `pnpm test -u` によりスナップショットを更新する（**追記前に更新しない**）
+4. 検証プロトタイプを更新する（次項）
+5. その後で `pnpm test -u` によりスナップショットを更新する（**追記前に更新しない**）
 
 意図しない生成結果の変化（リファクタのはずなのにスナップショットが落ちた等）は原因を直す。
+
+**新プリセットの追加・生成精度の変更**は、CLAUDE.md「検証プロトタイプ（Artifact）」の更新まで行って初めて完了とする:
+
+1. 新プリセットなら `prototype/refs.js` に参照画像の data URI を追加する（420px・JPEG quality 82 程度、キー名は `PRESETS[key].ref` と一致させる）
+2. `node prototype/build.mjs` で `prototype/index.html` を再ビルドする
+3. `Artifact` ツールに `file_path: prototype/index.html` と CLAUDE.md 記載の既存 Artifact URL を `url` で渡し、**同じ URL に再デプロイ**する（`url` を省くと別 Artifact になりリンクが変わる）
+4. 最終報告に Artifact の URL を含める
+
+`tests/prototype-sync.test.ts` が再ビルド忘れを検出する（再デプロイ忘れは検出できない）。
 
 **UI に触る変更**は `pnpm dev --port 5199` + Playwright（`channel: "chrome"`）でデスクトップ 1440 / モバイル 390 × ライト / ダークのスクリーンショットを確認する（CLAUDE.md「UI の実画面確認」）。
 
@@ -196,6 +206,7 @@ PR 作成後、フックが注入する指示に従い、自動レビューフ�
 - PR の URL
 - Sprint Contract の各項目の充足状況
 - 生成結果への影響（変化なし / スナップショット更新済み + docs 追記の節名）
+- 検証プロトタイプ（Artifact）の URL。新プリセット追加・生成精度の変更では必須
 - 自動レビューフローの対応サマリー（指摘数と対応内訳）
 - worktree の扱い: セッション終了時に keep / remove を聞かれたら **keep** を選ぶこと、マージ後は `/land {Issue番号}` で後片付けできること
 - 残タスク: マージは人間が判断する旨。CI（GitHub Actions）は現時点で未設定のため、PR 上での自動検証はない

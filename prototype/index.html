@@ -1600,7 +1600,9 @@ function cleanupSlivers(index, w, h, wrap=false){
   }
 }
 // 面積 < minArea の連結成分を近傍多数色へ併合。nColors は index に現れる色数 (既定 4 = クイルト系)
+// 戻り値: 1 px 以上を書き換えたら true (呼び出し側が不動点ループを打ち切る判定に使う)
 function cleanupFragments(index, w, h, minArea, wrap=false, nColors=4){
+  let changed = false;
   const seen = new Uint8Array(w*h);
   // 4近傍インデックス (wrap 時は境界をまたいで連結 → 継ぎ目で欠片が二重に数えられない)
   const nb = (i) => {
@@ -1633,7 +1635,9 @@ function cleanupFragments(index, w, h, minArea, wrap=false, nColors=4){
     for(let c2=1;c2<nColors;c2++) if(cnt[c2]>cnt[best]) best = c2;
     if(cnt[best]===0) continue;
     for(const i of cells) index[i] = best;
+    changed = true;
   }
+  return changed;
 }
 
 /* ================= 斑点配置 (フロッグスキン系) =================
@@ -1722,6 +1726,8 @@ function genSpots(w, h, seed, scale, P, opt={}){
     let painted = 0, fails = 0;
     // 候補 8 点から「既存斑点との最短距離が最大」のものを採る (Mitchell's best-candidate)。
     // 一様なダーツ投げより間隔が均され、捺染図案の「斑点が散在するが偏らない」配置になる
+    // fails は成功時にリセットしない「累積失敗」カウンタ (連続失敗ではない)。gap/over が厳しく
+    // 面積目標に届く前に置き場所が尽きる異常系の安全弁で、通常は面積目標到達が先に来て消費されない
     while(painted < target && fails < 400){
       const R = randRange(rng, rLo, rHi);
       let best = null, bestD = -1;
@@ -1748,10 +1754,16 @@ function genSpots(w, h, seed, scale, P, opt={}){
   // 後の版の斑点 2 個が前の版の斑点を挟むと、前の色が細い三日月や微小片として残る
   // (捺染の実物では版ずれ以外にこの形は出ない)。P.minFrag (512px・scale 1 基準の px²) 未満の欠片は
   // 近傍多数色へ併合する。それ以外の後処理 (平滑化・多数決) は要らない: 輪郭は解析形状で最初から滑らか
-  // 2 パス: cleanupFragments は 1 走査で併合先を決めるため、「欠片 A を欠片 B の色へ併合 → 直後に B 自体が
-  // 別の色へ併合」の順で A の画素が 1 px 取り残されることがある (2048px・scale 0.7 で実際に発生)。
-  // 2 パス目がその取り残しを拾う
-  if(P.minFrag) for(let p=0;p<2;p++) cleanupFragments(out, w, h, P.minFrag * u * u, wrap, P.colors.length);
+  // 不動点ループ: cleanupFragments は 1 走査で併合先を決めるため、「欠片 A を欠片 B の色へ併合 → 直後に
+  // B 自体が別の色へ併合」の順で A の画素が 1 px 取り残されることがある (2048px・scale 0.7 で実際に発生)。
+  // 3 個以上の欠片が数珠つなぎに連鎖する稀なケースにも対応できるよう、変化がなくなるまで繰り返す
+  // (実測では 2 パス目で収束。上限 8 は理論上の異常系向けの安全弁で通常消費されない)
+  if(P.minFrag){
+    const minArea = P.minFrag * u * u;
+    for(let p=0; p<8; p++){
+      if(!cleanupFragments(out, w, h, minArea, wrap, P.colors.length)) break;
+    }
+  }
   if(progress) progress(1);
   return {type:'spots', w, h, index: out};
 }

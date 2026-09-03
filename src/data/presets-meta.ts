@@ -49,6 +49,13 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "desert",
     svg: false,
   },
+  dbdu: {
+    label: "6 カラーデザート風 (DBDU)",
+    note: "1981〜 5 色。有機形状 + 小石斑点",
+    country: "米国",
+    group: "desert",
+    svg: false,
+  },
   marpat: {
     label: "デジタル・ウッドランド風",
     note: "MARPAT 系 4 色。ピクセル",

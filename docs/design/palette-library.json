@@ -2266,5 +2266,149 @@
     },
     "note": "レバノン戦争 (1982) 以降のメルカバ等の車両色。1970 年代以前より緑味が薄く暗い。FS 36134 近似 (fs34160 と近接 Δ3)。C-530 相当",
     "source": "approx.: FS 36134 近似 (Ilan Levy, IDF Modelling 色対照表, https://www.tapatalk.com/groups/scalemodelsmalaysia/merkava-color-match-t9747.html 引用) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換"
+  },
+  {
+    "id": "dcu-tan492",
+    "name": "DCU タン (Tan 492)",
+    "std": "DCU (実測)",
+    "code": "492",
+    "hex": "#e9d1ae",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-3color-desert"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "3 色デザート (DCU) の地色。最大面積",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は 3 色デザートの陸軍色呼称 (https://ciehub.info/glossary/ThreeColorDesertCamouflagePattern.html)"
+  },
+  {
+    "id": "dcu-khaki494",
+    "name": "DCU カーキ (Khaki 494)",
+    "std": "DCU (実測)",
+    "code": "494",
+    "hex": "#bbb18d",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-3color-desert"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "3 色デザート (DCU) のペールグリーン寄りのカーキ。1989/90 年図案ではミント色に見えると言われる",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は 3 色デザートの陸軍色呼称 (https://ciehub.info/glossary/ThreeColorDesertCamouflagePattern.html)"
+  },
+  {
+    "id": "dcu-brown493",
+    "name": "DCU ブラウン (Brown 493)",
+    "std": "DCU (実測)",
+    "code": "493",
+    "hex": "#8f590b",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-3color-desert"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "3 色デザート (DCU) のブラウン。細いリボン状に走る最小面積の色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は 3 色デザートの陸軍色呼称 (https://ciehub.info/glossary/ThreeColorDesertCamouflagePattern.html)"
+  },
+  {
+    "id": "dbdu-ltan379",
+    "name": "DBDU ライトタン (Light Tan 379)",
+    "std": "DBDU (実測)",
+    "code": "379",
+    "hex": "#e5d5cd",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-6color-desert"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "6 カラーデザート (DBDU) の「小石」の白。黒で縁取られてブロブ内部に散る",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は Natick color designation (Evaluation of Desert Camouflage Uniforms by Ground Observers, U.S. Army Belvoir RD&E Center / Natick RD&E Center, §2.1 Test Uniforms, https://commons.wikimedia.org/wiki/File:Evaluation_of_Desert_Camouflage_Uniforms_by_Ground_Observers.pdf)"
+  },
+  {
+    "id": "dbdu-tan380",
+    "name": "DBDU ペールタン (Tan 380)",
+    "std": "DBDU (実測)",
+    "code": "380",
+    "hex": "#c6b5a4",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-6color-desert"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "6 カラーデザート (DBDU) の地色。参照画像が退色しており Khaki 384 との分離はできていない",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は Natick color designation (Evaluation of Desert Camouflage Uniforms by Ground Observers, U.S. Army Belvoir RD&E Center / Natick RD&E Center, §2.1 Test Uniforms, https://commons.wikimedia.org/wiki/File:Evaluation_of_Desert_Camouflage_Uniforms_by_Ground_Observers.pdf)"
+  },
+  {
+    "id": "dbdu-lbrown381",
+    "name": "DBDU ライトブラウン (Light Brown 381)",
+    "std": "DBDU (実測)",
+    "code": "381",
+    "hex": "#9a766b",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-6color-desert"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "6 カラーデザート (DBDU) の明るいブラウン。二色のブラウン帯の明色側",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は Natick color designation (Evaluation of Desert Camouflage Uniforms by Ground Observers, U.S. Army Belvoir RD&E Center / Natick RD&E Center, §2.1 Test Uniforms, https://commons.wikimedia.org/wiki/File:Evaluation_of_Desert_Camouflage_Uniforms_by_Ground_Observers.pdf)"
+  },
+  {
+    "id": "dbdu-dbrown382",
+    "name": "DBDU ダークブラウン (Dark Brown 382)",
+    "std": "DBDU (実測)",
+    "code": "382",
+    "hex": "#704c44",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-6color-desert"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "6 カラーデザート (DBDU) の暗いブラウン。二色のブラウン帯の暗色側",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は Natick color designation (Evaluation of Desert Camouflage Uniforms by Ground Observers, U.S. Army Belvoir RD&E Center / Natick RD&E Center, §2.1 Test Uniforms, https://commons.wikimedia.org/wiki/File:Evaluation_of_Desert_Camouflage_Uniforms_by_Ground_Observers.pdf)"
+  },
+  {
+    "id": "dbdu-black383",
+    "name": "DBDU ブラック (Black 383)",
+    "std": "DBDU (実測)",
+    "code": "383",
+    "hex": "#1d1f23",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-6color-desert"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "note": "6 カラーデザート (DBDU) の小石の縁。実物では小石の全周ではなく片側に寄って三日月状に出る",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は Natick color designation (Evaluation of Desert Camouflage Uniforms by Ground Observers, U.S. Army Belvoir RD&E Center / Natick RD&E Center, §2.1 Test Uniforms, https://commons.wikimedia.org/wiki/File:Evaluation_of_Desert_Camouflage_Uniforms_by_Ground_Observers.pdf)"
   }
 ]

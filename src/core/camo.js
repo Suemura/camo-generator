@@ -680,14 +680,15 @@ export function hasSources(key){
 // quant (デジタル系): マスク判定座標をキャンバス格子 (cellPx) のセル中心に丸め、
 //   輪郭を階段状にする (未塗布や合流に接する部分でも実物のピクセル輪郭と同じ見え方にする)。
 // state: 0 未訪問 / 1 内側塗布 (未処理) / 2 内側塗布 (処理済) / 3 完走塗布 / 4 撤回済 / 5 島判定済。呼出し後は全て 0 に戻す
-// bbIn: 内側半径を覆う箱 (コア走査範囲)、bb: 完走まで含む箱 (成長の上限範囲)
-function pasteBlob(out, w, h, p, cx, cy, bbIn, bb, rad, outHi, allowExtend, srcGet, srcIn, wrap, state, oldBuf, quant=0){
+// bbInX/bbInY: 内側半径を覆う箱 (コア走査範囲)、bbX0/bbY0: 完走まで含む箱 (成長の上限範囲)。
+// 異方サンプリング (srcAspect) ではパッチ自体も横長の楕円になるため軸ごとに持つ (等方なら両者同値)
+function pasteBlob(out, w, h, p, cx, cy, bbInX, bbInY, bbX0, bbY0, rad, outHi, allowExtend, srcGet, srcIn, wrap, state, oldBuf, quant=0){
   const fl = Math.floor;
   // トーラスでは成長範囲をキャンバスの半分に抑え、各ピクセルへ 1 つの相対位置からしか到達しないようにする
   // (自己重なりの前線同士が出会う直線の切断面を防ぐ)。完走がこの範囲に達したら撤回になる
-  const bbX = wrap ? Math.min(bb, ((w-1)>>1)) : bb, bbY = wrap ? Math.min(bb, ((h-1)>>1)) : bb;
+  const bbX = wrap ? Math.min(bbX0, ((w-1)>>1)) : bbX0, bbY = wrap ? Math.min(bbY0, ((h-1)>>1)) : bbY0;
   const inBox = (ex, ey) => ex>=-bbX && ex<=bbX && ey>=-bbY && ey<=bbY;
-  let cap = Math.min(w*h, (2*bb+1)*(2*bb+1));
+  let cap = Math.min(w*h, (2*bbX0+1)*(2*bbY0+1));
   let qdx = new Int32Array(cap), qdy = new Int32Array(cap);
   let qt = 0;
   const grow = () => {
@@ -714,8 +715,8 @@ function pasteBlob(out, w, h, p, cx, cy, bbIn, bb, rad, outHi, allowExtend, srcG
 
   // --- 1. コア: 無条件塗布してシード化
   const coreR = 0.55;
-  for(let dy=-bbIn;dy<=bbIn;dy++){
-    for(let dx=-bbIn;dx<=bbIn;dx++){
+  for(let dy=-bbInY;dy<=bbInY;dy++){
+    for(let dx=-bbInX;dx<=bbInX;dx++){
       if(Math.hypot(dx,dy) >= rad(dx,dy)*coreR) continue;
       const i = pix(dx, dy);
       if(i < 0 || state[i]) continue;          // 自己重複: 先着優先
@@ -831,6 +832,172 @@ function pasteBlob(out, w, h, p, cx, cy, bbIn, bb, rad, outHi, allowExtend, srcG
   }
   for(let k=0;k<qt;k++){ const i = pix(qdx[k], qdy[k]); if(i >= 0) state[i] = 0; }   // 共有バッファを掃除
 }
+// 最上層の版 (P.topLayer): 実物の CCE / M81 は色ごとの版を順に刷る網版印刷で、黒は最後の版なので
+// 他色に切られずシェイプが丸ごと乗る。クイルトはパッチ合成なので、後から貼るパッチの輪郭が既存の
+// 黒ブロブを削り「緑の領域で黒がクロップされた」ように見える (撤回で旧内容が戻る箇所で特に出る)。
+// → 合成後に黒を版として刷り直す: (1) 下刷りから黒を消す (最近傍の非黒へ吸収) →
+//    (2) ソース図案の黒の連結成分を丸ごと貼る。成分単位なので輪郭は実物の黒枝そのもので、途中で切れない。
+// 置く位置は「ソースでその成分の周りにあった色」がキャンバス側にもある場所を優先する
+// (実物では黒枝は茶や暗部の上に乗るため、無作為に置くと下地との関係が壊れる)。
+function applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, top, targetFrac, seed, wrap){
+  const N4 = [[-1,0],[1,0],[0,-1],[0,1]];
+  // --- 1. ソースの黒成分をラベリング (bbox・面積・周囲の代表色つき)
+  const lab = new Int32Array(SWm*SHm).fill(-1);
+  const comps = [];
+  const stack = new Int32Array(SWm*SHm);
+  for(let i0=0;i0<SWm*SHm;i0++){
+    if(srcM[i0] !== top || lab[i0] >= 0) continue;
+    const id = comps.length;
+    let sp = 0; stack[sp++] = i0; lab[i0] = id;
+    let u0 = SWm, u1 = -1, v0 = SHm, v1 = -1, area = 0;
+    const ring = [0,0,0,0];
+    while(sp > 0){
+      const i = stack[--sp];
+      const u = i % SWm, v = (i / SWm) | 0;
+      area++;
+      if(u < u0) u0 = u; if(u > u1) u1 = u;
+      if(v < v0) v0 = v; if(v > v1) v1 = v;
+      for(const [ox,oy] of N4){
+        const nu = u+ox, nv = v+oy;
+        if(nu<0||nu>=SWm||nv<0||nv>=SHm) continue;
+        const i2 = nv*SWm + nu;
+        if(srcM[i2] !== top){ if(srcM[i2] < 4) ring[srcM[i2]]++; continue; }   // 周囲の色を集計
+        if(lab[i2] >= 0) continue;
+        lab[i2] = id; stack[sp++] = i2;
+      }
+    }
+    let rc = 0;
+    for(let c=1;c<4;c++) if(ring[c] > ring[rc]) rc = c;
+    comps.push({id, u0, u1, v0, v1, area, ring: rc});
+  }
+  if(!comps.length) return;
+  // --- 2. 下刷り: 黒を消して周囲の色で埋める。
+  // 「最近傍の色を BFS で伝播」だと細い黒枝が回廊になり、遠くの色が領域の内部へ幅 1〜2px の筋として
+  // 引き込まれる (平行に走る細線として見える。実際にユーザー指摘で出た)。
+  // → 8 近傍の多数決で 1 層ずつ膨張させる。回廊の壁は領域自身の色なので多数決では筋が生き残らない。
+  // 各スイープの結果はまとめて反映し、走査順に依存しない (決定性の維持)
+  const idx = (x, y) => {
+    if(wrap) return wrapI(y, h)*w + wrapI(x, w);
+    if(x<0||x>=w||y<0||y>=h) return -1;
+    return y*w + x;
+  };
+  const N8 = [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
+  const fill = new Int32Array(w*h);
+  for(let guard=0; guard<64; guard++){
+    let ft = 0;
+    const cnt = [0,0,0,0];
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const i = y*w + x;
+        if(out[i] !== top) continue;
+        cnt[0]=cnt[1]=cnt[2]=cnt[3]=0;
+        let n = 0;
+        for(const [ox,oy] of N8){
+          const i2 = idx(x+ox, y+oy);
+          if(i2 < 0) continue;
+          const v = out[i2];
+          if(v === top || v > 3) continue;
+          cnt[v]++; n++;
+        }
+        if(!n) continue;
+        let b = 0;
+        for(let c=1;c<4;c++) if(cnt[c] > cnt[b]) b = c;   // 同数タイは小さい色番号
+        fill[ft++] = i | (b << 28);                        // 反映はスイープ後 (順序依存を避ける)
+      }
+    }
+    if(!ft) break;
+    for(let k=0;k<ft;k++) out[fill[k] & 0x0fffffff] = fill[k] >>> 28;
+  }
+  // --- 3. 黒成分を丸ごと刷る。面積比が目標に達するまで
+  const rng = mulberry32(seed ^ 0x51ed);
+  // キャンバス上の footprint (半径) と、トーラスで自分自身と重ならない大きさに絞る
+  const target = Math.round(targetFrac * w * h);
+  const usable = [];
+  let wsum = 0;
+  for(const c of comps){
+    // ソース画像の縁に接する成分はそこで切れている (図案ではなくスキャンの縁) ので使わない。
+    // 丸ごと刷ると直線的な断面がそのまま出る
+    if(c.u0 === 0 || c.v0 === 0 || c.u1 === SWm-1 || c.v1 === SHm-1) continue;
+    const hx = ((c.u1 - c.u0)/2 + 1) / kmX, hy = ((c.v1 - c.v0)/2 + 1) / kmY;
+    if(2*hx > 0.9*w || 2*hy > 0.9*h) continue;                 // 大きすぎる枝 (キャンバスに収まらない)
+    const canvasArea = c.area / (kmX*kmY);
+    if(canvasArea < 12) continue;                              // 点になる欠片は刷らない
+    // 1 枚で目標面積の 6 割を超える成分は使わない (残りが素抜けになる)。
+    // M81 の黒は bbox 充填率 0.25 程度の枝分かれ形状で、大きい成分ほど画面に広く散るため
+    // 面積の上限は緩めでよい (固まりの抑制は密度ペナルティと使用回数の平準化が担う)
+    if(canvasArea > target * 0.6) continue;
+    wsum += canvasArea;
+    usable.push({c, hx, hy, canvasArea, acc: wsum, used: 0});
+  }
+  if(!usable.length) return;
+  let painted = 0;
+  for(let i=0;i<w*h;i++) if(out[i] === top) painted++;
+  // 黒の分布を粗い格子で数え、密な場所への重ね置きを避ける (実物の黒は画面全体に散る)
+  const GC = 8, dens = new Int32Array(GC*GC);
+  const densAt = (x, y) => dens[Math.min(GC-1, (y*GC/h)|0)*GC + Math.min(GC-1, (x*GC/w)|0)];
+  const densAdd = (x, y) => { dens[Math.min(GC-1, (y*GC/h)|0)*GC + Math.min(GC-1, (x*GC/w)|0)]++; };
+  const cellArea = (w*h)/(GC*GC);
+  const stampAt = (e, cx, cy, mx, my, apply, step) => {
+    const {c, hx, hy} = e;
+    const uc = (c.u0 + c.u1)/2, vc = (c.v0 + c.v1)/2;
+    let hit = 0, over = 0, ringN = 0, ringOk = 0;
+    for(let dy=-Math.ceil(hy); dy<=Math.ceil(hy); dy+=step){
+      const v = vc + my*dy*kmY;
+      if(v < 0 || v > SHm-1) continue;
+      for(let dx=-Math.ceil(hx); dx<=Math.ceil(hx); dx+=step){
+        const u = uc + mx*dx*kmX;
+        if(u < 0 || u > SWm-1) continue;
+        const si = ((v|0)*SWm + (u|0));
+        const i = idx(Math.round(cx+dx), Math.round(cy+dy));
+        if(i < 0) continue;
+        if(lab[si] === c.id){
+          hit++;
+          if(out[i] === top) over++;                                  // 既に黒 = 重ね置き
+          if(apply && out[i] !== top){ out[i] = top; painted++; densAdd(i % w, (i / w) | 0); }
+        }else if(srcM[si] !== top){
+          // 成分の周囲: ソースでの周囲色とキャンバスの下地が一致するほど良い置き場所
+          ringN++; if(out[i] === c.ring) ringOk++;
+        }
+      }
+    }
+    return {hit, over, ringMatch: ringN ? ringOk/ringN : 0};
+  };
+  // 成分は「丸ごと貼る」ので面積の粒度が粗い (最大の成分は目標面積の半分ある)。
+  // 目標との差が最小成分の 4 割を切ったら打ち切る = 行き過ぎと不足のどちらにも寄らない止め方
+  let minArea = Infinity, minE = usable[0];
+  for(const e of usable) if(e.canvasArea < minArea){ minArea = e.canvasArea; minE = e; }
+  for(let attempt=0; attempt<4000 && painted < target - minArea*0.4; attempt++){
+    // 成分は面積で重み付け抽選 (ソース図案と同じ大きさ分布になる)。
+    // ただし残り面積を大きく超える成分は避ける (目標比の行き過ぎ防止)。8 回引き直して駄目なら最小成分
+    let e = null;
+    const remain = target - painted;
+    for(let t=0;t<8;t++){
+      const r = rng() * wsum;
+      let lo = 0, hi = usable.length-1;
+      while(lo < hi){ const mid = (lo+hi)>>1; if(usable[mid].acc < r) lo = mid+1; else hi = mid; }
+      const cand = usable[lo];
+      if(cand.canvasArea > remain * 1.6) continue;
+      // 同じ成分の反復はタイルで目立つので、収まる候補のうち使用回数が最小のものを採る
+      if(e === null || cand.used < e.used) e = cand;
+    }
+    if(e === null) e = minE;
+    e.used++;
+    // 置き場所は 10 候補から選ぶ (走査は 3px 間隔の粗サンプル)。
+    // 下地がソースでの周囲色と一致するほど良く、既存の黒との重なり・その区画の黒密度は減点
+    // (減点が無いと下地一致の良い場所へ集中し、黒が一箇所に固まって残りが素抜けになる)
+    let bx = 0, by = 0, bmx = 1, bmy = 1, bs = -Infinity;
+    for(let cand=0; cand<10; cand++){
+      const cx = randRange(rng, 0, w), cy = randRange(rng, 0, h);
+      const mx = rng()<0.5 ? -1 : 1, my = rng()<0.5 ? -1 : 1;
+      const r2 = stampAt(e, cx, cy, mx, my, false, 3);
+      const s = r2.ringMatch
+        - 1.6 * (r2.hit ? r2.over/r2.hit : 1)
+        - 2.5 * Math.min(1.5, densAt(cx, cy) / (cellArea * targetFrac));
+      if(s > bs){ bs = s; bx = cx; by = cy; bmx = mx; bmy = my; }
+    }
+    stampAt(e, bx, by, bmx, bmy, true, 1);
+  }
+}
 export function genQuilt(w, h, seed, scale, P, opt={}){
   const wrap = opt.tileable !== false;   // キャンバスをトーラスとして扱う (シームレスタイル)
   const progress = typeof opt.progress === 'function' ? opt.progress : null;
@@ -868,6 +1035,17 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     }
     srcM = d; SWm = nw; SHm = nh; km /= 2;
   }
+  // ソース参照の異方サンプリング (P.srcAspect、既定 1 = 等方)。
+  // 意図: CCE (フランス) は M81 の図案を横方向に伸ばした派生で、ブロブが横長になる。
+  // 同じソースを x 方向だけ粗く参照すれば (kmX = km/a)、キャンバス上では横に伸びた
+  // シェイプになる。y は M81 と同一レートに保つ = 「M81 を横に伸ばしただけ」の関係。
+  // 面積保存の √分割 (kmX=km/√a, kmY=km·√a) も試したが、縦が 1/√a に縮んで M81 より
+  // 細かい別図案に見えたため採らなかった (docs/01-tech-verification.md v20)。
+  // km 側は縮小方向のみエイリアスを生む (ミップマップの帯 [0.7,1.4]) ので、kmX < km は
+  // 追加のエイリアス源にならない。代わりに x 方向の拡大階段が 1/kmX px に広がるため、
+  // 後段の平滑化半径は軸別レートの小さい方 (aSm) で決める。
+  const sA = P.srcAspect ?? 1;
+  const kmX = km / sA, kmY = km;   // 以降 pick / srcIn / srcGet は軸別レートのみを使う
   const out = new Uint8Array(w*h);
   const TARGET_FRAC = P.frac;
   const DIVW = P.divw ?? [1, 1, 1, 2];
@@ -883,12 +1061,12 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   };
   // 完走の参照がソース範囲内か (範囲外は折返し鏡映になるので完走を諦めて撤回する)
   const srcIn = (p, x, y) => {
-    const u = p.sx + p.mx * (x - p.cx) * km, v = p.sy + p.my * (y - p.cy) * km;
+    const u = p.sx + p.mx * (x - p.cx) * kmX, v = p.sy + p.my * (y - p.cy) * kmY;
     return u >= 0 && u <= SWm-1 && v >= 0 && v <= SHm-1;
   };
   const srcGet = (p, x, y) => {
     // x,y: canvas 座標。パッチ中心 (p.cx,p.cy) からの相対でソース参照
-    let u = p.sx + p.mx * (x - p.cx) * km, v = p.sy + p.my * (y - p.cy) * km;
+    let u = p.sx + p.mx * (x - p.cx) * kmX, v = p.sy + p.my * (y - p.cy) * kmY;
     // 安全折返し (通常は範囲内)
     if(u < 0) u = -u; if(u > SWm-1) u = 2*(SWm-1) - u;
     if(v < 0) v = -v; if(v > SHm-1) v = 2*(SHm-1) - v;
@@ -910,14 +1088,20 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   const OUT_HI = 2.2;                                  // 完走を許す半径比の上限 (超えたら撤回)
   const mkAllowExtend = (deficit) => (v) => deficit[v] >= 0.02;   // 目標比を 2% 以上下回る色だけ完走 (閾値 -0.02〜0.02 を比較し最も目標に近い)
   // デジタル系: マスク輪郭をセル格子に量子化 (ソースのセル ≈ P.cellSrc px → キャンバス px)
+  // 量子化は正方セル前提なので等方 km のまま。srcAspect との併用は未検証
+  // (デジタル系を伸長する場合はここも軸別セルにする必要がある)
   const quant = P.organic === false ? Math.max(1, (P.cellSrc ?? 10) / km) : 0;
   // 2. ブロブパッチ: 有機輪郭 (半径を角度ノイズで変調した星型領域)
   const R = (P.patchR ?? 185) / k;             // パッチ基準半径 (target px)
   // ブロブ半径の上限 (v18): 輪郭 rad(θ) の最大 1.17·bR がキャンバス短辺の半分を超えると、トーラス上で
   // パッチが自分自身と重なり、同じピクセルへ 2 方向から別内容の前線が到達する。両前線の出会う線は
   // パッチ中心の対蹠点を通る直線の切断面になる (旧実装から存在、撤回で旧内容が残るようになり露出が増えた)
-  const bRcap = 0.42 * Math.min(w, h);
-  const Rn = Math.min(R, bRcap);               // 被覆枚数の見積りに使う代表半径
+  // 異方サンプリング時はパッチも x 方向に sA 倍の楕円になるので、上限は x 側で決まる
+  const bRcap = 0.42 * Math.min(w / sA, h);
+  const Rn = Math.min(R, bRcap);               // 被覆枚数の見積りに使う代表半径 (y 半径)
+  // パッチ枚数は「面積被覆 2.2 倍」ではなく「枚数」を等方時と揃える: 楕円化で 1 枚の面積が sA 倍に
+  // なるため面積基準だと枚数が 1/sA に減り、色比フィードバック (deficit) の反復回数が足りずシード間の
+  // 面積比の振れが大きくなる (512px で 9 枚 → 6 枚)
   const nPatch = Math.ceil(2.2 * (w*h) / (Math.PI*Rn*Rn));
   for(let pi=0; pi<nPatch; pi++){
     if(progress) progress(0.75 * pi / nPatch);
@@ -934,12 +1118,26 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     let cx = 0, cy = 0;
     // 境界半径 r(θ) = bR * (0.62 + 0.55 * fbm(周期θ))
     // (v18 で高周波ローブ化を試したが、隣接パッチの輪郭が小半径で交差して細い C 字帯が増えたため据え置き)
-    const rad = (dx, dy) => {
-      const th = Math.atan2(dy, dx);
-      return bR * (0.62 + 0.55 * fbm(Math.cos(th)*1.4+7, Math.sin(th)*1.4+7, bSeed, 2, 2, .5));
-    };
-    const bbIn = Math.ceil(bR * 1.2);           // 内側半径を覆う箱 (rad の最大値 ≈ 1.17 bR)
-    const bb = Math.ceil(bbIn * OUT_HI);        // 完走まで含む成長範囲
+    // 異方サンプリング (srcAspect) では x を sA 倍に伸ばした楕円にする。
+    // 意図: ソース図案の特徴だけが x 方向に sA 倍広くなると「特徴 / パッチ」の比が x だけ崩れ、
+    // パッチがほぼ単色になる確率が上がる。単色パッチのシェイプ輪郭 = ブロブ半径そのものなので、
+    // 滑らかな弧が境界としてそのまま露出する (v18 で潰した半円状の切れ目と同じ見え方)。
+    // パッチも同率で伸ばせば両軸で M81 と同じ幾何比に戻り、1 パッチが参照するソース面積も M81 と同じになる
+    const rad = sA === 1
+      ? (dx, dy) => {
+          const th = Math.atan2(dy, dx);
+          return bR * (0.62 + 0.55 * fbm(Math.cos(th)*1.4+7, Math.sin(th)*1.4+7, bSeed, 2, 2, .5));
+        }
+      : (dx, dy) => {
+          // 正規化空間 (x/sA, y) の単位円をノイズで変調し、方向 (dx,dy) 上の交点距離を返す
+          const L = Math.hypot(dx, dy) || 1, ux = dx/L/sA, uy = dy/L, un = Math.hypot(ux, uy);
+          const th = Math.atan2(uy, ux);
+          return bR * (0.62 + 0.55 * fbm(Math.cos(th)*1.4+7, Math.sin(th)*1.4+7, bSeed, 2, 2, .5)) / un;
+        };
+    const bbInY = Math.ceil(bR * 1.2);              // 内側半径を覆う箱 (rad の最大値 ≈ 1.17 bR)
+    const bbInX = sA === 1 ? bbInY : Math.ceil(bR * 1.2 * sA);
+    const bbY = Math.ceil(bbInY * OUT_HI);          // 完走まで含む成長範囲
+    const bbX = sA === 1 ? bbY : Math.ceil(bbInX * OUT_HI);
     // 候補: 境界リング上の不一致(重み大) + 内部の色多様性。
     // リング誤差が高止まりなら中心を再抽選 (境界線の露出防止)
     let best = null, bestScore = Infinity, bestRing = Infinity;
@@ -949,13 +1147,14 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
       const tx = randRange(rng, 0, w), ty = randRange(rng, 0, h);
       let aBest = null, aScore = Infinity, aRing = Infinity;
       for(let c=0;c<nCand;c++){
-        const p = pick(rng, bbIn*km, bbIn*km);
+        const p = pick(rng, bbInX*kmX, bbInY*kmY);
         p.cx = tx; p.cy = ty;
         let err = 0, cnt = 0;
         const hist = [0,0,0,0]; let hn = 0;
-        const es = Math.max(2, (bbIn/32)|0);   // 走査は内側半径の箱 (bb は完走帯込みで大きい)
-        for(let dy=-bbIn;dy<=bbIn;dy+=es){
-          for(let dx=-bbIn;dx<=bbIn;dx+=es){
+        const es = Math.max(2, (bbInY/32)|0);   // 走査は内側半径の箱 (bb は完走帯込みで大きい)
+        const esX = sA === 1 ? es : Math.max(2, (bbInX/32)|0);
+        for(let dy=-bbInY;dy<=bbInY;dy+=es){
+          for(let dx=-bbInX;dx<=bbInX;dx+=esX){
             const x = fl(tx+dx), y = fl(ty+dy);
             const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
             if(xi<0||xi>=w||yi<0||yi>=h) continue;
@@ -981,7 +1180,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     // 貼り付け: 領域成長型シーム。コア(0.55R)は無条件、
     // 外側は「旧と一致」or「新シェイプ自身の連続」だけ塗り広げる →
     // 遷移が必ず実シェイプの輪郭上に乗り、切断面が出ない
-    pasteBlob(out, w, h, best, cx, cy, bbIn, bb, rad, OUT_HI, mkAllowExtend(deficit), srcGet, srcIn, wrap, tstate, oldBuf, quant);
+    pasteBlob(out, w, h, best, cx, cy, bbInX, bbInY, bbX, bbY, rad, OUT_HI, mkAllowExtend(deficit), srcGet, srcIn, wrap, tstate, oldBuf, quant);
   }
   // 未塗布セルが残っていれば、その位置を中心に追加パッチで埋める
   let guard = 0;
@@ -995,24 +1194,33 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     const hx = hole % w, hy = (hole / w) | 0;
     const bSeed = (seed ^ 0x7f3) + guard*53;
     const bR = Math.min(bRcap, R * randRange(rng, 0.9, 1.3));
-    const rad2 = (dx, dy) => {
-      const th = Math.atan2(dy, dx);
-      return bR * (0.7 + 0.5 * fbm(Math.cos(th)*1.4+7, Math.sin(th)*1.4+7, bSeed, 2, 2, .5));
-    };
+    const rad2 = sA === 1
+      ? (dx, dy) => {
+          const th = Math.atan2(dy, dx);
+          return bR * (0.7 + 0.5 * fbm(Math.cos(th)*1.4+7, Math.sin(th)*1.4+7, bSeed, 2, 2, .5));
+        }
+      : (dx, dy) => {   // 通常パッチと同じ楕円 (x を sA 倍)
+          const L = Math.hypot(dx, dy) || 1, ux = dx/L/sA, uy = dy/L, un = Math.hypot(ux, uy);
+          const th = Math.atan2(uy, ux);
+          return bR * (0.7 + 0.5 * fbm(Math.cos(th)*1.4+7, Math.sin(th)*1.4+7, bSeed, 2, 2, .5)) / un;
+        };
     const cur2 = [0,0,0,0]; let cn2 = 0;
     for(let i=0;i<w*h;i+=997){ if(out[i]<4){ cur2[out[i]]++; cn2++; } }
     const allow2 = mkAllowExtend(cn2 ? TARGET_FRAC.map((t,ci)=> t - cur2[ci]/cn2) : [0,0,0,0]);
-    const bbIn = Math.ceil(bR * 1.3);
-    const bb = Math.ceil(bbIn * OUT_HI);
+    const bbInY = Math.ceil(bR * 1.3);
+    const bbInX = sA === 1 ? bbInY : Math.ceil(bR * 1.3 * sA);
+    const bbY = Math.ceil(bbInY * OUT_HI);
+    const bbX = sA === 1 ? bbY : Math.ceil(bbInX * OUT_HI);
     // 通常パッチ同様: 境界リング一致で候補選択 → 領域成長型で貼付
     let hp = null, hs = Infinity;
     for(let c=0;c<30;c++){
-      const p = pick(rng, bbIn*km, bbIn*km);
+      const p = pick(rng, bbInX*kmX, bbInY*kmY);
       p.cx = hx; p.cy = hy;
       let err = 0, cnt = 0;
-      const es = Math.max(2, (bbIn/24)|0);
-      for(let dy=-bbIn;dy<=bbIn;dy+=es){
-        for(let dx=-bbIn;dx<=bbIn;dx+=es){
+      const es = Math.max(2, (bbInY/24)|0);
+      const esX = sA === 1 ? es : Math.max(2, (bbInX/24)|0);
+      for(let dy=-bbInY;dy<=bbInY;dy+=es){
+        for(let dx=-bbInX;dx<=bbInX;dx+=esX){
           const x = fl(hx+dx), y = fl(hy+dy);
           const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
           if(xi<0||xi>=w||yi<0||yi>=h) continue;
@@ -1024,17 +1232,21 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
       const sc = cnt ? err/cnt : rng()*0.01;
       if(sc < hs){ hs = sc; hp = p; }
     }
-    pasteBlob(out, w, h, hp, hx, hy, bbIn, bb, rad2, OUT_HI, allow2, srcGet, srcIn, wrap, tstate, oldBuf, quant);
+    pasteBlob(out, w, h, hp, hx, hy, bbInX, bbInY, bbX, bbY, rad2, OUT_HI, allow2, srcGet, srcIn, wrap, tstate, oldBuf, quant);
     // 成長で埋まらなかった未塗布セルは無条件で充填 (取り残し防止)
-    for(let dy=-bbIn;dy<=bbIn;dy++){
+    for(let dy=-bbInY;dy<=bbInY;dy++){
       const y = fl(hy+dy), yi = wrap ? wrapI(y, h) : y;
       if(yi<0||yi>=h) continue;
-      for(let dx=-bbIn;dx<=bbIn;dx++){
+      for(let dx=-bbInX;dx<=bbInX;dx++){
         const x = fl(hx+dx), xi = wrap ? wrapI(x, w) : x;
         if(xi<0||xi>=w) continue;
         if(out[yi*w+xi]===255 && Math.hypot(dx,dy) < rad2(dx,dy)) out[yi*w+xi] = srcGet(hp, x, y);
       }
     }
+  }
+  // 最上層の版を刷り直す (黒がパッチ輪郭に切られる問題。applyTopLayer のコメント参照)
+  if(P.topLayer != null){
+    applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, P.topLayer, TARGET_FRAC[P.topLayer], seed, wrap);
   }
   if(progress) progress(0.8);
   let sm = out;
@@ -1051,22 +1263,159 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   if(P.organic !== false){
     // 有機系: nearest サンプリング起因のギザ除去 (必要最小限)
     let smoothR = 0;
+    // 異方サンプリング時の階段幅は軸別レートの小さい方で決まる (srcAspect=1 なら kFull と同値)
+    const kFullMin = kFull / sA;
+    // 縮小側は kFull（正規化しない）で判定: srcAspect>1 で軸別レートが分岐しても
+    // 大きい方 (kmY=km=kFullと同スケール) がエイリアス発生源のため、正規化すると閾値が甘くなる
     if(kFull > 1.05) smoothR = Math.max(1, Math.round(1.2*(w/512)));       // 縮小: エイリアス除去
     // 拡大: 階段除去。階段幅は 1/k px なので半径は 1/k に比例させる
     // (v16 以前は ×(w/512) が掛かり二重スケールで 4096px で半径 54 → 数分かかった)
-    else if(kFull < 0.95) smoothR = Math.max(1, Math.round(1.2/kFull));
+    else if(kFullMin < 0.95) smoothR = Math.max(1, Math.round(1.2/kFullMin));
     if(smoothR) sm = modeFilter(sm, w, h, smoothR, 1, 4, wrap);
     if(progress) progress(0.92);
     // 微小フラグメント除去 (画面上で点に見えるサイズの絶対下限つき)
     const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),
                                         110 * (w/512)*(w/512) / (scale*scale)));
     cleanupFragments(sm, w, h, minFrag, wrap);
+    cleanupSlivers(sm, w, h, wrap);   // 幅 1px の筋 (輪郭交差の残り) を除去
   }else{
     // デジタル系: ピクセル輪郭を保持。サブセルの欠片だけ除去
     cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)), wrap);
   }
+  // 小石層 (DBDU のチョコチップ): 平滑化・欠片除去の「後」に実寸で置く。
+  // 先に置くと (1) 多数決ミップで消える (2) 領域成長シームに途中で切られる
+  // (3) minFrag (512px で 70〜224px 相当) の欠片除去に丸ごと食われる ため、
+  // 1〜2px の黒縁を持つ数 px の斑点はこの位置でしか成立しない。
+  if(P.chips) applyChips(sm, w, h, seed, (w/512)/scale, P.chips, wrap);
   if(progress) progress(1);
   return {type:'organic', w, h, index: sm};
+}
+/* ================= 小石層 (チョコレートチップ) =================
+   実物 DBDU の識別点は「ブロブ層の内部に散る、黒フチ付きの白い小石」。
+   ブロブ層 (クイルト) では再現できないので、後処理後の index に直接描く。
+   配置はジッタードグリッド: セル幅を w/nx で厳密に割り切り、小石の footprint が
+   セル内に収まるようジッタを制限する。これで (a) 隣接セルの小石と構造的に重ならず
+   (b) トーラス上で格子が連続し (c) 占有判定・距離場が不要になる。
+   すべて座標ハッシュなので走査順に依存せず、同一シード → 同一配置。 */
+// 小石 1 個の形。実物の小石は真円でも楕円でもない不定形 (コンマ状・腎臓状) なので
+// 半径を角度の低次ハーモニクスで変調する (pasteBlob の rad(θ) と同じ考え方、周期は 2 と 3)。
+// 戻り値: (dx,dy) が形の内側なら true
+function chipInside(dx, dy, sh){
+  const u =  dx*sh.co + dy*sh.si;
+  const t = (-dx*sh.si + dy*sh.co) / sh.ar;
+  const rr = Math.hypot(u, t);
+  if(rr > sh.a * 1.5) return false;
+  const an = Math.atan2(t, u);
+  const rad = sh.a * (1 + 0.30*Math.sin(2*an + sh.p1) + 0.18*Math.sin(3*an + sh.p2));
+  return rr <= rad;
+}
+// 小石 (白) と黒縁の 2 形を 1 回の走査で塗る。
+// 黒縁は白と同形をひとまわり大きくして中心をずらしたもの。実物の黒は小石の全周ではなく
+// 片側に寄って三日月状に太く出るので、同心の輪では実物と別物になる。
+function drawChip(index, w, h, cx, cy, wh, rimSh, C, wrap){
+  const m = Math.ceil(Math.max(wh ? wh.a : 0, rimSh.a) * 1.5 + Math.hypot(rimSh.ox, rimSh.oy)) + 2;
+  const ix0 = Math.round(cx), iy0 = Math.round(cy);
+  for(let dy=-m; dy<=m; dy++){
+    for(let dx=-m; dx<=m; dx++){
+      let v = -1;
+      if(wh && chipInside(dx, dy, wh)) v = C.v;
+      else if(chipInside(dx - rimSh.ox, dy - rimSh.oy, rimSh)) v = C.rimV;
+      if(v < 0) continue;
+      const x = ix0 + dx, y = iy0 + dy;
+      const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
+      if(xi < 0 || xi >= w || yi < 0 || yi >= h) continue;   // 非タイル時はクリップ
+      index[yi*w + xi] = v;
+    }
+  }
+}
+// 小石が置かれる範囲が単一のブロブ色で占められている比率
+// (実物の小石はブロブ内部に置かれ、境界を跨がない)
+// index にはすでに描いた小石が混ざるので、判定はブロブ層のスナップショット blob に対して行う
+// (これで小石同士の重なりを許せる。実物の小石は隣同士がくっついて連なることがある)
+// 2px 間隔サンプリング: 小石 (r ≈ 4〜16px) でも走査点は最低十数点確保できる密度で、
+// pure 閾値 0.9 の判定を粗く離散化するほどではない (目視検証: seed 1234/777/211025 で境界跨ぎ誤判定なし)
+function chipPurity(blob, w, h, cx, cy, r, wrap){
+  const index = blob;
+  const m = Math.ceil(r);
+  const bx = wrap ? wrapI(Math.round(cx), w) : Math.min(w-1, Math.max(0, Math.round(cx)));
+  const by = wrap ? wrapI(Math.round(cy), h) : Math.min(h-1, Math.max(0, Math.round(cy)));
+  const base = index[by*w + bx];
+  let same = 0, n = 0;
+  for(let dy=-m; dy<=m; dy+=2){
+    for(let dx=-m; dx<=m; dx+=2){
+      if(dx*dx + dy*dy > m*m) continue;
+      const x = Math.round(cx) + dx, y = Math.round(cy) + dy;
+      const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
+      if(xi < 0 || xi >= w || yi < 0 || yi >= h) continue;
+      n++;
+      if(index[yi*w + xi] === base) same++;
+    }
+  }
+  return n ? same/n : 0;
+}
+// C: {v, rimV, r, rim, spacing, density, pure}。長さの単位は「512px・scale 1.0」基準 px
+// (upx で実 px に換算。genQuilt の k と同じ換算なのでブロブと小石の寸法比が scale で保たれる)
+// index はこの呼び出し時点で常に実寸 (genQuilt が多段解像度時に sm/w/h を fullW/fullH へ
+// 差し替えた「後」に呼ぶ設計、上の呼び出し行を参照)。よって index.slice() のコピーは
+// 常に実寸 1 枚分で収まり、baseMax による縮小生成後の解像度と食い違うことはない
+function applyChips(index, w, h, seed, upx, C, wrap){
+  const cell = Math.max(6, (C.spacing ?? 30) * upx);
+  const nx = Math.max(1, Math.round(w/cell)), ny = Math.max(1, Math.round(h/cell));
+  const cw = w/nx, ch = h/ny;                        // 厳密割り切り → 継ぎ目で格子がずれない
+  const s = (seed ^ 0x5b1c) | 0;
+  const rBase = (C.r ?? 8) * upx;
+  const rimF = C.rim ?? 0.42;                        // 黒縁の太さ (小石半径に対する比)
+  const blob = index.slice();                        // 配置判定用のブロブ層スナップショット
+  for(let gy=0; gy<ny; gy++){
+    for(let gx=0; gx<nx; gx++){
+      if(hash2(gx, gy, s) > (C.density ?? 0.6)) continue;       // 実物は疎密がある
+      // 大きさは 0.45〜1.55 倍でばらつく (実物の小石は大小の差が大きい)
+      const a = Math.max(1.5, rBase * (0.45 + 1.1*hash2(gx, gy, s+31)));
+      const th = 2*Math.PI * hash2(gx, gy, s+41);
+      const wh = {
+        a, co: Math.cos(th), si: Math.sin(th),
+        ar: 0.62 + 0.38*hash2(gx, gy, s+37),                   // 軸比
+        p1: 2*Math.PI*hash2(gx, gy, s+43), p2: 2*Math.PI*hash2(gx, gy, s+47),
+      };
+      // 黒縁: 同じ形をひとまわり大きくし、ランダム方向へ半径の 0.2〜0.5 だけずらす → 三日月
+      const oth = 2*Math.PI * hash2(gx, gy, s+53);
+      const od = a * (0.20 + 0.30*hash2(gx, gy, s+59));
+      const rimSh = {...wh, a: a*(1 + rimF), ox: Math.cos(oth)*od, oy: Math.sin(oth)*od};
+      const m = Math.ceil(rimSh.a * 1.5 + od) + 2;
+      // ジッタはセル全域。footprint がセルからはみ出して隣の小石と重なるのは許容する
+      // (セル内に閉じ込めると格子のリズムが目に見えてしまう。実物の配置は不規則)
+      const cx = gx*cw + hash2(gx, gy, s+11) * cw;
+      const cy = gy*ch + hash2(gx, gy, s+23) * ch;
+      if(chipPurity(blob, w, h, cx, cy, m, wrap) < (C.pure ?? 0.9)) continue;
+      // 実物には白を伴わない黒だけの斑点も混ざる
+      const blackOnly = hash2(gx, gy, s+61) < (C.blackOnly ?? 0.22);
+      drawChip(index, w, h, cx, cy, blackOnly ? null : wh, rimSh, C, wrap);
+    }
+  }
+}
+// 幅 1px の筋を消す (有機系のみ)。両隣が互いに同色で自分だけ違う画素を隣の色に倒す。
+// k ≈ 1 の領域では階段もエイリアスも出ないため多数決フィルタを掛けない設計だが、
+// 最上層の版で消した黒枝の跡や、パッチ輪郭の交差でできた 1px の筋だけはそこに残る
+// (連結成分としては本体に繋がっているので cleanupFragments では落ちない)。
+// デジタル系は 1px セルが図案なので対象外
+function cleanupSlivers(index, w, h, wrap=false){
+  for(let pass=0; pass<2; pass++){
+    const src = index.slice();
+    const sat = (x, y) => {
+      if(wrap) return src[wrapI(y, h)*w + wrapI(x, w)];
+      if(x<0||x>=w||y<0||y>=h) return -1;
+      return src[y*w + x];
+    };
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const v = src[y*w + x];
+        const l = sat(x-1, y), r = sat(x+1, y);
+        if(l >= 0 && l === r && l !== v){ index[y*w + x] = l; continue; }
+        const u = sat(x, y-1), d = sat(x, y+1);
+        if(u >= 0 && u === d && u !== v) index[y*w + x] = u;
+      }
+    }
+  }
 }
 // 面積 < minArea の連結成分を近傍多数色へ併合
 function cleanupFragments(index, w, h, minArea, wrap=false){
@@ -1108,14 +1457,30 @@ function cleanupFragments(index, w, h, minArea, wrap=false){
 /* ================= プリセット ================= */
 export const PRESETS = {
   woodland: {
+    // topLayer: 黒は実物でも最後に刷る版なので、パッチ輪郭に切られず丸ごと乗る (v21/v22)
     name: 'ウッドランド (M81)', kind: 'quilt', src: 'm81', ref: 'm81',
-    kBase: 0.95, patchR: 185, organic: true,
+    kBase: 0.95, patchR: 185, organic: true, topLayer: 3,
     frac: [0.24, 0.27, 0.333, 0.157], divw: [1, 1, 1, 2.4],
     colors: [
       {name:'サンド',  hex:'#9c8f6f'},
       {name:'グリーン', hex:'#4c5f49'},
       {name:'ブラウン', hex:'#5f5345'},
       {name:'ブラック', hex:'#3a3e3d'},
+    ],
+  },
+  cce: {
+    // CCE (Camouflage Centre-Europe、フランス 1990 年代〜現用): M81 の図案を横に伸ばした派生。
+    // 4 色構成も M81 と同系統なので、ソースは m81 を流用し srcAspect で横長ブロブを作る。
+    // 色は M81 よりグリーンが明るく、カーキが灰味 (参照画像からの実測値)
+    name: 'CCE (フランス)', kind: 'quilt', src: 'm81', ref: 'cce',
+    // patchR は M81 と同値。パッチも srcAspect 倍の楕円になるので 1 パッチが参照するソース面積は M81 と同じ
+    kBase: 0.95, patchR: 185, organic: true, srcAspect: 1.5, topLayer: 3,
+    frac: [0.305, 0.254, 0.277, 0.165], divw: [1, 1, 1, 2.4],
+    colors: [
+      {name:'ライトカーキ', hex:'#a29275'},
+      {name:'グリーン',   hex:'#4f5c40'},
+      {name:'ブラウン',    hex:'#614f3d'},
+      {name:'ブラック',    hex:'#2d2d2d'},
     ],
   },
   marpat: {
@@ -1257,6 +1622,32 @@ export const PRESETS = {
       {name:'グリーン',   hex:'#5e775c'},
       {name:'ブラウン',   hex:'#74524e'},
       {name:'ブラック',   hex:'#46444b'},
+    ],
+  },
+  dbdu: {
+    // 6 カラーデザート (DBDU / チョコレートチップ)。実物の特徴:
+    //   - ブロブ層は DCU と同系の大ぶりで丸い形状 → ソース図案は dcu を共有する
+    //     (DBDU 実物のフラットなスウォッチはパブリックドメインで入手できないため、
+    //      同系統で PD の DCU 図案を流用している。基色は実物の 4 色に対し 3 色)
+    //   - 識別点は「小石」を模した黒フチ付きの白い斑点がブロブ内部に散ること → chips 層が担う
+    name: '6 カラーデザート (DBDU)', kind: 'quilt', src: 'dcu', ref: 'dbdu',
+    kBase: 1.35, patchR: 150, organic: true,
+    // frac/divw は dcu からそのまま流用 (dcu 側は blob 層専用パラメータで 4 要素)。
+    // dbdu の blob 層が生成する値も 0..2 のみなので意味は保たれる。3 (小石ホワイト) /
+    // 4 (黒縁) は下の chips 層が実寸 index に直接描く専用値で、frac/divw の制御対象外
+    frac: [0.401, 0.506, 0.093, 0], divw: [1, 1, 1.8, 1],
+    // 小石層。r / spacing は「512px・scale 1.0」基準 px、rim は小石半径に対する比。
+    // 実物写真 (refs/dbdu.jpg) の見た目に合わせた: 小石はブロブ幅の 1/8 前後で大小が混在し、
+    // 黒は全周の輪ではなく片側に寄った三日月として小石と同程度の面積を占める
+    chips: {v: 3, rimV: 4, r: 8, rim: 0.42, spacing: 34, density: 0.72, pure: 0.9},
+    // 色の並びは index 値の順。ソース図案 (dcu) の面積比が 0.40 / 0.51 / 0.09 なので、
+    // 実物で支配的なペールタンを最大面積の値 1 に割り当てる (実物は淡色が地になる)
+    colors: [
+      {name:'ライトブラウン', hex:'#9a766b'},
+      {name:'ペールタン',    hex:'#c6b5a4'},
+      {name:'ブラウン',      hex:'#704c44'},
+      {name:'小石ホワイト',   hex:'#e5d5cd'},
+      {name:'ブラック',      hex:'#1d1f23'},
     ],
   },
 };

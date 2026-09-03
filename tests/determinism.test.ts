@@ -25,6 +25,13 @@ describe("generate() は決定的", () => {
       );
     });
   }
+  it("cce は woodland と同一ソースでも srcAspect で別出力になる", () => {
+    // 同じ m81 ソース・同じ kBase。差は srcAspect (横伸長) と patchR だけ。
+    // 異方サンプリングが無効化されると両者が一致してしまうため、その回帰を検知する
+    expect(sha(generate("cce", 256, 256, 1234, 1.0).index)).not.toBe(
+      sha(generate("woodland", 256, 256, 1234, 1.0).index),
+    );
+  });
   it("index マップのハッシュ (回帰スナップショット)", () => {
     const snap = Object.fromEntries(
       keys.map((k) => [k, sha(generate(k, 256, 256, 1234, 1.0).index)]),

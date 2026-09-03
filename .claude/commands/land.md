@@ -61,7 +61,7 @@ git fetch origin && git pull --ff-only
 - 削除した worktree・ブランチ
 - `Closes #N` により自動クローズされた Issue（PR 本文から判定）
 - main の最新コミット
-- デプロイ: 本番反映は `pnpm deploy`（ask 権限）を人間が実行する。このコマンドからは実行しない
+- デプロイ: main へのマージで GitHub Actions「Deploy」が自動実行される。マージ後 `gh run list --workflow Deploy --limit 1` で起動を確認し、結果（成功 / 失敗と URL）を報告する。失敗時の切り分けは `docs/03-deploy.md` §4。`pnpm deploy` はこのコマンドからは実行しない
 
 ## 中断条件
 

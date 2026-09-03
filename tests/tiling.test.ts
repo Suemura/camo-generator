@@ -11,21 +11,24 @@ registerSources(digsrc);
 const keys = Object.keys(PRESETS) as PresetKey[];
 const SEEDS = [1234, 777, 211025];
 
+// 継ぎ目は「同じ向きの隣接」で正規化する: x ラップの継ぎ目は横隣接、y ラップの継ぎ目は縦隣接。
+// 軸を混ぜると異方パターン (CCE の横伸長など) で分母が縮み、継ぎ目が無くても指標が伸長率だけ悪化する
 function seamRatio(index: Uint8Array, w: number, h: number) {
   let seamX = 0;
   let seamY = 0;
-  let inner = 0;
-  let innerN = 0;
+  let innerX = 0;
+  let innerY = 0;
   for (let y = 0; y < h; y++) {
     if (index[y * w + (w - 1)] !== index[y * w]) seamX++;
-    for (let x = 0; x < w - 1; x++) {
-      if (index[y * w + x] !== index[y * w + x + 1]) inner++;
-      innerN++;
-    }
+    for (let x = 0; x < w - 1; x++) if (index[y * w + x] !== index[y * w + x + 1]) innerX++;
   }
-  for (let x = 0; x < w; x++) if (index[(h - 1) * w + x] !== index[x]) seamY++;
-  const innerRate = inner / innerN;
-  return { x: seamX / h / innerRate, y: seamY / w / innerRate };
+  for (let x = 0; x < w; x++) {
+    if (index[(h - 1) * w + x] !== index[x]) seamY++;
+    for (let y = 0; y < h - 1; y++) if (index[y * w + x] !== index[(y + 1) * w + x]) innerY++;
+  }
+  const rateX = innerX / (h * (w - 1));
+  const rateY = innerY / (w * (h - 1));
+  return { x: seamX / h / rateX, y: seamY / w / rateY };
 }
 
 function measure(key: PresetKey, seed: number, opt?: { tileable: boolean }) {

@@ -1072,9 +1072,10 @@ function applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, top, targetFrac, see
     if(2*hx > 0.9*w || 2*hy > 0.9*h) continue;                 // 大きすぎる枝 (キャンバスに収まらない)
     const canvasArea = c.area / (kmX*kmY);
     if(canvasArea < 12) continue;                              // 点になる欠片は刷らない
-    // 目標面積の 3 割を超える成分は使わない: 1 枚で広い面積を占めてしまい、黒が一箇所に固まって
-    // 残りが素抜けになる (実物の黒も画面内に複数の中規模シェイプとして散る)
-    if(canvasArea > target * 0.3) continue;
+    // 1 枚で目標面積の 6 割を超える成分は使わない (残りが素抜けになる)。
+    // M81 の黒は bbox 充填率 0.25 程度の枝分かれ形状で、大きい成分ほど画面に広く散るため
+    // 面積の上限は緩めでよい (固まりの抑制は密度ペナルティと使用回数の平準化が担う)
+    if(canvasArea > target * 0.6) continue;
     wsum += canvasArea;
     usable.push({c, hx, hy, canvasArea, acc: wsum, used: 0});
   }
@@ -1426,12 +1427,37 @@ function genQuilt(w, h, seed, scale, P, opt={}){
     const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),
                                         110 * (w/512)*(w/512) / (scale*scale)));
     cleanupFragments(sm, w, h, minFrag, wrap);
+    cleanupSlivers(sm, w, h, wrap);   // 幅 1px の筋 (消した黒枝の跡・輪郭交差) を除去
   }else{
     // デジタル系: ピクセル輪郭を保持。サブセルの欠片だけ除去
     cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)), wrap);
   }
   if(progress) progress(1);
   return {type:'organic', w, h, index: sm};
+}
+// 幅 1px の筋を消す (有機系のみ)。両隣が互いに同色で自分だけ違う画素を隣の色に倒す。
+// k ≈ 1 の領域では階段もエイリアスも出ないため多数決フィルタを掛けない設計だが、
+// 最上層の版で消した黒枝の跡や、パッチ輪郭の交差でできた 1px の筋だけはそこに残る
+// (連結成分としては本体に繋がっているので cleanupFragments では落ちない)。
+// デジタル系は 1px セルが図案なので対象外
+function cleanupSlivers(index, w, h, wrap=false){
+  for(let pass=0; pass<2; pass++){
+    const src = index.slice();
+    const sat = (x, y) => {
+      if(wrap) return src[wrapI(y, h)*w + wrapI(x, w)];
+      if(x<0||x>=w||y<0||y>=h) return -1;
+      return src[y*w + x];
+    };
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const v = src[y*w + x];
+        const l = sat(x-1, y), r = sat(x+1, y);
+        if(l >= 0 && l === r && l !== v){ index[y*w + x] = l; continue; }
+        const u = sat(x, y-1), d = sat(x, y+1);
+        if(u >= 0 && u === d && u !== v) index[y*w + x] = u;
+      }
+    }
+  }
 }
 // 面積 < minArea の連結成分を近傍多数色へ併合
 function cleanupFragments(index, w, h, minArea, wrap=false){
@@ -1473,8 +1499,9 @@ function cleanupFragments(index, w, h, minArea, wrap=false){
 /* ================= プリセット ================= */
 const PRESETS = {
   woodland: {
+    // topLayer: 黒は実物でも最後に刷る版なので、パッチ輪郭に切られず丸ごと乗る (v21/v22)
     name: 'ウッドランド (M81)', kind: 'quilt', src: 'm81', ref: 'm81',
-    kBase: 0.95, patchR: 185, organic: true,
+    kBase: 0.95, patchR: 185, organic: true, topLayer: 3,
     frac: [0.24, 0.27, 0.333, 0.157], divw: [1, 1, 1, 2.4],
     colors: [
       {name:'サンド',  hex:'#9c8f6f'},

@@ -2,6 +2,7 @@
 // すべて座標ハッシュベースの決定的生成。同一シード → 同一結果。
 'use strict';
 import { M81_SRC_W, M81_SRC_H, M81_SRC_RLE } from './m81src.js';
+import { DCU_SRC_W, DCU_SRC_H, DCU_SRC_RLE } from './dcusrc.js';
 // AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は静的 import しない。初期バンドルを小さく保つため、
 // 利用側が動的 import して registerSources() で渡す (ブラウザ: src/lib/generate.ts、Node: tools/render.mjs)。
 
@@ -644,6 +645,7 @@ function decodeSrc(key, rle, W, H){
 }
 const SRCS = {
   m81:  () => decodeSrc('m81',  M81_SRC_RLE,  M81_SRC_W,  M81_SRC_H),
+  dcu:  () => decodeSrc('dcu',  DCU_SRC_RLE,  DCU_SRC_W,  DCU_SRC_H),   // 18KB なので静的 import で足りる
 };
 // 外部ソースマップの登録: registerSources(await import('./digsrc.js'))
 export function registerSources(mod){
@@ -1187,6 +1189,36 @@ export const PRESETS = {
       {name:'デザートサンド', hex:'#d1cfab'},
       {name:'アーバングレー', hex:'#9ca88b'},
       {name:'フォリッジグリーン', hex:'#798d72'},
+    ],
+  },
+  dcu: {
+    // 3 カラーデザート (DCU / コーヒーステイン)。実物の特徴:
+    //   - ブロブが M81 より大きく丸みが強く、輪郭の入り組みが少ない → 専用ソース図案 (dcusrc) が担う
+    //     (クイルトは局所形状 = ソース図案そのものなので、丸みはパラメータでは作れない)
+    //   - ライトタンとペールグリーンが大面積を分け合い、ブラウンは細いリボン状に走るだけ (実測 9%)
+    name: '3 カラーデザート (DCU)', kind: 'quilt', src: 'dcu', ref: 'dcu',
+    // kBase 1.35: ソース図案 (800px) を 1/1.35 に縮小参照する。DCU のブロブは M81 より
+    // 大きいが、スウォッチ上ではさらに大きく写っている (M81 スウォッチの形状の約 2.5 倍) ため、
+    // そのまま等倍参照すると 512px 出力に 2〜3 個しか入らない。1.35 は実物の見た目
+    // (ブロブが画面の 1/3 前後 + ブラウンは細いリボン) に合う倍率で、
+    // 多数決ミップマップの発動域 (k > 1.4) を避けて輪郭の階段化も出さない上限でもある。
+    // patchR 150: 実物のブロブの大きさはソース図案側で決まるので、patchR は「継ぎ目の頻度」だけを
+    // 決める。M81 (185) より小さくしている理由は、DCU では大きいパッチがトーラス上の切断面を招くこと:
+    // patchR 230 だとブロブ半径が bRcap (0.42·短辺) に張り付き、完走帯 (OUT_HI 倍) がキャンバス一周を
+    // 超えてパッチが自分自身と重なる → 縦継ぎ目の変化率が内部の 3 倍超になる (tests/tiling.test.ts)。
+    // 150 なら 8 シードで最大 1.7 倍に収まり、面積比も測定値に最も近い
+    kBase: 1.35, patchR: 150, organic: true,
+    // frac / divw は 4 要素固定 (genQuilt が 4 色前提で走査する)。4 色目は 0 で無効化。
+    // frac はソース図案の実測面積比 (tools/gen-src.mjs の出力) をそのまま置く。
+    // ただし DCU では候補選択が境界リング誤差項に支配され (div 項は最大 0.07 対 ring*2.6 ≈ 0.8)、
+    // frac / divw を動かしても出力は変わらない。実際の面積比はシード依存で
+    // タン 0.27〜0.39 / グリーン 0.50〜0.57 / ブラウン 0.10〜0.16 に落ち着く
+    // (完走がグリーンの地を優遇するため測定値よりグリーン寄りになる。既知の系統誤差)
+    frac: [0.401, 0.506, 0.093, 0], divw: [1, 1, 1.8, 1],
+    colors: [
+      {name:'ライトタン',    hex:'#e9d1ae'},
+      {name:'ペールグリーン', hex:'#bbb18d'},
+      {name:'ブラウン',      hex:'#8f590b'},
     ],
   },
 };

@@ -1,13 +1,20 @@
 // 画像からのパレット抽出: 固定シードの k-means (Lloyd)。同じ画像 → 同じ結果 (決定的)。
-import { mulberry32 } from "@/core/camo.js";
+// browser (palette-extract.worker) と Node (tools/extract-palette.mjs) で共用するため
+// camo.js と同じく依存ゼロの JS のまま置く。型は kmeans.d.ts。
+import { mulberry32 } from "./camo.js";
 
-export type RGB = [number, number, number];
-
-export function kmeans(pixels: Uint8ClampedArray, k: number, iters = 24): RGB[] {
+/**
+ * @param {Uint8ClampedArray | Uint8Array} pixels RGBA 連続配列 (length = 4 * n)
+ * @param {number} k
+ * @param {number} [iters]
+ * @returns {[number, number, number][]} 明度順 (暗→明) の RGB
+ */
+export function kmeans(pixels, k, iters = 24) {
   const n = pixels.length / 4;
   const rng = mulberry32(0x5eed);
   // 初期化: k-means++ 風 (最遠点優先) を決定的に
-  const centers: RGB[] = [];
+  /** @type {[number, number, number][]} */
+  const centers = [];
   const first = Math.floor(rng() * n) * 4;
   centers.push([pixels[first], pixels[first + 1], pixels[first + 2]]);
   const d2 = new Float32Array(n);
@@ -71,13 +78,17 @@ export function kmeans(pixels: Uint8ClampedArray, k: number, iters = 24): RGB[] 
     }
   }
   // 明度順 (暗→明) に並べる。プリセット既定色との対応づけの基準
-  return centers.map((c) => c.map(Math.round) as RGB).sort((a, b) => lum(a) - lum(b));
+  return centers
+    .map((c) => /** @type {[number, number, number]} */ (c.map(Math.round)))
+    .sort((a, b) => lum(a) - lum(b));
 }
 
-export function lum([r, g, b]: RGB) {
+/** @param {[number, number, number]} rgb */
+export function lum([r, g, b]) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-export function rgbToHex([r, g, b]: RGB) {
+/** @param {[number, number, number]} rgb */
+export function rgbToHex([r, g, b]) {
   return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
 }

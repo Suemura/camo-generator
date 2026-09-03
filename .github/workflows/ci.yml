@@ -17,12 +17,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # refs/private の履歴検査に全履歴が要る
       - uses: pnpm/action-setup@v6 # バージョンは package.json の packageManager から読む
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: refs/private が混入していないか (再配布不可の画像)
+        run: bash tools/check-private-refs.sh "origin/${{ github.base_ref }}..HEAD"
       - run: pnpm check
       - run: pnpm test
       - run: pnpm build

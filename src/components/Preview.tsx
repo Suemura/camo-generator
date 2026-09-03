@@ -1,7 +1,7 @@
-// プレビュー: 出力比率を保った縮小生成を表示。単一 / タイル 2×2 / 実物比較。
+// プレビュー: 出力比率を保った縮小生成を表示。単一 / タイル 2×2 / 3D。
+// 実物リファレンスとの比較はアプリ外 (tools/render.mjs --compare、refs/README.md)。
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type GenResult, PRESETS } from "@/core/camo.js";
-import { PRESET_META } from "@/data/presets-meta";
 import { drawToCanvas } from "@/lib/export";
 import { generateAsync, previewSize } from "@/lib/generate";
 import { type Model3D, textureRepeat, tileSizeMm } from "@/lib/preview3d-math";
@@ -10,7 +10,7 @@ import { outputPx } from "@/lib/units";
 import styles from "./Preview.module.scss";
 import { Preview3D } from "./Preview3D";
 
-export type ViewMode = "single" | "tile" | "compare" | "3d";
+export type ViewMode = "single" | "tile" | "3d";
 const PREVIEW_EDGE = 768;
 const COARSE_EDGE = 192; // まず粗い結果を即表示してフリーズ感を消す
 
@@ -30,7 +30,6 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [coarse, setCoarse] = useState(false);
-  const [refSrc, setRefSrc] = useState<string | null>(null);
   // 3D モデル (表示モードと同様に URL には含めない)
   const [model, setModel] = useState<Model3D>("sphere");
   const out = outputPx(state);
@@ -104,18 +103,6 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
     }
   }, [res, pal, mode, state.preset]);
 
-  // 実物リファレンス (比較モードのみ動的 import)
-  useEffect(() => {
-    if (mode !== "compare") return;
-    let alive = true;
-    import("@/data/refs.js").then((m) => {
-      if (alive) setRefSrc(m.REFS[PRESET_META[state.preset].ref] ?? null);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [mode, state.preset]);
-
   // 3D 用: 旧プリセットの形状に新パレットを当てない (2D と同じガード)
   const texRes = res && res.preset === state.preset && pal.length >= res.colors ? res : null;
   const repeat = useMemo(
@@ -135,9 +122,6 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
           </button>
           <button type="button" aria-pressed={mode === "tile"} onClick={() => onMode("tile")}>
             タイル 2×2
-          </button>
-          <button type="button" aria-pressed={mode === "compare"} onClick={() => onMode("compare")}>
-            実物比較
           </button>
           <button type="button" aria-pressed={mode === "3d"} onClick={() => onMode("3d")}>
             3D
@@ -175,7 +159,7 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
           {mode === "3d" && ` · リピート ${repeat.x.toFixed(2)}×${repeat.y.toFixed(2)}`}
         </p>
       </div>
-      <div className={`${styles.stage} ${mode === "compare" ? styles.split : ""}`}>
+      <div className={styles.stage}>
         <div
           className={`${styles.frame} ${mode === "3d" ? styles.frame3d : ""}`}
           style={mode === "3d" ? undefined : { aspectRatio: `${out.w} / ${out.h}` }}
@@ -208,22 +192,6 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
             </div>
           )}
         </div>
-        {mode === "compare" && (
-          <figure className={styles.refFig}>
-            {refSrc ? (
-              <img
-                src={refSrc}
-                alt={`${PRESET_META[state.preset].label} の実物リファレンス`}
-                className={styles.refImg}
-              />
-            ) : (
-              <div className={styles.refEmpty}>読み込み中…</div>
-            )}
-            <figcaption className="hint">
-              実物リファレンス (Wikimedia Commons) · 出典は About 参照
-            </figcaption>
-          </figure>
-        )}
       </div>
     </section>
   );

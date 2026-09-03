@@ -9,3 +9,6 @@ src/styles/tokens/_primitives.scss
 *.tsbuildinfo
 .claude/settings.local.json
 .claude/worktrees/
+
+# リファレンス画像のうち再配布できないもの (絶対にコミットしない。tools/check-private-refs.sh が防ぐ)
+refs/private/

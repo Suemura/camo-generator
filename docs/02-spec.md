@@ -254,7 +254,8 @@ docs/design/spacious-DESIGN.md          spacious トークンの原本
 
 - ビルドコマンド: `pnpm build`（Vite → `dist/`）
 - キャッシュ: ハッシュ付きアセットは Vite 既定で immutable 扱い。`index.html` は no-cache（Static Assets の既定挙動）
-- ヘッダー: `public/_headers` で `X-Content-Type-Options`, `Referrer-Policy`, CSP（self のみ。外部リソース無し。Google Fonts を使うならフォントは自前配信に切り替えて CSP を閉じる）
+- ヘッダー: `public/_headers` で `X-Content-Type-Options`, `Referrer-Policy`, CSP（`default-src 'self'`、`font-src 'self' data:`。インライン script 不可のためテーマ初期化は `public/theme.js`）
+- Cloudflare の Web Analytics ビーコン自動注入は CSP で遮断される（プライバシー表記と整合）。コンソールエラーを消すなら Worker 設定で Web Analytics を無効化する
 - カスタムドメイン: **`camo-generator.suemura.app`**（既存の `image-converter.suemura.app` と同じ命名）。`suemura.app` ゾーンは Cloudflare 管理下なので、`wrangler.jsonc` の `routes` に `custom_domain: true` で宣言すれば DNS レコードと証明書は自動発行される。ダッシュボード操作は不要
 - 環境: `production`（main）/ プレビュー（PR）。環境変数は不要（秘密情報を持たない）
 

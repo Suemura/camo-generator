@@ -3,7 +3,7 @@
 迷彩模様をプロシージャル生成する Web アプリ。
 
 デモ（フェーズ1 プロトタイプ）: `prototype/index.html` をブラウザで開くだけで動作（依存なし・単一ファイル）。
-本実装（フェーズ3〜）: `pnpm install && pnpm dev`。公開先は `camo-generator.suemura.app`（予定）。
+本実装: **https://camo-generator.suemura.app** （`pnpm install && pnpm dev` でローカル起動）。
 
 ## 概要
 
@@ -67,7 +67,7 @@ node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG �
 | 1. 技術検証 | 生成精度の検証・手法確立（自己改善ループ計40周超 + 並行手法探索） | **完了** |
 | 2. 仕様整理 | 機能仕分け・画面構成・技術選定・Cloudflare 構成・デザインシステム（`docs/02-spec.md`） | **完了** |
 | 3. 設計 | React + Vite プロジェクト骨格・トークン生成・シームレスタイリング（v15） | **完了** |
-| 4. 実装 | UI 本実装（`docs/02-spec.md` §2〜3、完了）・デプロイ（次） | 進行中 |
+| 4. 実装 | UI 本実装・初回デプロイ（`camo-generator.suemura.app`） | **完了** |
 | 4. 実装 | 本実装・デプロイ | 未着手 |
 
 ### フェーズ1 の到達点

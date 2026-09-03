@@ -1,5 +1,5 @@
 // プレビュー: 出力比率を保った縮小生成を表示。単一 / タイル 2×2 / 実物比較。
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type GenResult, PRESETS } from "@/core/camo.js";
 import { PRESET_META } from "@/data/presets-meta";
 import { drawToCanvas } from "@/lib/export";
@@ -118,7 +118,10 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
 
   // 3D 用: 旧プリセットの形状に新パレットを当てない (2D と同じガード)
   const texRes = res && res.preset === state.preset && pal.length >= res.colors ? res : null;
-  const repeat = textureRepeat(model, tileSizeMm(state));
+  const repeat = useMemo(
+    () => textureRepeat(model, tileSizeMm(state)),
+    [model, state.w, state.h, state.unit, state.dpi],
+  );
 
   const physical =
     state.unit !== "px" ? `${state.w}×${state.h} ${state.unit} @ ${state.dpi} dpi → ` : "";

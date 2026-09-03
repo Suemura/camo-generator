@@ -184,6 +184,8 @@ export class Scene3D {
   }
 
   setModel(model: Model3D) {
+    // 同一モデルへの再設定は no-op (コンストラクタの初期構築との二重実行を避ける)
+    if (this.mesh && this.model === model) return;
     this.model = model;
     if (this.mesh) {
       this.scene.remove(this.mesh);

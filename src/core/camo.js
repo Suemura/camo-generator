@@ -1594,7 +1594,7 @@ export const PRESETS = {
     //     → wander / drift を下げて compact を上げ、丸みのある塊にする
     //   - ブラックは緑塊の内側に落ちる (eat: [1] で緑だけを食う)。
     //     ブラウンは緑と地の境界を縫う細い帯 (eat: [0,1])
-    //   - ピクセルが MARPAT より粗い (Issue #30) → cell 6。粗いセルでスペックルを強くすると
+    //   - ピクセルが MARPAT より粗い (Issue #30) → cell 5。粗いセルでスペックルを強くすると
     //     微小点アーティファクトが目立つので density は MARPAT より低くする
     name: '07 式 通用迷彩 (中国)', kind: 'growth', ref: 'pla07',
     cell: 5, growDither: 1,

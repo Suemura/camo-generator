@@ -115,8 +115,9 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 
 - 3D プレビューの環境光 HDRI は Poly Haven「Kloofendal 48d Partly Cloudy (Pure Sky)」（Greg Zaal / Jarod Guest、CC0）、布地の normal / roughness マップは ambientCG「Fabric 036」「Fabric 062」（CC0）を 512px に縮小して `public/3d/` に同梱。3D 描画は three.js（MIT）
 - M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）
-- 実物リファレンス画像（`refs/`、開発時専用・アプリ非同梱）の出典。いずれも Wikimedia Commons、パブリックドメイン（米政府著作物）
+- 実物リファレンス画像（`refs/`、開発時専用・アプリ非同梱）の出典。いずれも Wikimedia Commons。米政府図案はパブリックドメイン、`cce.png` は CC0
   - `woodland.png` — [File:"M81" U.S. woodland camouflage pattern swatch.png](https://commons.wikimedia.org/wiki/File:%22M81%22_U.S._woodland_camouflage_pattern_swatch.png)（U.S. Army）
+  - `cce.png` — [File:Bariolage Centre-Europe.png](https://commons.wikimedia.org/wiki/File:Bariolage_Centre-Europe.png)（Commons 利用者 Youri BRIAND による作図、CC0）
   - `marpat.jpg` — [File:MARPAT woodland pattern.jpg](https://commons.wikimedia.org/wiki/File:MARPAT_woodland_pattern.jpg)（Henrik Clausen 撮影、パブリックドメイン）
   - `marpat_desert.jpg` — [File:Desert MARPAT camouflage pattern swatch.jpg](https://commons.wikimedia.org/wiki/File:Desert_MARPAT_camouflage_pattern_swatch.jpg)（USMC）
   - `aor1.png` — [File:Navy Working Uniform (NWU) Type III camouflage pattern swatch, AOR-1.png](https://commons.wikimedia.org/wiki/File:Navy_Working_Uniform_(NWU)_Type_III_camouflage_pattern_swatch,_AOR-1.png)（U.S. Navy）

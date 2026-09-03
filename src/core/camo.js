@@ -862,6 +862,17 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     }
     srcM = d; SWm = nw; SHm = nh; km /= 2;
   }
+  // ソース参照の異方サンプリング (P.srcAspect、既定 1 = 等方)。
+  // 意図: CCE (フランス) は M81 の図案を横方向に伸ばした派生で、ブロブが横長になる。
+  // 同じソースを x 方向だけ粗く参照すれば (kmX = km/a)、キャンバス上では横に伸びた
+  // シェイプになる。y は M81 と同一レートに保つ = 「M81 を横に伸ばしただけ」の関係。
+  // 面積保存の √分割 (kmX=km/√a, kmY=km·√a) も試したが、縦が 1/√a に縮んで M81 より
+  // 細かい別図案に見えたため採らなかった (docs/01-tech-verification.md v19)。
+  // km 側は縮小方向のみエイリアスを生む (ミップマップの帯 [0.7,1.4]) ので、kmX < km は
+  // 追加のエイリアス源にならない。代わりに x 方向の拡大階段が 1/kmX px に広がるため、
+  // 後段の平滑化半径は軸別レートの小さい方 (aSm) で決める。
+  const sA = P.srcAspect ?? 1;
+  const kmX = km / sA, kmY = km;   // 以降 pick / srcIn / srcGet は軸別レートのみを使う
   const out = new Uint8Array(w*h);
   const TARGET_FRAC = P.frac;
   const DIVW = P.divw ?? [1, 1, 1, 2];
@@ -877,12 +888,12 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   };
   // 完走の参照がソース範囲内か (範囲外は折返し鏡映になるので完走を諦めて撤回する)
   const srcIn = (p, x, y) => {
-    const u = p.sx + p.mx * (x - p.cx) * km, v = p.sy + p.my * (y - p.cy) * km;
+    const u = p.sx + p.mx * (x - p.cx) * kmX, v = p.sy + p.my * (y - p.cy) * kmY;
     return u >= 0 && u <= SWm-1 && v >= 0 && v <= SHm-1;
   };
   const srcGet = (p, x, y) => {
     // x,y: canvas 座標。パッチ中心 (p.cx,p.cy) からの相対でソース参照
-    let u = p.sx + p.mx * (x - p.cx) * km, v = p.sy + p.my * (y - p.cy) * km;
+    let u = p.sx + p.mx * (x - p.cx) * kmX, v = p.sy + p.my * (y - p.cy) * kmY;
     // 安全折返し (通常は範囲内)
     if(u < 0) u = -u; if(u > SWm-1) u = 2*(SWm-1) - u;
     if(v < 0) v = -v; if(v > SHm-1) v = 2*(SHm-1) - v;
@@ -904,6 +915,8 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   const OUT_HI = 2.2;                                  // 完走を許す半径比の上限 (超えたら撤回)
   const mkAllowExtend = (deficit) => (v) => deficit[v] >= 0.02;   // 目標比を 2% 以上下回る色だけ完走 (閾値 -0.02〜0.02 を比較し最も目標に近い)
   // デジタル系: マスク輪郭をセル格子に量子化 (ソースのセル ≈ P.cellSrc px → キャンバス px)
+  // 量子化は正方セル前提なので等方 km のまま。srcAspect との併用は未検証
+  // (デジタル系を伸長する場合はここも軸別セルにする必要がある)
   const quant = P.organic === false ? Math.max(1, (P.cellSrc ?? 10) / km) : 0;
   // 2. ブロブパッチ: 有機輪郭 (半径を角度ノイズで変調した星型領域)
   const R = (P.patchR ?? 185) / k;             // パッチ基準半径 (target px)
@@ -943,7 +956,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
       const tx = randRange(rng, 0, w), ty = randRange(rng, 0, h);
       let aBest = null, aScore = Infinity, aRing = Infinity;
       for(let c=0;c<nCand;c++){
-        const p = pick(rng, bbIn*km, bbIn*km);
+        const p = pick(rng, bbIn*kmX, bbIn*kmY);
         p.cx = tx; p.cy = ty;
         let err = 0, cnt = 0;
         const hist = [0,0,0,0]; let hn = 0;
@@ -1001,7 +1014,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     // 通常パッチ同様: 境界リング一致で候補選択 → 領域成長型で貼付
     let hp = null, hs = Infinity;
     for(let c=0;c<30;c++){
-      const p = pick(rng, bbIn*km, bbIn*km);
+      const p = pick(rng, bbIn*kmX, bbIn*kmY);
       p.cx = hx; p.cy = hy;
       let err = 0, cnt = 0;
       const es = Math.max(2, (bbIn/24)|0);
@@ -1045,10 +1058,12 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   if(P.organic !== false){
     // 有機系: nearest サンプリング起因のギザ除去 (必要最小限)
     let smoothR = 0;
+    // 異方サンプリング時の階段幅は軸別レートの小さい方で決まる (srcAspect=1 なら kFull と同値)
+    const kFullMin = kFull / sA;
     if(kFull > 1.05) smoothR = Math.max(1, Math.round(1.2*(w/512)));       // 縮小: エイリアス除去
     // 拡大: 階段除去。階段幅は 1/k px なので半径は 1/k に比例させる
     // (v16 以前は ×(w/512) が掛かり二重スケールで 4096px で半径 54 → 数分かかった)
-    else if(kFull < 0.95) smoothR = Math.max(1, Math.round(1.2/kFull));
+    else if(kFullMin < 0.95) smoothR = Math.max(1, Math.round(1.2/kFullMin));
     if(smoothR) sm = modeFilter(sm, w, h, smoothR, 1, 4, wrap);
     if(progress) progress(0.92);
     // 微小フラグメント除去 (画面上で点に見えるサイズの絶対下限つき)
@@ -1110,6 +1125,20 @@ export const PRESETS = {
       {name:'グリーン', hex:'#4c5f49'},
       {name:'ブラウン', hex:'#5f5345'},
       {name:'ブラック', hex:'#3a3e3d'},
+    ],
+  },
+  cce: {
+    // CCE (Camouflage Centre-Europe、フランス 1990 年代〜現用): M81 の図案を横に伸ばした派生。
+    // 4 色構成も M81 と同系統なので、ソースは m81 を流用し srcAspect で横長ブロブを作る。
+    // 色は M81 よりグリーンが明るく、カーキが灰味 (参照画像からの実測値)
+    name: 'CCE (フランス)', kind: 'quilt', src: 'm81', ref: 'cce',
+    kBase: 0.95, patchR: 150, organic: true, srcAspect: 1.5,   // patchR: 185 (M81 と同値) だと横伸長で 1 パッチ内の色多様性が落ち、緑比が目標を 0.10 下回った
+    frac: [0.305, 0.254, 0.277, 0.165], divw: [1, 1, 1, 2.4],
+    colors: [
+      {name:'ライトカーキ', hex:'#a29275'},
+      {name:'グリーン',   hex:'#4f5c40'},
+      {name:'ブラウン',    hex:'#614f3d'},
+      {name:'ブラック',    hex:'#2d2d2d'},
     ],
   },
   marpat: {

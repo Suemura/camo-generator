@@ -14,6 +14,11 @@ description: エージェントのワークフロー・オーケストレーシ�
 - `/land` の中でも、`gh pr merge` の直前に `AskUserQuestion` で PR 番号・タイトル・マージ方式を提示し承認を得る。`.claude/settings.json` の ask 権限ダイアログは承認の代替にならない（ダイアログはコマンド単位の許可であり、マージ判断の合意ではない）
 - 承認が得られなければ後片付けも行わず終了する
 
+## main への直接 push は原則禁止（指示があっても一度確認）
+- main には PR 経由でのみ変更を入れる。エージェントがローカル main にコミットして `git push origin main` することは原則禁止。誤って main 上で作業していた場合はブランチを切って PR にする
+- ユーザーが「main に直接 push して」と明示した場合のみ例外。その場合も実行前に `AskUserQuestion` で push するコミット一覧（`git log origin/main..main --oneline`）と理由を提示し、承認を得てから 1 回だけ実行する。ask 権限ダイアログは確認の代替にならない
+- `git push --force` 系は settings で deny 済み（main 以外でも禁止）
+
 ## 実装計画の策定
 - **Plan Mode で計画済みの場合**: planner の起動をスキップし、合意済みの計画に基づいて実装を開始する。
 - **Plan Mode を経ずに直接実装する場合**: 些細ではないタスク（3ステップ以上、またはアーキテクチャの決定事項など）では **planner エージェントを起動**して実装計画を策定する。

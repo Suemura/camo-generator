@@ -6,7 +6,7 @@ import fs from 'node:fs';
 const dir = new URL('.', import.meta.url).pathname;
 const core = new URL('../src/core/', import.meta.url).pathname;
 // ソースマップ類は camo.js より前にインライン展開する
-const srcFiles = ['m81src.js', 'dcusrc.js', 'digsrc.js'];
+const srcFiles = ['m81src.js', 'dcusrc.js', 'jgsdf2src.js', 'digsrc.js'];
 
 export function buildIndexHtml(){
   const srcInline = srcFiles

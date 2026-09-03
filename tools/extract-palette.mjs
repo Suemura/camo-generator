@@ -1,25 +1,105 @@
 // リファレンス画像からパレット既定値を実測する (規約: 既定色は感覚で決めず参照画像から抽出)。
 // UI の「画像から抽出」と同じ k-means (src/core/kmeans.js) を Node から呼ぶので結果が一致する。
-// usage: node tools/extract-palette.mjs <image> [k=4]
+// usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--max-edge=N] [--flatten=SIGMA]
 //   例: node tools/extract-palette.mjs refs/woodland.png 4
+//       node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core
 // 出力: 暗→明の hex 一覧と、PRESETS.colors にそのまま貼れるスニペット
+//
+// --core[=R] (既定 R=3): 各クラスタの「領域内部」だけで代表色 (中央値) を測り直す。
+//   輪郭のアンチエイリアス画素はクラスタ重心を隣接色へ引っ張るため、小さい図形が多い迷彩
+//   (斑点の多い陸自 2 型など) では黒が周囲の緑側へ寄って measured なのに実物と合わなくなる。
+//   半径 R の近傍が全て同ラベルの画素だけを集計するとこの混色が落ちる。
+// --flatten=SIGMA: フラットフィールド補正 (周辺減光・照明ムラの平坦化) を先にかける。
+//   布地の写真をリファレンスにする場合、ソースマップ生成 (tools/gen-src.mjs) と同じ値を渡して
+//   量子化とパレットの前提を揃える。
 
 import { kmeans, rgbToHex } from "../src/core/kmeans.js";
 import { loadRgba } from "./image.mjs";
 
-const MAX_EDGE = 256; // src/lib/extract.ts と同じ縮小上限 (UI の抽出結果と揃える)
+const DEFAULT_MAX_EDGE = 256; // src/lib/extract.ts と同じ縮小上限 (UI の抽出結果と揃える)
 
-const file = process.argv[2];
-const k = Number(process.argv[3] || 4);
+const argv = process.argv.slice(2);
+const flags = argv.filter((a) => a.startsWith("--"));
+const [file, kArg] = argv.filter((a) => !a.startsWith("--"));
+const k = Number(kArg || 4);
 if (!file) {
-  console.error("usage: node tools/extract-palette.mjs <image> [k=4]");
+  console.error(
+    "usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--max-edge=N] [--flatten=SIGMA]",
+  );
   process.exit(1);
 }
-const { data, w, h } = await loadRgba(file, { maxEdge: MAX_EDGE });
-const colors = kmeans(data, k).map(rgbToHex);
-console.log(`${file} (${w}×${h} に縮小、k=${k})`);
-for (const c of colors) console.log(`  ${c}`);
+const coreArg = flags.find((a) => a === "--core" || a.startsWith("--core="));
+const coreR = coreArg ? Number(coreArg.split("=")[1] ?? 3) : 0;
+const edgeArg = flags.find((a) => a.startsWith("--max-edge="));
+const maxEdge = edgeArg ? Number(edgeArg.slice(11)) : DEFAULT_MAX_EDGE;
+const flattenArg = flags.find((a) => a.startsWith("--flatten="));
+const flattenSigma = flattenArg ? Number(flattenArg.slice(10)) : undefined;
+
+const { data, w, h } = await loadRgba(file, {
+  maxEdge,
+  ...(flattenSigma ? { flatten: flattenSigma } : {}),
+});
+const centers = kmeans(data, k);
+
+/** 各画素を最近傍クラスタへ割り当てる */
+function labelPixels() {
+  const lab = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    let bi = 0;
+    let bd = Number.POSITIVE_INFINITY;
+    for (let j = 0; j < k; j++) {
+      const c = centers[j];
+      const d =
+        (data[i * 4] - c[0]) ** 2 + (data[i * 4 + 1] - c[1]) ** 2 + (data[i * 4 + 2] - c[2]) ** 2;
+      if (d < bd) {
+        bd = d;
+        bi = j;
+      }
+    }
+    lab[i] = bi;
+  }
+  return lab;
+}
+
+/** 領域内部 (半径 R の近傍が全て同ラベル) の画素だけを集めてクラスタごとの中央値を返す */
+function coreMedians(R) {
+  const lab = labelPixels();
+  const buckets = Array.from({ length: k }, () => []);
+  for (let y = R; y < h - R; y++) {
+    for (let x = R; x < w - R; x++) {
+      const c = lab[y * w + x];
+      let inner = true;
+      for (let dy = -R; dy <= R && inner; dy++) {
+        for (let dx = -R; dx <= R; dx++) {
+          if (lab[(y + dy) * w + x + dx] !== c) {
+            inner = false;
+            break;
+          }
+        }
+      }
+      if (inner) buckets[c].push((y * w + x) * 4);
+    }
+  }
+  return centers.map((c, i) => {
+    const b = buckets[i];
+    if (b.length === 0) return { rgb: c, n: 0 };
+    const med = [0, 1, 2].map((ch) => {
+      const v = b.map((p) => data[p + ch]).sort((a, z) => a - z);
+      return v[v.length >> 1];
+    });
+    return { rgb: med, n: b.length };
+  });
+}
+
+const measured = coreR
+  ? coreMedians(coreR).map((m) => ({ hex: rgbToHex(m.rgb), n: m.n }))
+  : centers.map((c) => ({ hex: rgbToHex(c), n: null }));
+
+console.log(
+  `${file} (${w}×${h} に縮小、k=${k}${flattenSigma ? `、--flatten=${flattenSigma}` : ""}${coreR ? `、--core=${coreR}: 領域内部の中央値` : ""})`,
+);
+for (const m of measured) console.log(`  ${m.hex}${m.n === null ? "" : `  (内部画素 ${m.n})`}`);
 console.log("\n// PRESETS.colors 用スニペット (name は実物の呼称に置き換える)");
 console.log("colors: [");
-for (const c of colors) console.log(`  { name: '', hex: '${c}' },`);
+for (const m of measured) console.log(`  { name: '', hex: '${m.hex}' },`);
 console.log("],");

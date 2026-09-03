@@ -1,5 +1,5 @@
 // prototype 由来の生成コア (camo.js) の型定義。実装は JS のまま (browser/Node 共用・依存ゼロを維持)。
-export type PresetKey = "woodland" | "marpat" | "marpat_desert" | "aor1" | "aor2" | "ucp" | "dcu";
+export type PresetKey = "woodland" | "marpat" | "marpat_desert" | "aor1" | "aor2" | "ucp" | "dcu" | "jgsdf2";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;

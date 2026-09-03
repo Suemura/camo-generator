@@ -7,7 +7,7 @@
 
 ## 概要
 
-- ウッドランド (M81) / 3 カラーデザート (DCU) / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP の迷彩に近い模様を計算で生成する
+- ウッドランド (M81) / 3 カラーデザート (DCU) / 陸自迷彩 2 型 / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP の迷彩に近い模様を計算で生成する
 - シード値により、同じアルゴリズムから無数のバリエーションを決定的に再現できる
 - 各パターンのパレット（例: ウッドランドの緑・茶・サンド・黒）を自由な色にその場で差し替えられる
 - 生成結果を PNG / JPG / WebP / SVG（デジタル系のみ）で任意サイズ・実寸（mm / inch × DPI、PNG に DPI 埋込）でエクスポートできる
@@ -20,7 +20,7 @@
 
 | 手法 | 対象 | 概要 |
 |------|------|------|
-| **ブロブパッチ合成（クイルト）** | M81 ウッドランド / DCU 3 カラーデザート / AOR1 / AOR2 | 実物図案のインデックスマップから、有機輪郭のパッチを領域成長型シームで貼り合わせる。局所形状・色・面積比は実物の設計言語そのもの。多数決ミップマップ・フラグメント除去・シェイプ完走成長などの後処理を含む。**主力手法**（ユーザー評価 88+） |
+| **ブロブパッチ合成（クイルト）** | M81 ウッドランド / DCU 3 カラーデザート / 陸自迷彩 2 型 / AOR1 / AOR2 | 実物図案のインデックスマップから、有機輪郭のパッチを領域成長型シームで貼り合わせる。局所形状・色・面積比は実物の設計言語そのもの。多数決ミップマップ・フラグメント除去・シェイプ完走成長などの後処理を含む。**主力手法**（ユーザー評価 88+） |
 | **クラスタ成長** | MARPAT (ウッドランド/デザート) / UCP | セルグリッド上で色ごとに面積予算つきシード成長。蛇行ドリフト・seedNear 連鎖・境界ディザ・スペックルで実物のクラスタ構造を再現 |
 | **ノイズ閾値（従来手法）** | （選択肢からは退役） | シード付き値ノイズ + fBm + ドメインワープ + 分位点閾値。到達上限 ~75点。コードは保持し、フェーズ2 のカスタム迷彩生成の基盤候補 |
 
@@ -69,7 +69,10 @@ pnpm deploy       # 手動デプロイ (wrangler login 済み前提)。通常は
 node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG レンダ (目視検証用)
 node tools/render.mjs <出力dir> <seed> --compare  # 左=生成 / 右=実物リファレンス (refs/) を並べた PNG。精度改善の基本ループ
 node tools/extract-palette.mjs refs/<key>.png 4    # 参照画像からパレット既定値を実測 (PRESETS.colors 用スニペットを出力)
+#   オプション: --core[=R] (領域内部の中央値で測る。輪郭の混色を除く) / --flatten=SIGMA (周辺減光の平坦化)
 node tools/gen-src.mjs refs/<key>.png src/core/<key>src.js <k> <PREFIX>   # 参照画像 → クイルト用インデックスマップ (新プリセットの図案化)
+#   オプション: --resize=N (長辺を縮小) / --blur=SIGMA (織り目を落とす) / --flatten=SIGMA (周辺減光の平坦化)
+#             いずれも布地の写真をリファレンスにする場合に必要。既定オフで従来と同一出力
 bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検査 (CI と pre-push が自動実行)
 ```
 
@@ -122,8 +125,8 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 ## クレジット・ライセンス注記
 
 - 3D プレビューの環境光 HDRI は Poly Haven「Kloofendal 48d Partly Cloudy (Pure Sky)」（Greg Zaal / Jarod Guest、CC0）、布地の normal / roughness マップは ambientCG「Fabric 036」「Fabric 062」（CC0）を 512px に縮小して `public/3d/` に同梱。3D 描画は three.js（MIT）
-- M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）。DCU ソースマップ（`src/core/dcusrc.js`）は `refs/dcu.png` から生成した 3 値インデックス
-- 実物リファレンス画像（`refs/`、開発時専用・アプリ非同梱）の出典。いずれも Wikimedia Commons、パブリックドメイン（米政府著作物）
+- M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）。DCU ソースマップ（`src/core/dcusrc.js`）は `refs/dcu.png` から生成した 3 値インデックス、陸自迷彩 2 型ソースマップ（`src/core/jgsdf2src.js`）は `refs/jgsdf2.jpg`（CC BY 3.0、下記クレジット）から生成した 4 値インデックス
+- 実物リファレンス画像（`refs/`、開発時専用・アプリ非同梱）の出典。いずれも Wikimedia Commons。ライセンスの明記があるもの以外はパブリックドメイン（米政府著作物）
   - `woodland.png` — [File:"M81" U.S. woodland camouflage pattern swatch.png](https://commons.wikimedia.org/wiki/File:%22M81%22_U.S._woodland_camouflage_pattern_swatch.png)（U.S. Army）
   - `marpat.jpg` — [File:MARPAT woodland pattern.jpg](https://commons.wikimedia.org/wiki/File:MARPAT_woodland_pattern.jpg)（Henrik Clausen 撮影、パブリックドメイン）
   - `marpat_desert.jpg` — [File:Desert MARPAT camouflage pattern swatch.jpg](https://commons.wikimedia.org/wiki/File:Desert_MARPAT_camouflage_pattern_swatch.jpg)（USMC）
@@ -131,4 +134,5 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
   - `aor2.png` — [File:NWU Type III camouflage pattern swatch, AOR-2.png](https://commons.wikimedia.org/wiki/File:NWU_Type_III_camouflage_pattern_swatch,_AOR-2.png)（U.S. Navy）
   - `ucp.jpg` — [File:Universal Camouflage Pattern (UCP).jpg](https://commons.wikimedia.org/wiki/File:Universal_Camouflage_Pattern_(UCP).jpg)（Commons 利用者 Doubleailes、パブリックドメイン）
   - `dcu.png` — [File:DCU camo swatch.png](https://commons.wikimedia.org/wiki/File:DCU_camo_swatch.png)（U.S. Army）
+  - `jgsdf2.jpg` — [File:迷彩服2型の迷彩パターン.jpg](https://commons.wikimedia.org/wiki/File:%E8%BF%B7%E5%BD%A9%E6%9C%8D2%E5%9E%8B%E3%81%AE%E8%BF%B7%E5%BD%A9%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3.jpg)（Crescent moon 撮影、**CC BY 3.0**。無改変で収録）
 - `experimental/` の一部は [camogen](https://github.com/glederrey/camogen) (MIT) のアルゴリズムを参考にした

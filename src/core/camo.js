@@ -3,6 +3,7 @@
 'use strict';
 import { M81_SRC_W, M81_SRC_H, M81_SRC_RLE } from './m81src.js';
 import { DCU_SRC_W, DCU_SRC_H, DCU_SRC_RLE } from './dcusrc.js';
+import { JGSDF2_SRC_W, JGSDF2_SRC_H, JGSDF2_SRC_RLE } from './jgsdf2src.js';
 // AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は静的 import しない。初期バンドルを小さく保つため、
 // 利用側が動的 import して registerSources() で渡す (ブラウザ: src/lib/generate.ts、Node: tools/render.mjs)。
 
@@ -646,6 +647,7 @@ function decodeSrc(key, rle, W, H){
 const SRCS = {
   m81:  () => decodeSrc('m81',  M81_SRC_RLE,  M81_SRC_W,  M81_SRC_H),
   dcu:  () => decodeSrc('dcu',  DCU_SRC_RLE,  DCU_SRC_W,  DCU_SRC_H),   // 18KB なので静的 import で足りる
+  jgsdf2: () => decodeSrc('jgsdf2', JGSDF2_SRC_RLE, JGSDF2_SRC_W, JGSDF2_SRC_H), // 30KB なので静的 import で足りる
 };
 // 外部ソースマップの登録: registerSources(await import('./digsrc.js'))
 export function registerSources(mod){
@@ -1219,6 +1221,40 @@ export const PRESETS = {
       {name:'ライトタン',    hex:'#e9d1ae'},
       {name:'ペールグリーン', hex:'#bbb18d'},
       {name:'ブラウン',      hex:'#8f590b'},
+    ],
+  },
+  jgsdf2: {
+    // 陸上自衛隊 迷彩 2 型 (1991〜)。実物の特徴:
+    //   - ブロブが M81 より丸く小ぶりで、輪郭から小さなローブ (斑点) が多数分岐する二重構造。
+    //     クイルトは局所形状 = ソース図案そのものなので、この「丸み + 斑点」は専用ソース図案
+    //     (jgsdf2src) が担う。パラメータ側では作れない
+    //   - 4 色。緑が地を占め (実測 40%)、タン・ブラウン・黒に近いダークグリーンが上に乗る
+    name: '陸自迷彩 2 型風', kind: 'quilt', src: 'jgsdf2', ref: 'jgsdf2',
+    // ソース図案の生成:
+    //   node tools/gen-src.mjs refs/jgsdf2.jpg src/core/jgsdf2src.js 4 JGSDF2 --resize=800 --blur=1.2 --flatten=80
+    //   (参照がスウォッチではなく布地の写真なので前処理が要る。--blur: 織り目の斜め筋を
+    //    落とさないと k-means が明度で切ってしまい茶が緑に吸収される。--flatten: 周辺減光を
+    //    残すと四隅が丸ごと黒に量子化され、黒の面積比が 10% → 22% に膨らむ)
+    // kBase 1.1: ソース図案 (800px) を 1/1.1 に縮小参照する。実物と同じ「512px の画面に
+    // ブロブが 6〜7 個」の見え方になる倍率で、1 未満 (= ソースの拡大参照) にすると
+    // 最近傍サンプリングで輪郭が階段化するため 1 以上に留める。多数決ミップの発動域
+    // (k > 1.4) にも入らない
+    // patchR 185: ブロブの大きさはソース図案側で決まるので patchR は「継ぎ目の頻度」だけを決める。
+    // ソースが M81 と同じ 800px なので M81 と同値でパッチ / キャンバス比が揃う
+    kBase: 1.1, patchR: 185, organic: true,
+    // frac はソース図案の実測面積比 (tools/gen-src.mjs の出力)。
+    // divw[3] 1.6: 黒は面積が小さい (10%) ので M81 (2.4) ほどではないが重みを足す。
+    // 重みが 1 のままだと完走が大面積色を優遇する性質で黒がさらに痩せる
+    frac: [0.240, 0.468, 0.186, 0.105], divw: [1, 1, 1, 1.6],
+    // 実測: node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core --flatten=80
+    // (--core = 領域内部の中央値。斑点が多い図案なので素の k-means 重心だと輪郭の混色に
+    //  引かれて黒が緑寄り #464e45 になり、実物の黒に近い色を再現できない。
+    //  --flatten はソースマップ生成と同じ値にして量子化とパレットの前提を揃える)
+    colors: [
+      {name:'タン',      hex:'#8d8b7f'},
+      {name:'グリーン',   hex:'#5e775c'},
+      {name:'ブラウン',   hex:'#74524e'},
+      {name:'ブラック',   hex:'#46444b'},
     ],
   },
 };

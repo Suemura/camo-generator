@@ -42,6 +42,13 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "desert",
     svg: false,
   },
+  jgsdf2: {
+    label: "陸自迷彩 2 型風",
+    note: "1991〜 4 色。有機形状 + 斑点",
+    country: "日本",
+    group: "woodland",
+    svg: false,
+  },
   marpat: {
     label: "デジタル・ウッドランド風",
     note: "MARPAT 系 4 色。ピクセル",

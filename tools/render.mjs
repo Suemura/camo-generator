@@ -1,9 +1,13 @@
-// Node 用レンダリングハーネス: 各プリセットを PNG 出力して目視確認する。 usage: node tools/render.mjs <outdir> <seed> [scale]
+// Node 用レンダリングハーネス: 各プリセットを PNG 出力して目視確認する。
+// usage: node tools/render.mjs <outdir> <seed> [scale] [--tile | --crop=N | --compare] [--size=WxH] [--preset=key]
+//   --compare: 左=生成、右=実物リファレンス (refs/private/<key>.* → refs/<key>.* の順に探索) を並べた
+//              <key>-compare.png を出す。精度改善の基本ループはこれ。参照が無いプリセットは警告して単一出力
 
 import fs from "node:fs";
 import zlib from "node:zlib";
 import { generate, PRESETS, registerSources, toRGBA } from "../src/core/camo.js";
 import * as digsrc from "../src/core/digsrc.js";
+import { findRef, loadRgba } from "./image.mjs";
 
 registerSources(digsrc);
 
@@ -53,8 +57,10 @@ export function writePng(path, rgba, w, h) {
 const outDir = process.argv[2] || "./out";
 fs.mkdirSync(outDir, { recursive: true });
 const seed = parseInt(process.argv[3] || "1234", 10);
-const scale = parseFloat(process.argv[4] || "1.0");
+// scale を省略してフラグを直接置いた場合 (render.mjs out 1234 --compare) は 1.0 扱い
+const scale = process.argv[4]?.startsWith("--") ? 1.0 : parseFloat(process.argv[4] || "1.0");
 const tile = process.argv.includes("--tile"); // 2x2 に並べて継ぎ目を目視確認
+const compare = process.argv.includes("--compare"); // 実物リファレンスと左右比較
 const arg = (name, def) =>
   (process.argv.find((a) => a.startsWith(`--${name}=`)) ?? `=${def}`).split("=")[1];
 const [W0, H0] = arg("size", "512x512").split("x").map(Number); // --size=640x400
@@ -65,6 +71,7 @@ for (const [key, P] of Object.entries(PRESETS)) {
   const t0 = Date.now();
   const res = generate(key, W0, H0, seed, scale);
   const pal = P.colors.map((c) => c.hex);
+  const refPath = compare ? findRef(key) : null;
   if (tile) {
     // 2x2 タイル: 継ぎ目が中央の十字に来る
     const W = W0 * 2;
@@ -81,7 +88,22 @@ for (const [key, P] of Object.entries(PRESETS)) {
     for (let y = 0; y < c; y++)
       for (let x = 0; x < c; x++) idx[y * c + x] = res.index[(oy + y) * W0 + ox + x];
     writePng(`${outDir}/${key}-crop${c}.png`, toRGBA({ w: c, h: c, index: idx }, pal), c, c);
+  } else if (refPath) {
+    // 左右比較: 参照画像を出力寸法に cover でリサイズし、生成結果の右に並べる
+    const ref = await loadRgba(refPath, { width: W0, height: H0 });
+    const gen = toRGBA(res, pal);
+    const W = W0 * 2;
+    const rgba = new Uint8ClampedArray(W * H0 * 4);
+    for (let y = 0; y < H0; y++) {
+      rgba.set(gen.subarray(y * W0 * 4, (y + 1) * W0 * 4), y * W * 4);
+      rgba.set(ref.data.subarray(y * W0 * 4, (y + 1) * W0 * 4), (y * W + W0) * 4);
+    }
+    writePng(`${outDir}/${key}-compare.png`, rgba, W, H0);
+    console.log(`${key}: ${Date.now() - t0}ms (ref: ${refPath})`);
+    continue;
   } else {
+    if (compare)
+      console.warn(`${key}: リファレンス画像が refs/ に無いため単一出力 (refs/README.md)`);
     writePng(`${outDir}/${key}.png`, toRGBA(res, pal), W0, H0);
   }
   console.log(`${key}: ${Date.now() - t0}ms`);

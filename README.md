@@ -34,8 +34,15 @@ src/
   app/              React UI
   styles/tokens/    デザイントークン (spacious 由来。primitives → semantic → CSS カスタムプロパティ)
 tools/
-  render.mjs        Node レンダリングハーネス (PNG 出力、目視検証ループ用)
+  render.mjs        Node レンダリングハーネス (PNG 出力、目視検証ループ用。--compare で refs/ の実物と左右比較)
+  extract-palette.mjs  参照画像からパレット既定値を k-means で実測 (UI の抽出と同じ実装)
+  image.mjs         Node 側の画像読込 (sharp を動的 import。refs/ の探索)
+  check-private-refs.sh  refs/private/ がリポジトリに混入していないか検査 (pre-push / CI / Claude フックから呼ぶ)
   gen-tokens.mjs    docs/design/spacious-DESIGN.md → _primitives.scss
+refs/               実物リファレンス画像 (開発時専用、アプリ非同梱。refs/README.md)
+  <presetKey>.<ext>   自由ライセンス (Wikimedia Commons)。git 管理、出典は本 README のクレジット節
+  private/            再配布不可の画像。gitignore + 4 層の push 防止で絶対にコミットしない
+.githooks/pre-push  refs/private/ を含む push を拒否 (pnpm install の prepare が core.hooksPath を設定)
 tests/              Vitest (決定性・回帰スナップショット)
 prototype/          フェーズ1 プロトタイプ (参照のみ。build.mjs は src/core を読む)
   app-template.html / build.mjs / refs.js / index.html / experimental/
@@ -59,7 +66,17 @@ pnpm typecheck    # tsc
 pnpm deploy       # 手動デプロイ (wrangler login 済み前提)。通常は main マージで GitHub Actions が自動デプロイ
 
 node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG レンダ (目視検証用)
+node tools/render.mjs <出力dir> <seed> --compare  # 左=生成 / 右=実物リファレンス (refs/) を並べた PNG。精度改善の基本ループ
+node tools/extract-palette.mjs refs/<key>.png 4    # 参照画像からパレット既定値を実測 (PRESETS.colors 用スニペットを出力)
+bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検査 (CI と pre-push が自動実行)
 ```
+
+### リファレンス画像の運用（`refs/`）
+
+- 実物リファレンスは**開発時専用**。アプリには同梱せず、UI の「実物比較」モードは廃止した。比較は `render.mjs --compare`、パレット実測は `extract-palette.mjs`
+- 自由ライセンス（Wikimedia Commons 等）の画像は `refs/<presetKey>.<ext>` に置いて git 管理し、下記クレジット節に出典・作者・ライセンスを書く
+- 権利上再配布できない画像は `mkdir -p refs/private` して `refs/private/<presetKey>.<ext>` に置く。`.gitignore` 対象で、`.githooks/pre-push` / Claude Code の PreToolUse フック / CI・Deploy の 4 層が混入を止める。**`git add -f` しないこと**
+- 新プリセット追加の 4 点セット: `PRESETS`（`src/core/camo.js`）/ `PRESET_META`（`src/data/presets-meta.ts`、`group` と `country` を含む）/ `refs/<key>.<ext>` / 決定性スナップショット（`pnpm test -u`）。加えてクレジット節の更新
 
 ## 進め方と進捗
 
@@ -97,5 +114,12 @@ node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG �
 ## クレジット・ライセンス注記
 
 - 3D プレビューの環境光 HDRI は Poly Haven「Kloofendal 48d Partly Cloudy (Pure Sky)」（Greg Zaal / Jarod Guest、CC0）、布地の normal / roughness マップは ambientCG「Fabric 036」「Fabric 062」（CC0）を 512px に縮小して `public/3d/` に同梱。3D 描画は three.js（MIT）
-- 実物リファレンス画像および M81 ソースマップは Wikimedia Commons 由来（US Woodland は米政府図案でパブリックドメイン。各画像のライセンスは Commons の該当ファイルページに従う）
+- M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）
+- 実物リファレンス画像（`refs/`、開発時専用・アプリ非同梱）の出典。いずれも Wikimedia Commons、パブリックドメイン（米政府著作物）
+  - `woodland.png` — [File:"M81" U.S. woodland camouflage pattern swatch.png](https://commons.wikimedia.org/wiki/File:%22M81%22_U.S._woodland_camouflage_pattern_swatch.png)（U.S. Army）
+  - `marpat.jpg` — [File:MARPAT woodland pattern.jpg](https://commons.wikimedia.org/wiki/File:MARPAT_woodland_pattern.jpg)（Henrik Clausen 撮影、パブリックドメイン）
+  - `marpat_desert.jpg` — [File:Desert MARPAT camouflage pattern swatch.jpg](https://commons.wikimedia.org/wiki/File:Desert_MARPAT_camouflage_pattern_swatch.jpg)（USMC）
+  - `aor1.png` — [File:Navy Working Uniform (NWU) Type III camouflage pattern swatch, AOR-1.png](https://commons.wikimedia.org/wiki/File:Navy_Working_Uniform_(NWU)_Type_III_camouflage_pattern_swatch,_AOR-1.png)（U.S. Navy）
+  - `aor2.png` — [File:NWU Type III camouflage pattern swatch, AOR-2.png](https://commons.wikimedia.org/wiki/File:NWU_Type_III_camouflage_pattern_swatch,_AOR-2.png)（U.S. Navy）
+  - `ucp.jpg` — [File:Universal Camouflage Pattern (UCP).jpg](https://commons.wikimedia.org/wiki/File:Universal_Camouflage_Pattern_(UCP).jpg)（Commons 利用者 Doubleailes、パブリックドメイン）
 - `experimental/` の一部は [camogen](https://github.com/glederrey/camogen) (MIT) のアルゴリズムを参考にした

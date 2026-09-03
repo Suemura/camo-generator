@@ -1,5 +1,5 @@
 import type { PresetKey } from "@/core/camo.js";
-import { PRESET_KEYS, PRESET_META } from "@/data/presets-meta";
+import { PRESET_GROUPS, PRESET_KEYS, PRESET_META } from "@/data/presets-meta";
 import { type AppState, LIMITS } from "@/lib/state";
 import styles from "./PatternSection.module.scss";
 
@@ -14,20 +14,37 @@ export function PatternSection({ state, onChange }: Props) {
   return (
     <div className="section">
       <h2 className="sectionTitle">パターン</h2>
-      <div className={styles.grid} role="radiogroup" aria-label="プリセット">
-        {PRESET_KEYS.map((k: PresetKey) => (
-          <button
-            key={k}
-            type="button"
-            role="radio"
-            aria-checked={state.preset === k}
-            className={`${styles.card} ${state.preset === k ? styles.active : ""}`}
-            onClick={() => onChange({ preset: k, palette: null })}
-          >
-            <span className={styles.cardName}>{PRESET_META[k].label}</span>
-            <span className={styles.cardNote}>{PRESET_META[k].note}</span>
-          </button>
-        ))}
+      <div>
+        {PRESET_GROUPS.map((g) => {
+          // 該当プリセットが無いグループは見出しも出さない (プリセット追加に応じて自然に現れる)
+          const keys = PRESET_KEYS.filter((k: PresetKey) => PRESET_META[k].group === g.key);
+          if (keys.length === 0) return null;
+          const headingId = `preset-group-${g.key}`;
+          return (
+            <div key={g.key} className={styles.group}>
+              <h3 id={headingId} className={styles.groupTitle}>
+                {g.label}
+              </h3>
+              <div role="radiogroup" aria-labelledby={headingId} className={styles.grid}>
+                {keys.map((k: PresetKey) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="radio"
+                    aria-checked={state.preset === k}
+                    className={`${styles.card} ${state.preset === k ? styles.active : ""}`}
+                    onClick={() => onChange({ preset: k, palette: null })}
+                  >
+                    <span className={styles.cardName}>{PRESET_META[k].label}</span>
+                    <span className={styles.cardNote}>
+                      {PRESET_META[k].country} · {PRESET_META[k].note}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
       <div className="field">
         <label className="label" htmlFor="seed">

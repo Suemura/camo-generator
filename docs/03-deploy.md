@@ -15,7 +15,7 @@ main push ─► Deploy (deploy.yml): check → test → build → wrangler depl
                                    custom domain: camo-generator.suemura.app
 ```
 
-- **CI**（`.github/workflows/ci.yml`）: `pull_request`（main 向け）で `pnpm check` → `pnpm test` → `pnpm build`。デプロイはしない
+- **CI**（`.github/workflows/ci.yml`）: `pull_request`（main 向け）で `checkout` (fetch-depth: 0) → `check-private-refs.sh` → `pnpm check` → `pnpm test` → `pnpm build`。デプロイはしない
 - **Deploy**（`.github/workflows/deploy.yml`）: `push` to `main` と `workflow_dispatch`。マージコミットは PR 時点と内容が異なりうるため、CI と同じ検証を再実行してから `cloudflare/wrangler-action` で `wrangler deploy` する
 - Deploy は `concurrency: deploy-production` で直列化し、途中キャンセルはしない（`cancel-in-progress: false`）。連続マージ時は順番に実行される
 - GitHub Environment `production` に URL を紐付けているので、Actions の実行画面からサイトへ直接飛べる

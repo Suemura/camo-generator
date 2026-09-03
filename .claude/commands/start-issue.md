@@ -103,6 +103,7 @@ gh issue edit {Issue番号} --add-assignee @me
 - **planner エージェント**を起動し、Issue のタイトル・本文・コメント要旨・関連する `docs/02-spec.md` の節を渡して実装計画と Sprint Contract（完了条件）を得る
 - 起動プロンプトには**この時点で判明している関連ファイルパス・対象領域**を埋め込み、planner がコードベースをゼロから探索し直さなくて済むようにする（探索削減）
 - 生成アルゴリズムに触る Issue では、`docs/01-tech-verification.md` の該当手法の節を planner に読ませる（過去に解消済みのアーティファクトを再発させない）
+- **迷彩プリセットを追加する Issue**（#21 のサブ Issue）では、`docs/04-add-preset.md` を planner に読ませ、同ガイド §9 のチェックリスト（7 点セット・カラーライブラリ登録・検証プロトタイプ更新・PR への検証画像貼付）をそのまま Sprint Contract に取り込む。カラーライブラリ登録とプロトタイプ更新は後追いにせず同じ PR に含める
 - 計画と Sprint Contract をユーザーに表示するが、**承認待ちで停止しない**
 - 些細なタスク（3 ステップ未満）は `workflow-orchestration.md` の基準に従い planner をスキップしてよい。その場合は「pnpm check / typecheck / test 成功」を Sprint Contract とみなす
 
@@ -159,6 +160,7 @@ pnpm test
 - `git push -u origin <ブランチ名>` を**単独で**実行する
 - PR 本文を**リポジトリ外の一時ファイル**（例: `/tmp/pr-body.md`）に書き出し、`--body-file` で渡して PR を作成する。本文に `Closes #{Issue番号}` を必ず含める。作業ツリー内に書き出すと untracked ファイルとして残留するため
 - PR 本文には「何を・なぜ」に加え、**生成結果への影響**（index マップが変わるか / スナップショットを更新したか / render.mjs で確認したシードとスケール）を 1 節書く。レビュアーの判断材料になる
+- 迷彩プリセットの追加・精度改善では、render.mjs の検証画像（`--compare` / 複数スケール / `--tile` + `--crop`）を `verify-assets` ブランチに置いて PR 本文に埋め込み、Artifact の URL も書く（`docs/04-add-preset.md` §6）
 
 **重要**: `gh pr create` はコマンド文字列の**先頭**から始まる単独コマンドとして実行すること。PR 検知フック（`.claude/hooks/pr-created.sh`）はコマンド文字列の先頭一致で検証しているため、`git push && gh pr create` のような複合コマンドや環境変数プレフィックス付きでは発火せず、自動レビューフローが始まらない。
 

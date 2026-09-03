@@ -1,6 +1,6 @@
 # パレットライブラリ 出典一覧
 
-`palette-library.json` に収録した 120 色 (第1弾 50 色 + 第2弾 70 色) の hex 値の出典と、採用方針・注意事項をまとめる。仕様は `docs/02-spec.md` §3.3 を参照。
+`palette-library.json` に収録した 128 色 (第1弾 50 色 + 第2弾 70 色 + 第3弾 8 色) の hex 値の出典と、採用方針・注意事項をまとめる。仕様は `docs/02-spec.md` §3.3、迷彩プリセット追加時の登録手順は `docs/04-add-preset.md` §3 を参照。
 
 ## 収録方針
 
@@ -9,7 +9,7 @@
 - RAL Classic は encycolorpedia の換算値、RAL F9 (連邦軍迷彩色) は nuancier-ral の換算値を採用した。RAL 7028 Dunkelgelb は RAL Classic 廃番のため模型塗料の画面近似値を採用し、`source` に approx. と明記した。
 - BS 381C は scalemates の BS 381C パレットの値を採用した。
 - 公式 sRGB 値が存在しない色 (4BO / 7K / 日本陸海軍色 / 陸自 OD 色) は、研究者・模型誌で通説となっている FS 近似色またはマンセル値を経由して換算し、`source` に approx. と明記した。
-- アプリのプリセット (MARPAT / AOR1 / AOR2) は公的規格の色番号が存在しないため、`src/core/camo.js` の実測パレット (Wikimedia Commons 参照画像からの抽出値) をそのまま収録した。M81 と UCP は FS 595 の公式色番号が存在するため FS 系エントリで代表させている。
+- アプリのプリセット (MARPAT / AOR1 / AOR2 / DCU / DBDU) は公的規格の色番号が存在しないため、`src/core/camo.js` の実測パレット (Wikimedia Commons 参照画像からの抽出値) をそのまま収録した。M81 と UCP は FS 595 の公式色番号が存在するため FS 系エントリで代表させている。新しい迷彩プリセットを追加したら、その既定色も同じ方式で登録する (`docs/04-add-preset.md` §3)。
 - タグは色味 (hue) / 用途 (use) / 国 (country) の 3 軸。用途タグの camo-* はアプリのプリセット名に対応する。
 
 ## 第2弾（模型塗料ラインナップをモチーフ索引として追加）
@@ -81,6 +81,18 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - `su-amt4` は FS 34102 近似のため `fs34102` / `su-4bo` と完全に同じ hex になる。ソ連 WWII 航空機色 AMT-4 と車両色 4BO は別の塗料規格であり、パレット選択 UI で別名として提示する価値があるため残した。
 - `fs34088` (OD CARC) は `fs34087` (旧 OD) の改番だが、595C 測色値は #675e4c と大幅に明るく、流布する 34087 の hex チャート値 #3c3421 とは別物として扱う。
 - `bs381c-629` は RAF Ocean Grey の BS 381C 上の近似番号であり、Ocean Grey そのものではない。`fs36173` / `fs36176` と近接するが規格が異なる。
+
+## 第3弾（迷彩プリセット追加に伴う実測色: DCU / DBDU）
+
+アプリに 3 カラーデザート (DCU、Issue #23) と 6 カラーデザート (DBDU、Issue #24) のプリセットを追加したのに合わせ、両プリセットの既定色 8 色を追記し 128 色とした (コミット `a7f5abc`)。以後、迷彩プリセットを追加したら同じ手順で既定色を登録する (`docs/04-add-preset.md` §3)。
+
+### 方法
+
+- 第1弾の MARPAT / AOR と同じく、`std` は「〜 (実測)」とし、hex は `src/core/camo.js` の `PRESETS[key].colors` (Wikimedia Commons 参照画像からの k-means 実測値) と完全一致させている。URL には hex しか入らないため、この一致がカラーライブラリ名称の逆引き (`libraryByHex`) の前提になる。
+- `code` には公式の色呼称の番号を入れた。DBDU は Natick/Belvoir の報告書 "Evaluation of Desert Camouflage Uniforms by Ground Observers" §2.1 に記載の Natick color designation (Light Tan 379 / Tan 380 / Light Brown 381 / Dark Brown 382 / Black 383 / Khaki 384)、DCU は 3 色デザートの陸軍色呼称 (Tan 492 / Brown 493 / Khaki 494)。hex はこれらの測色データではなく参照画像の実測値である旨を `source` に明記した。
+- DBDU の Khaki 384 は登録していない。参照画像 (退色した実物写真、CC BY-SA 3.0) では地の Tan 380 と分離できなかったため。`dbdu-tan380` の `note` にその旨を記載。
+- 用途タグ `camo-3color-desert` (既存) / `camo-6color-desert` (新規) を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「6 色デザート (チョコチップ)」を追加した。
+- 未登録のプリセット既定色: CCE (Issue #25) の 4 色。フランス CE 迷彩の色に公的規格番号は見つかっておらず、「CCE (実測)」+ `camo-cce` タグで登録する予定 (`docs/04-add-preset.md` 残課題)。
 
 ## 出典一覧
 
@@ -206,6 +218,14 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `su-amt7` | FS 595 AMT-7 (FS 35190 近似) | #5a8b9e | approx.: FS 25190 近似 (https://massimotessitori.altervista.org/sovietwarplanes/pages/colors/color-table.html) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換 (35190 の値を使用) |
 | `idf-sand-grey-67` | FS 595 (FS 30372 近似) | #ac9a86 | approx.: FS 30372 近似 (Lifecolor UA020 / AK RC096 の対照表記, https://www.mech9.com/p/mr-color-paint-conversion-table.html) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換 |
 | `idf-sinai-grey-82` | FS 595 (FS 36134 近似) | #676865 | approx.: FS 36134 近似 (Ilan Levy, IDF Modelling 色対照表, https://www.tapatalk.com/groups/scalemodelsmalaysia/merkava-color-match-t9747.html 引用) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換 |
+| `dcu-tan492` | DCU (実測) Tan 492 | #e9d1ae | app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像 refs/dcu.png から k-means 抽出)。色番号は 3 色デザートの陸軍色呼称 (https://ciehub.info/glossary/ThreeColorDesertCamouflagePattern.html) |
+| `dcu-khaki494` | DCU (実測) Khaki 494 | #bbb18d | 同上 |
+| `dcu-brown493` | DCU (実測) Brown 493 | #8f590b | 同上 |
+| `dbdu-ltan379` | DBDU (実測) Light Tan 379 | #e5d5cd | app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像 refs/dbdu.jpg から k-means 抽出)。色番号は Natick color designation (Evaluation of Desert Camouflage Uniforms by Ground Observers, U.S. Army Belvoir RD&E Center / Natick RD&E Center §2.1, https://commons.wikimedia.org/wiki/File:Evaluation_of_Desert_Camouflage_Uniforms_by_Ground_Observers.pdf) |
+| `dbdu-tan380` | DBDU (実測) Tan 380 | #c6b5a4 | 同上。参照画像の退色により Khaki 384 と分離できず、地色として 1 色で代表 |
+| `dbdu-lbrown381` | DBDU (実測) Light Brown 381 | #9a766b | 同上 |
+| `dbdu-dbrown382` | DBDU (実測) Dark Brown 382 | #704c44 | 同上 |
+| `dbdu-black383` | DBDU (実測) Black 383 | #1d1f23 | 同上 |
 
 ## 注意事項
 

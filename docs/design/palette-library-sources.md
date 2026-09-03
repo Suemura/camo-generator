@@ -1,6 +1,6 @@
 # パレットライブラリ 出典一覧
 
-`palette-library.json` に収録した 128 色 (第1弾 50 色 + 第2弾 70 色 + 第3弾 8 色) の hex 値の出典と、採用方針・注意事項をまとめる。仕様は `docs/02-spec.md` §3.3、迷彩プリセット追加時の登録手順は `docs/04-add-preset.md` §3 を参照。
+`palette-library.json` に収録した 132 色 (第1弾 50 色 + 第2弾 70 色 + 第3弾 8 色 + 第4弾 4 色) の hex 値の出典と、採用方針・注意事項をまとめる。仕様は `docs/02-spec.md` §3.3、迷彩プリセット追加時の登録手順は `docs/04-add-preset.md` §3 を参照。
 
 ## 収録方針
 
@@ -9,7 +9,8 @@
 - RAL Classic は encycolorpedia の換算値、RAL F9 (連邦軍迷彩色) は nuancier-ral の換算値を採用した。RAL 7028 Dunkelgelb は RAL Classic 廃番のため模型塗料の画面近似値を採用し、`source` に approx. と明記した。
 - BS 381C は scalemates の BS 381C パレットの値を採用した。
 - 公式 sRGB 値が存在しない色 (4BO / 7K / 日本陸海軍色 / 陸自 OD 色) は、研究者・模型誌で通説となっている FS 近似色またはマンセル値を経由して換算し、`source` に approx. と明記した。
-- アプリのプリセット (MARPAT / AOR1 / AOR2 / DCU / DBDU) は公的規格の色番号が存在しないため、`src/core/camo.js` の実測パレット (Wikimedia Commons 参照画像からの抽出値) をそのまま収録した。M81 と UCP は FS 595 の公式色番号が存在するため FS 系エントリで代表させている。新しい迷彩プリセットを追加したら、その既定色も同じ方式で登録する (`docs/04-add-preset.md` §3)。
+- アプリのプリセット (MARPAT / AOR1 / AOR2 / DCU / DBDU / 陸自迷彩 2 型) は公的規格の色番号が存在しないため、`src/core/camo.js` の実測パレット (Wikimedia Commons 参照画像からの抽出値) をそのまま収録した。M81 と UCP は FS 595 の公式色番号が存在するため FS 系エントリで代表させている。新しい迷彩プリセットを追加したら、その既定色も同じ方式で登録する (`docs/04-add-preset.md` §3)。
+- 陸自迷彩 2 型については、車両用塗料の NDS Z 8201E 3414 / 3606 は規格として公開されているが**被服 (迷彩服) 4 色の色指定は公表されていない** (防衛省規格目録に「迷彩」の規格は存在せず、日塗工番号との公式対応もない) ため、生地の実測値を収録し、塗料色エントリとは別物として `note` に明記した。
 - タグは色味 (hue) / 用途 (use) / 国 (country) の 3 軸。用途タグの camo-* はアプリのプリセット名に対応する。
 
 ## 第2弾（模型塗料ラインナップをモチーフ索引として追加）
@@ -93,6 +94,19 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - DBDU の Khaki 384 は登録していない。参照画像 (退色した実物写真、CC BY-SA 3.0) では地の Tan 380 と分離できなかったため。`dbdu-tan380` の `note` にその旨を記載。
 - 用途タグ `camo-3color-desert` (既存) / `camo-6color-desert` (新規) を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「6 色デザート (チョコチップ)」を追加した。
 - 未登録のプリセット既定色: CCE (Issue #25) の 4 色。フランス CE 迷彩の色に公的規格番号は見つかっておらず、「CCE (実測)」+ `camo-cce` タグで登録する予定 (`docs/04-add-preset.md` 残課題)。
+
+## 第4弾（迷彩プリセット追加に伴う実測色: 陸自迷彩 2 型）
+
+アプリに陸自迷彩 2 型（Issue #28）のプリセットを追加したのに合わせ、既定色 4 色を追記し 132 色とした。
+
+### 方法
+
+- 第3弾と同じく `std` は「陸自迷彩 2 型 (実測)」、hex は `src/core/camo.js` の `PRESETS.jgsdf2.colors` と完全一致させている
+- **公式の色指定を探したが存在しなかった**。防衛省規格 NDS Z 8201E（[PDF](https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf)）に載る `3414 濃緑色(迷彩用) 7.5GY 3/1` / `3606 茶色(迷彩用) 2.5Y 3.5/1.5` は**車両・機体の塗料色**で、既に `jsdf-dgreen-3414` / `jsdf-brown-3606` として第2弾で収録済み。防衛省規格目録（令和 7 年 12 月現在）に「迷彩」を含む規格は 1 件もなく、被服の色は個別の調達仕様書（非公開）で規定されている。日塗工番号との公式対応、模型塗料メーカーの公表 hex（タミヤ XF-72 / XF-73 は車両色で、メーカー自身が Web 表示色を「近似」と否認）、camopedia 等の資料サイトの hex もいずれも存在しない
+- したがって `code` に入れられる公式番号がないため、index 値の順に `type2-1`〜`type2-4` を振った（DCU / DBDU のような Natick color designation に相当するものがない）
+- 参照画像が布地の写真なので、パレット実測にも `--flatten`（周辺減光の平坦化）と `--core`（領域内部の中央値）を使った。コマンドは `node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core --flatten=80`。詳細は `docs/01-tech-verification.md` v25
+- 用途タグ `camo-jgsdf2`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「陸自迷彩 2 型」を追加した
+- 近接する既存エントリ: `jgsdf2-green` #5e775c は車両色 `jsdf-dgreen-3414` #434941 と 20 以上離れており別色。`jgsdf2-brown` #74524e ↔ `jsdf-brown-3606` #5c5243 も同様（生地の染色色と塗料色の違い）
 
 ## 出典一覧
 
@@ -212,6 +226,10 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `ija-hairyokushoku` | FS 595 (FS 36357 近似) | #a09c8f | approx.: FS 36357 近似 (https://www.scalemates.com/colors/ak-3rd-generation-air--978/ak-11899-ija-1-hairyokushoku-grey-green-acrylic-matt--35541、http://www.aviationofjapan.com/2010/07/paint-matters-mr-color-ki-27-mix.html) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換 |
 | `jsdf-dgreen-3414` | NDS Z 8201E 3414 | #434941 | approx.: NDS Z 8201E 標準色 (マンセル 7.5GY 3/1, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
 | `jsdf-brown-3606` | NDS Z 8201E 3606 | #5c5243 | approx.: NDS Z 8201E 標準色 (マンセル 2.5Y 3.5/1.5, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
+| `jgsdf2-tan` | 陸自迷彩 2 型 (実測) type2-1 | #8d8b7f | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core --flatten=80`。参照画像は Wikimedia Commons [File:迷彩服2型の迷彩パターン.jpg](https://commons.wikimedia.org/wiki/File:%E8%BF%B7%E5%BD%A9%E6%9C%8D2%E5%9E%8B%E3%81%AE%E8%BF%B7%E5%BD%A9%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3.jpg) CC BY 3.0) |
+| `jgsdf2-green` | 陸自迷彩 2 型 (実測) type2-2 | #5e775c | 同上 |
+| `jgsdf2-brown` | 陸自迷彩 2 型 (実測) type2-3 | #74524e | 同上 |
+| `jgsdf2-black` | 陸自迷彩 2 型 (実測) type2-4 | #46444b | 同上 |
 | `jmsdf-grey-2704` | NDS Z 8201E 2704 | #797979 | approx.: NDS Z 8201E 標準色 (マンセル N 5, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
 | `jmsdf-dgrey-2705` | NDS Z 8201E 2705 | #606060 | approx.: NDS Z 8201E 標準色 (マンセル N 4, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
 | `su-amt4` | FS 595 AMT-4 (FS 34102 近似) | #595b45 | approx.: FS 24102/34102 近似 (https://massimotessitori.altervista.org/sovietwarplanes/pages/colors/color-table.html) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換 |

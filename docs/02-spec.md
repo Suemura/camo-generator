@@ -227,10 +227,11 @@ docs/design/spacious-DESIGN.md          spacious トークンの原本
 
 ## 5. Cloudflare ホスティング・デプロイ
 
-### 5.1 結論: Workers（Static Assets）+ Workers Builds
+### 5.1 結論: Workers（Static Assets）+ GitHub Actions からの `wrangler deploy`
 
 - 生成は完全クライアントサイドなので静的配信で足りる
-- Cloudflare は新規プロジェクトに **Workers + Static Assets** を推奨しており、Pages と同等の Git 連携（Workers Builds: push で本番、PR でプレビュー URL）が使える。将来 OGP 動的生成などを足す場合も同じ Worker に関数を追加できる
+- Cloudflare は新規プロジェクトに **Workers + Static Assets** を推奨している。将来 OGP 動的生成などを足す場合も同じ Worker に関数を追加できる
+- デプロイは GitHub Actions から `wrangler deploy` で行う（当初案は Workers Builds の Git 連携だったが、テスト失敗時にデプロイを止めるゲートを CI と一本化するため変更。フェーズ4で確定）
 - Pages でも成立するが、新規に選ぶ理由はない
 
 ### 5.2 構成
@@ -257,11 +258,13 @@ docs/design/spacious-DESIGN.md          spacious トークンの原本
 - ヘッダー: `public/_headers` で `X-Content-Type-Options`, `Referrer-Policy`, CSP（`default-src 'self'`、`font-src 'self' data:`。インライン script 不可のためテーマ初期化は `public/theme.js`）
 - Cloudflare の Web Analytics ビーコン自動注入は CSP で遮断される（プライバシー表記と整合）。コンソールエラーを消すなら Worker 設定で Web Analytics を無効化する
 - カスタムドメイン: **`camo-generator.suemura.app`**（既存の `image-converter.suemura.app` と同じ命名）。`suemura.app` ゾーンは Cloudflare 管理下なので、`wrangler.jsonc` の `routes` に `custom_domain: true` で宣言すれば DNS レコードと証明書は自動発行される。ダッシュボード操作は不要
-- 環境: `production`（main）/ プレビュー（PR）。環境変数は不要（秘密情報を持たない）
+- 環境: `production`（main）のみ。PR プレビュー URL は持たない（必要になれば `wrangler versions upload` のプレビュー URL を検討）。ビルド時の環境変数は不要（秘密情報を持たない）
 
 ### 5.3 CI
 
-- GitHub Actions: `pnpm install` → `biome check` → `vitest run` → `pnpm build`。デプロイは Workers Builds に任せる（Actions からの `wrangler deploy` は二重管理になるので使わない）
+- `.github/workflows/ci.yml`（`pull_request`）: `pnpm install --frozen-lockfile` → `pnpm check` → `pnpm test` → `pnpm build`
+- `.github/workflows/deploy.yml`（`push` to `main` / `workflow_dispatch`）: 同じ検証を再実行してから `cloudflare/wrangler-action` で `wrangler deploy`。マージコミットが PR 時点と異なりうるため CI の結果は再利用しない。`concurrency` で直列化し途中キャンセルはしない
+- Secrets: `CLOUDFLARE_API_TOKEN`（最小権限の Custom Token。権限一覧は README「デプロイ」節）/ `CLOUDFLARE_ACCOUNT_ID`
 - 決定性テストが落ちたら生成結果が変わったことを意味する。意図した変更なら `docs/01-tech-verification.md` へ追記してスナップショット更新
 
 ---

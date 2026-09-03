@@ -56,7 +56,7 @@ pnpm build        # dist/ 生成 (tokens → tsc → vite)
 pnpm test         # 決定性テスト
 pnpm check        # Biome
 pnpm typecheck    # tsc
-pnpm deploy       # Cloudflare Workers へデプロイ (wrangler login 済み前提)
+pnpm deploy       # 手動デプロイ (wrangler login 済み前提)。通常は main マージで GitHub Actions が自動デプロイ
 
 node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG レンダ (目視検証用)
 ```
@@ -69,7 +69,14 @@ node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG �
 | 2. 仕様整理 | 機能仕分け・画面構成・技術選定・Cloudflare 構成・デザインシステム（`docs/02-spec.md`） | **完了** |
 | 3. 設計 | React + Vite プロジェクト骨格・トークン生成・シームレスタイリング（v15） | **完了** |
 | 4. 実装 | UI 本実装・初回デプロイ（`camo-generator.suemura.app`） | **完了** |
-| 4. 実装 | 本実装・デプロイ | 未着手 |
+| 4. 実装 | main マージ時の自動デプロイ（GitHub Actions → `wrangler deploy`） | **完了** |
+
+### デプロイ
+
+- `main` への push（PR マージ）で `.github/workflows/deploy.yml` が `pnpm check` → `pnpm test` → `pnpm build` → `wrangler deploy` を実行する。PR では `ci.yml` が同じ検証だけを行う
+- 必要な GitHub Secrets: `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`
+- API トークンは Custom Token で最小権限にする: Account `Workers Scripts: Edit` / `Account Settings: Read`、User `User Details: Read`、Zone（`suemura.app` のみ） `Workers Routes: Edit` / `DNS: Edit`（custom domain 用）。Account Resources は対象アカウントのみに限定
+- 手動で再デプロイしたい場合は Actions の「Deploy」を `workflow_dispatch` で実行するか、ローカルで `pnpm deploy`
 
 ### フェーズ1 の到達点
 

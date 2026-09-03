@@ -121,6 +121,19 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグは既存の `camo-dpm`（ラベル「DPM」。従来は descriptive の `khaki` のみが持っていた）と新規の `camo-ddpm`（`src/data/palette.ts` の `USE_LABEL` に「デザート DPM (DDPM)」を追加）
 - 近接する既存エントリ: `dpm-sand` #d8a858 は `bs381c-362` Middle Stone #ac7c42 と 40 以上離れており別色。`khaki` #c3b091 も同様（参照写真の照明が暖色寄りである影響を含む。残課題は v26 節）
 
+## 第6弾（迷彩プリセット追加に伴う実測色: タイガーストライプ）
+
+アプリにタイガーストライプ風（Issue #31）のプリセットを追加したのに合わせ、既定色 4 色を追記した。
+
+### 方法
+
+- `std` は「タイガーストライプ (実測)」、hex は `src/core/camo.js` の `PRESETS.tigerstripe.colors` と完全一致させている
+- タイガーストライプは南ベトナム軍／米軍が現地調達した被服が起源で、統一規格が存在しない（派生が多数あり、色指定を公表した仕様書もない）。したがって `code` は index 値の順に `tiger-1`〜`tiger-4` を振った
+- 参照画像に自由ライセンスのフラットなスウォッチが無いため、Wikimedia Commons の PD-USGov 写真 [File:OPFOR shows Soldiers the enemy for Combined Resolve XIII 200121-Z-KY097-5213.jpg](https://commons.wikimedia.org/wiki/File:OPFOR_shows_Soldiers_the_enemy_for_Combined_Resolve_XIII_200121-Z-KY097-5213.jpg) から布地部分（曇天のフラット光で写った袖、5950px 原寸のうち 280×430px）を切り出して `refs/tigerstripe.jpg` とした
+- 実測は `node tools/extract-palette.mjs refs/tigerstripe.jpg 4 --core`。縞が細く輪郭の混色画素が多い図案なので、素の k-means 重心では黒が緑寄りに、カーキが暗側に引かれる（`--core` = 領域内部の中央値でこれを落とす）。詳細は `docs/01-tech-verification.md` v27
+- 用途タグ `camo-tigerstripe`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「タイガーストライプ」を追加した。国タグは `us` と新規の `vn`（`COUNTRY_LABEL` に「ベトナム」を追加）
+- 近接する既存エントリ: `tigerstripe-darkgreen` #4c5641 は `fs34079` Dark Green #555548 と 15 前後の距離で近いが、前者は被服の染色色で、緑味が強く明度が低い別色として残した。`tigerstripe-black` #292a2b は `dpm-black` #28221f と近いが、こちらは無彩色寄り（DPM 黒は褐色味を含む）
+
 ## 出典一覧
 
 | id | 規格・コード | hex | 出典 |
@@ -263,6 +276,10 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `dbdu-lbrown381` | DBDU (実測) Light Brown 381 | #9a766b | 同上 |
 | `dbdu-dbrown382` | DBDU (実測) Dark Brown 382 | #704c44 | 同上 |
 | `dbdu-black383` | DBDU (実測) Black 383 | #1d1f23 | 同上 |
+| `tigerstripe-khaki` | タイガーストライプ (実測) tiger-1 | #aeab9d | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/tigerstripe.jpg 4 --core`。参照画像は Wikimedia Commons [File:OPFOR shows Soldiers the enemy for Combined Resolve XIII 200121-Z-KY097-5213.jpg](https://commons.wikimedia.org/wiki/File:OPFOR_shows_Soldiers_the_enemy_for_Combined_Resolve_XIII_200121-Z-KY097-5213.jpg) PD-USGov の布地部分) |
+| `tigerstripe-lightgreen` | タイガーストライプ (実測) tiger-2 | #79795a | 同上 |
+| `tigerstripe-darkgreen` | タイガーストライプ (実測) tiger-3 | #4c5641 | 同上 |
+| `tigerstripe-black` | タイガーストライプ (実測) tiger-4 | #292a2b | 同上 |
 
 ## 注意事項
 

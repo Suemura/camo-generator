@@ -48,4 +48,13 @@ export function generate(key: PresetKey, w: number, h: number, seed: number, sca
 export function toRGBA(res: GenResult, palette: string[]): Uint8ClampedArray<ArrayBuffer>;
 export function hexToRgb(hex: string): [number, number, number];
 export function hash2(ix: number, iy: number, seed: number): number;
+/** 周期値ノイズ。nx / ny が格子数 (0 で巻かない = vnoise と同一) */
+export function pnoise(x: number, y: number, seed: number, nx: number, ny: number): number;
+/** 周期 fbm。lac=2 かつ nx / ny が整数なら全オクターブで周期が保たれる */
+export function pfbm(
+  x: number, y: number, seed: number, oct: number, nx: number, ny: number,
+  lac?: number, gain?: number,
+): number;
+/** ノイズ閾値の従来手法 (プリセットからは退役。周期化の回帰検知テストで使う) */
+export function genWoodland(w: number, h: number, seed: number, scale: number): GenResult;
 export function mulberry32(seed: number): () => number;

@@ -37,7 +37,8 @@ node prototype/build.mjs              # 検証プロトタイプ index.html の�
 - `src/core/camo.js` — 生成コア（旧 `prototype/camo.js`）。**browser / Node 共用の ES module、外部依存ゼロ、JS のまま**。型は `camo.d.ts` で与える。この制約は維持すること
   - すべての乱数は座標ハッシュ (`hash2`) または `mulberry32` によるシード決定的生成。`Math.random` 禁止（同一シード→同一出力の保証が製品要件）
   - 「形状（index マップ: `Uint8Array` の色インデックス）」と「色（パレット）」を分離。`generate()` → `{w, h, index, grid?}`、着色は `toRGBA()`。この分離がパレット自由変更の根拠なので崩さない
-  - 手法は3系統: `genQuilt`（ブロブパッチ合成、M81 主力）/ `genGrowth`（クラスタ成長、デジタル系）/ `genWoodland`・`genDigital`（ノイズ閾値、従来手法・比較用）
+  - 手法: `genQuilt`（ブロブパッチ合成、M81 主力）/ `genGrowth`（クラスタ成長、デジタル系）/ `genStripe`（等高線バンド、ストローク系）/ `genWoodland`・`genDigital`（ノイズ閾値、従来手法・比較用）
+  - `genStripe` は周期ノイズ（`pnoise` / `pfbm`）でタイル性を担保する。キャンバスをノイズ格子の整数個にちょうど収めてサンプルする方式で、`vnoise` / `fbm` / `genField` とは別系統（既存プリセットの出力を変えないため統合していない）
   - プリセットは `PRESETS` に集約。`kind` で生成関数にディスパッチ
   - `generate(key, w, h, seed, scale, opt)`。`opt.tileable`（既定 true）/ `opt.progress(0..1)` / `opt.baseMax`（長辺がこれを超えると縮小生成 → 拡大 → 実寸で後処理。v17）
   - クイルト系のソース異方サンプリングは**プリセット側**の `P.srcAspect`（既定 1.0 = 等方、`>1` で横に伸びる。CCE は M81 ソースを 1.5 倍伸長）。`opt` ではない（図案固有の性質なので URL 状態に持たせない）。ノイズ周波数倍率の `P.aspectX` / `aspectY` とは別物

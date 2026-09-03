@@ -2518,5 +2518,81 @@
     },
     "note": "英軍デザート DPM のブラウン (実測 55%)",
     "source": "同上"
+  },
+  {
+    "id": "tigerstripe-khaki",
+    "name": "タイガーストライプ カーキ",
+    "std": "タイガーストライプ (実測)",
+    "code": "tiger-1",
+    "hex": "#aeab9d",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-tigerstripe"
+      ],
+      "country": [
+        "us",
+        "vn"
+      ]
+    },
+    "note": "黒の主縞に寄り添って走る細縞の色 (実測 17%)",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons File:OPFOR shows Soldiers the enemy for Combined Resolve XIII 200121-Z-KY097-5213.jpg (PD-USGov) の布地部分から k-means 抽出。node tools/extract-palette.mjs refs/tigerstripe.jpg 4 --core)"
+  },
+  {
+    "id": "tigerstripe-lightgreen",
+    "name": "タイガーストライプ ライトグリーン",
+    "std": "タイガーストライプ (実測)",
+    "code": "tiger-2",
+    "hex": "#79795a",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-tigerstripe"
+      ],
+      "country": [
+        "us",
+        "vn"
+      ]
+    },
+    "note": "地を占める明るい側の緑 (実測 22%)",
+    "source": "同上"
+  },
+  {
+    "id": "tigerstripe-darkgreen",
+    "name": "タイガーストライプ ダークグリーン",
+    "std": "タイガーストライプ (実測)",
+    "code": "tiger-3",
+    "hex": "#4c5641",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-tigerstripe"
+      ],
+      "country": [
+        "us",
+        "vn"
+      ]
+    },
+    "note": "地を占める暗い側の緑 (実測 22%)",
+    "source": "同上"
+  },
+  {
+    "id": "tigerstripe-black",
+    "name": "タイガーストライプ ブラック",
+    "std": "タイガーストライプ (実測)",
+    "code": "tiger-4",
+    "hex": "#292a2b",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-tigerstripe"
+      ],
+      "country": [
+        "us",
+        "vn"
+      ]
+    },
+    "note": "主役の太い縞。横方向に流れて互いに噛み合う (実測 39%)",
+    "source": "同上"
   }
 ]

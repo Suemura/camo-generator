@@ -2,7 +2,8 @@
 // すべて座標ハッシュベースの決定的生成。同一シード → 同一結果。
 'use strict';
 import { M81_SRC_W, M81_SRC_H, M81_SRC_RLE } from './m81src.js';
-import { AOR1_SRC_W, AOR1_SRC_H, AOR1_SRC_RLE, AOR2_SRC_W, AOR2_SRC_H, AOR2_SRC_RLE } from './digsrc.js';
+// AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は静的 import しない。初期バンドルを小さく保つため、
+// 利用側が動的 import して registerSources() で渡す (ブラウザ: src/lib/generate.ts、Node: tools/render.mjs)。
 
 /* ================= 決定的乱数・ノイズ ================= */
 export function hash2(ix, iy, seed){
@@ -615,9 +616,18 @@ function decodeSrc(key, rle, W, H){
 }
 const SRCS = {
   m81:  () => decodeSrc('m81',  M81_SRC_RLE,  M81_SRC_W,  M81_SRC_H),
-  aor1: () => decodeSrc('aor1', AOR1_SRC_RLE, AOR1_SRC_W, AOR1_SRC_H),
-  aor2: () => decodeSrc('aor2', AOR2_SRC_RLE, AOR2_SRC_W, AOR2_SRC_H),
 };
+// 外部ソースマップの登録: registerSources(await import('./digsrc.js'))
+export function registerSources(mod){
+  if(mod.AOR1_SRC_RLE) SRCS.aor1 = () => decodeSrc('aor1', mod.AOR1_SRC_RLE, mod.AOR1_SRC_W, mod.AOR1_SRC_H);
+  if(mod.AOR2_SRC_RLE) SRCS.aor2 = () => decodeSrc('aor2', mod.AOR2_SRC_RLE, mod.AOR2_SRC_W, mod.AOR2_SRC_H);
+}
+/** プリセットの実物マップが登録済みか (未登録なら generate() 前に registerSources が必要) */
+export function hasSources(key){
+  const P = PRESETS[key];
+  if(!P) return false;               // 未知キーは「登録なし」扱い (事前チェック用途なので投げない)
+  return P.kind !== 'quilt' || !!SRCS[P.src];
+}
 function pasteBlob(out, w, h, p, cx, cy, bb, rad, srcGet, wrap=false, tstate=null){
   if(wrap) return pasteBlobTorus(out, w, h, p, cx, cy, bb, rad, srcGet, tstate);
   const bw2 = 2*bb+1;
@@ -727,7 +737,9 @@ function pasteBlobTorus(out, w, h, p, cx, cy, bb, rad, srcGet, state){
 }
 export function genQuilt(w, h, seed, scale, P, opt={}){
   const wrap = opt.tileable !== false;   // キャンバスをトーラスとして扱う (シームレスタイル)
-  const SRC = SRCS[P.src]();
+  const load = SRCS[P.src];
+  if(!load) throw new Error(`source map '${P.src}' not registered: call registerSources() first`);
+  const SRC = load();
   const srcMap = SRC.map, SW = SRC.W, SH = SRC.H;
   // ブロブマスク・パッチ合成: 有機輪郭のパッチを実物ソースから貼り重ねる。
   // 矩形グリッド/直線シームが構造的に存在しない (Graphcut Textures の簡略版)

@@ -2,7 +2,10 @@
 
 import fs from "node:fs";
 import zlib from "node:zlib";
-import { generate, PRESETS, toRGBA } from "../src/core/camo.js";
+import { generate, PRESETS, registerSources, toRGBA } from "../src/core/camo.js";
+import * as digsrc from "../src/core/digsrc.js";
+
+registerSources(digsrc);
 
 function crc32(buf) {
   let c,
@@ -56,6 +59,7 @@ const arg = (name, def) =>
   (process.argv.find((a) => a.startsWith(`--${name}=`)) ?? `=${def}`).split("=")[1];
 const [W0, H0] = arg("size", "512x512").split("x").map(Number); // --size=640x400
 const only = arg("preset", ""); // --preset=ucp
+const crop = Number(arg("crop", "0")); // --crop=512: 中央を等倍で切り出す (高解像度の階段・ギザ確認用)
 for (const [key, P] of Object.entries(PRESETS)) {
   if (only && key !== only) continue;
   const t0 = Date.now();
@@ -69,6 +73,14 @@ for (const [key, P] of Object.entries(PRESETS)) {
     for (let y = 0; y < H; y++)
       for (let x = 0; x < W; x++) idx[y * W + x] = res.index[(y % H0) * W0 + (x % W0)];
     writePng(`${outDir}/${key}-tile.png`, toRGBA({ w: W, h: H, index: idx }, pal), W, H);
+  } else if (crop > 0) {
+    const c = Math.min(crop, W0, H0);
+    const idx = new Uint8Array(c * c);
+    const ox = ((W0 - c) / 2) | 0;
+    const oy = ((H0 - c) / 2) | 0;
+    for (let y = 0; y < c; y++)
+      for (let x = 0; x < c; x++) idx[y * c + x] = res.index[(oy + y) * W0 + ox + x];
+    writePng(`${outDir}/${key}-crop${c}.png`, toRGBA({ w: c, h: c, index: idx }, pal), c, c);
   } else {
     writePng(`${outDir}/${key}.png`, toRGBA(res, pal), W0, H0);
   }

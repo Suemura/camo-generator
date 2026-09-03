@@ -21,6 +21,12 @@ export interface GenResult {
   grid?: { gw: number; gh: number; cellPx: number; cellColor: Uint8Array };
 }
 export const PRESETS: Record<PresetKey, Preset>;
+/** AOR1/AOR2 実物マップの登録 (digsrc.js を動的 import して渡す)。クイルト系 generate() の前に必要 */
+export function registerSources(mod: {
+  AOR1_SRC_W?: number; AOR1_SRC_H?: number; AOR1_SRC_RLE?: string;
+  AOR2_SRC_W?: number; AOR2_SRC_H?: number; AOR2_SRC_RLE?: string;
+}): void;
+export function hasSources(key: PresetKey): boolean;
 export function generate(key: PresetKey, w: number, h: number, seed: number, scale: number, opt?: GenerateOptions): GenResult;
 export function toRGBA(res: GenResult, palette: string[]): Uint8ClampedArray<ArrayBuffer>;
 export function hexToRgb(hex: string): [number, number, number];

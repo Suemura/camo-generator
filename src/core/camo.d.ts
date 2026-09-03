@@ -11,11 +11,12 @@ export type PresetKey =
   | "dbdu"
   | "jgsdf2"
   | "dpm"
-  | "ddpm";
+  | "ddpm"
+  | "tigerstripe";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth";
+  kind: "quilt" | "growth" | "stripe";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;

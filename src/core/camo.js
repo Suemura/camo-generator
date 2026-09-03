@@ -34,6 +34,29 @@ export function fbm(x, y, seed, oct, lac=2, gain=0.5){
   }
   return sum / norm;
 }
+// 周期ノイズ: 格子添字を (nx, ny) で巻いてサンプルする。x は nx、y は ny の周期で厳密に一致する。
+// nx / ny に 0 を渡すと巻かない = vnoise と同一。ノイズ閾値系をタイル可能にするための下地で、
+// 「キャンバスがノイズ格子の整数個にちょうど収まる」ようにサンプルすれば継ぎ目が構造的に消える
+// (クイルト系のトーラス貼付・成長系のセル格子ラップに相当する仕組み)。
+export function pnoise(x, y, seed, nx, ny){
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = x - ix, fy = y - iy;
+  const x0 = nx > 0 ? wrapI(ix, nx) : ix,   x1 = nx > 0 ? wrapI(ix+1, nx) : ix+1;
+  const y0 = ny > 0 ? wrapI(iy, ny) : iy,   y1 = ny > 0 ? wrapI(iy+1, ny) : iy+1;
+  const a = hash2(x0, y0, seed), b = hash2(x1, y0, seed);
+  const c = hash2(x0, y1, seed), d = hash2(x1, y1, seed);
+  const u = fade(fx), v = fade(fy);
+  return a + (b-a)*u + (c-a)*v + (a-b-c+d)*u*v;
+}
+// 周期 fbm。lac=2 かつ nx/ny が整数なら全オクターブの格子数も整数に保たれるので周期が崩れない
+export function pfbm(x, y, seed, oct, nx, ny, lac=2, gain=0.5){
+  let amp = 0.5, f = 1, sum = 0, norm = 0;
+  for(let i=0;i<oct;i++){
+    sum += amp * pnoise(x*f, y*f, seed + i*101, nx*f, ny*f);
+    norm += amp; amp *= gain; f *= lac;
+  }
+  return sum / norm;
+}
 export function quantile(field, q){
   const n = field.length, step = Math.max(1, Math.floor(n/20000));
   const s = [];
@@ -229,6 +252,155 @@ export function genDigital(w, h, seed, scale, P){
   return {type:'digital', w, h, index: out, grid:{gw, gh, cellPx, cellColor: cc}};
 }
 
+
+/* ================= ストローク系 (genStripe) =================
+   実物特徴 (タイガーストライプ):
+   - 横方向に流れる細長い縞。太さが途中で変わり、先端が鋭く尖って途切れる
+   - 完全な水平ではなく緩やかにうねり、時々分岐・合流する
+   - 黒縞が主役で、その脇にカーキの細縞が寄り添って噛み合う (インターロック)
+   ブロブ系 (クイルト / 成長) とは形状の統計が根本的に違うため既存 3 手法では作れない。
+
+   手法: 横に強く伸長した周期ノイズの「等高線バンド」。
+   - 等高線を勾配で正規化すると帯の太さを px 単位で指定できる (genWoodland の黒枝と同じ構造)
+   - その太さを別ノイズで 0 まで変調すると先端が尖って途切れる = 筆致になる
+   - うねり / 分岐・合流は等高線が鞍点を通る性質そのままで、追加処理は要らない
+   - 細縞は「同じ芯フィールドの、主縞から一定 px ずれた等高線」に置く。こうすると必ず主縞の脇を
+     平行に走り、主縞が太い所では黒に飲まれ細い所では緑側に出る = 噛み合いになる。
+     別フィールドから独立に作ると無関係な 2 系統が交差する見え方になるので採らない */
+
+/**
+ * 周期フィールド。キャンバスをノイズ格子の整数個 (latX × latY) にちょうど収めてサンプルするので、
+ * 上下左右に並べても連続する。ワープ量も正規化座標 (0..1) で足すため周期は保たれる。
+ * latX を latY より小さくすると x 方向に伸びた異方フィールドになり、実物の「横に流れる縞」の下地になる。
+ * ワープは正規化空間では等方だが w≠h の出力では px 換算で引き伸ばされる (縞自体が異方なので問題にならない)。
+ * wrap=false なら格子を巻かない (= genField と同じ非タイル生成)。
+ */
+function genPField(w, h, seed, o, wrap){
+  const {latX, latY, oct=3, gain=0.5, warp=0, warpLat=3, warpOct=2,
+         warp2=0, warpLat2=12, shear=0} = o;
+  const nx = wrap ? latX : 0, ny = wrap ? latY : 0;
+  const wl = Math.max(1, Math.round(warpLat));
+  const wn = wrap ? wl : 0;
+  const wl2 = Math.max(1, Math.round(warpLat2));
+  const wn2 = wrap ? wl2 : 0;
+  const out = new Float32Array(w*h);
+  for(let y=0;y<h;y++){
+    const v0 = y/h;
+    for(let x=0;x<w;x++){
+      const u0 = x/w;
+      let u = u0, v = v0;
+      if(warp){
+        u += (pfbm(u0*wl, v0*wl, seed+31, warpOct, wn, wn) - .5) * warp;
+        v += (pfbm(u0*wl, v0*wl, seed+57, warpOct, wn, wn) - .5) * warp;
+      }
+      // 第 2 ワープ (高周波・小振幅): 等高線に指状のギザギザを与える。
+      // タイガーストライプの縞の縁が羽状に毛羽立つ性質はこれが担う
+      if(warp2){
+        u += (pfbm(u0*wl2, v0*wl2, seed+73, 2, wn2, wn2) - .5) * warp2;
+        v += (pfbm(u0*wl2, v0*wl2, seed+89, 2, wn2, wn2) - .5) * warp2;
+      }
+      // shear: 縞全体を傾ける (リザード等の派生用)。整数に限れば周期が保たれる
+      out[y*w+x] = pfbm((u + v*shear)*latX, v*latY, seed, oct, nx, ny, 2, gain);
+    }
+  }
+  return out;
+}
+
+export function genStripe(w, h, seed, scale, P, opt={}){
+  const wrap = opt.tileable !== false;
+  const prog = opt.progress;
+  // 「512px・scale 1.0 の 1px」に相当する出力 px。scale を上げると縞の本数が増えるので
+  // 太さも同じ比率で細らせる (でないと高 scale で縞が潰れて一様な黒面になる)
+  const upx = (w/512) / scale;
+  const aspectX = P.aspectX ?? 0.2;
+  // キャンバスあたりの格子数は整数で持つ (周期の担保。実数だと丸めでタイル性が崩れる)。
+  // h / w を掛けているので出力の縦横比が変わっても縞の物理サイズは一定
+  // latX の下限は 2: 1 だと wrap 時に左右の格子点が同一になり、最低オクターブが x に依存しない
+  // (= 完全な水平縞) に退化する。異方比 latY/latX は整数の比でしか表現できないので、
+  // プリセット側は latY を「latY*aspectX が 2 以上になる」値に取る
+  const latY = Math.max(2, Math.round(P.latY * scale * h/512));
+  const latX = Math.max(2, Math.round(P.latY * aspectX * scale * w/512));
+  const shear = Math.round(P.shear ?? 0);
+
+  // 芯フィールド: この等高線が縞になる
+  const core = genPField(w, h, seed+11, {
+    latX, latY, oct: P.oct ?? 3, gain: P.fieldGain ?? 0.5,
+    warp: P.warp ?? 0.10, warpLat: P.warpLat ?? 3,
+    warp2: P.warp2 ?? 0, warpLat2: P.warpLat2 ?? 12, shear,
+  }, wrap);
+  prog?.(0.25);
+  // 太さ変調フィールド。x は低周波 (1 本の筆致が長い距離をかけて太り細る)、
+  // y は縞の間隔より高周波 (隣り合う縞が別々の太さを持つ) にする。
+  // x を高周波にすると 1 本の縞が細かい破線に千切れて筆致に見えなくなる
+  const wid = genPField(w, h, seed+29, {
+    latX: Math.max(2, Math.round(P.widLatX * scale * w/512)),
+    latY: Math.max(2, Math.round(P.widLatY * scale * h/512)),
+    oct: 2, shear,
+  }, wrap);
+  prog?.(0.45);
+  // 地の濃淡: 縞より低周波・等方の大きなムラ。実物の「緑の濃淡が広い面で入れ替わる」性質
+  const bf = P.baseFreq ?? 0.45;
+  const base = genPField(w, h, seed+47, {
+    latX: Math.max(2, Math.round(P.latY * bf * scale * w/512)),
+    latY: Math.max(2, Math.round(P.latY * bf * scale * h/512)),
+    oct: 3, warp: 0.08, warpLat: 2,
+  }, wrap);
+  prog?.(0.6);
+
+  // 勾配場: 等高線バンドの太さを px 単位に正規化する。極値近傍 (勾配小) は除外して
+  // 閉ループ (輪っか) の発生を防ぐ (genWoodland / genDigital のツイッグと同じ既存対策)。
+  // 差分はラップ添字で取る (境界 1px を 0 のままにすると端に筋が出る)
+  const gm = new Float32Array(w*h);
+  for(let y=0;y<h;y++){
+    const yp = wrap ? wrapI(y-1, h) : Math.max(0, y-1);
+    const yn = wrap ? wrapI(y+1, h) : Math.min(h-1, y+1);
+    for(let x=0;x<w;x++){
+      const xp = wrap ? wrapI(x-1, w) : Math.max(0, x-1);
+      const xn = wrap ? wrapI(x+1, w) : Math.min(w-1, x+1);
+      gm[y*w+x] = Math.hypot(core[y*w+xn]-core[y*w+xp], core[yn*w+x]-core[yp*w+x]) * 0.5;
+    }
+  }
+  const qgm = quantile(gm, P.maskQ ?? 0.20);
+
+  // 地の 2 分割 (実物の刷り順どおり、この上に縞を重ねる)
+  const qBase = quantile(base, P.baseQ ?? 0.5);
+  const out = new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++) out[i] = base[i] > qBase ? P.groundHi : P.ground;
+  prog?.(0.7);
+
+  for(const L of (P.layers ?? [])){
+    const levs = (L.levelsQ ?? [0.5]).map(q => quantile(core, q));
+    const offs = L.offsetsPx ?? [0];
+    /** 等高線からの符号付き距離 (px) が帯 [off-t, off+t] に入るか。g は面積キャリブレーション倍率 */
+    const hit = (i, g) => {
+      if(gm[i] <= qgm) return false;
+      // 太さ (px): 幅変調ノイズを gate で切って gain 倍。gate 未満は 0 = 途切れ → 先端が尖る
+      const t = Math.min(L.maxW, Math.max(0, wid[i] - L.gate) * L.gain) * upx * g;
+      if(t <= 0) return false;
+      const inv = 1 / gm[i];
+      for(const lv of levs){
+        const s = (core[i] - lv) * inv;
+        for(const o of offs) if(Math.abs(s - o*upx) < t) return true;
+      }
+      return false;
+    };
+    // 面積比の 1 段キャリブレーション。等高線バンドの面積は幅変調ノイズの分位に依存して
+    // シード間で振れるので、名目太さで一度数えて目標比へ寄せる (探索はしない = 決定的で速い)
+    let g = 1;
+    if(L.targetFrac){
+      let n = 0;
+      for(let i=0;i<w*h;i++) if(hit(i, 1)) n++;
+      if(n > 0) g = Math.min(2, Math.max(0.5, L.targetFrac / (n/(w*h))));
+    }
+    for(let i=0;i<w*h;i++) if(hit(i, g)) out[i] = L.color;
+  }
+  prog?.(0.9);
+
+  // 微小点除去: 先端が 1px 未満に細る所で孤立点が出る。閾値は「512px・scale 1.0 基準の px²」
+  if(P.minFrag) cleanupFragments(out, w, h, Math.max(2, Math.round(P.minFrag * upx * upx)), wrap);
+  prog?.(1);
+  return {type:'stroke', w, h, index: out};
+}
 
 /* ================= 新手法: 形状文法 / クラスタ成長 =================
    experimental/ (shapes.js, growth.js) からの統合移植。 */
@@ -1718,6 +1890,45 @@ export const PRESETS = {
       {name:'ブラウン', hex:'#7a5825'},
     ],
   },
+  tigerstripe: {
+    // タイガーストライプ (ベトナム戦争期〜。まず一般的な「ゴールドタイガー」系)。
+    // ストローク系 (genStripe) の代表。実物の特徴と各パラメータの対応:
+    //   - 緑地に黒の太い縞が横方向に流れる → aspectX 0.18 (x 周波数を y の約 1/5.5)。
+    //     Issue #31 の 1/4〜1/6 に収まる範囲で、実物の「1 本の縞が画面幅を渡り切る」見えに合う
+    //   - 縞の太さが途中で変わり先端が尖る → 黒層の gate 0.40 / gain 34 / maxW 15。
+    //     gate を上げるほど途切れが増えて先端が鋭くなる
+    //   - 黒の脇にカーキの細縞が寄り添って噛み合う → カーキ層を黒と同じ levelsQ の
+    //     offsetsPx ±11 に置く。黒が太い所では飲まれ、細い所では緑側に現れる
+    //   - 緑は濃淡 2 色が広い面で入れ替わる → 地を base フィールドで 2 分割 (ground/groundHi)
+    name: 'タイガーストライプ風', kind: 'stripe', ref: 'tigerstripe',
+    // latY 7: 512px の画面に縞の芯が 7 段。参照画像 (袖幅 ≈ 280px に主縞 4 本) から換算した本数
+    latY: 8, aspectX: 0.25, oct: 3, fieldGain: 0.45, warp: 0.12, warpLat: 3,
+    warp2: 0.012, warpLat2: 22, maskQ: 0.20,
+    widLatX: 4, widLatY: 26,
+    baseFreq: 0.45, baseQ: 0.5, ground: 1, groundHi: 2, minFrag: 10,
+    // 刷り順: 地 (ライトグリーン / ダークグリーン) → 黒の主縞 → カーキの細縞。
+    // 実物も暗色を先に、明色の細い筆致を最後に刷るのでこの順序になる。
+    // levelsQ が 2 段あるのは 1 段だと縞が疎になりすぎるため (等高線 1 本 = 縞 1 本)
+    layers: [
+      // 黒の主縞。targetFrac は参照画像の実測面積比
+      // targetFrac 0.46: 実測の黒は 0.39 だが、この上にカーキの細縞を刷って一部を上書きするので
+      // 刷る時点では多めに置く (最終の黒はおおよそ 0.36〜0.39 に落ち着く)
+      {color: 3, levelsQ: [0.34, 0.68], gate: 0.34, gain: 130, maxW: 34, targetFrac: 0.46},
+      // カーキの細縞。黒と同じ等高線から ±13px ずれた位置に細く走らせて噛み合わせる。
+      // maxW 4: 上限が緩いと左右 2 本のカーキが太って中央で融合し、細縞ではなく塊に見える
+      // (offsetsPx の間隔 26px に対して片側 13px を超えないこと)
+      {color: 0, levelsQ: [0.34, 0.68], offsetsPx: [-13, 13], gate: 0.42, gain: 22, maxW: 4, targetFrac: 0.17},
+    ],
+    // 実測: node tools/extract-palette.mjs refs/tigerstripe.jpg 4 --core
+    // (--core = 領域内部の中央値。縞が細く輪郭の混色が多い図案なので、素の k-means 重心だと
+    //  黒が緑寄り #2b2d2b→ に寄り、カーキも暗く沈む)
+    colors: [
+      {name:'カーキ',       hex:'#aeab9d'},
+      {name:'ライトグリーン', hex:'#79795a'},
+      {name:'ダークグリーン', hex:'#4c5641'},
+      {name:'ブラック',      hex:'#292a2b'},
+    ],
+  },
 };
 
 /* ================= 生成入口 ================= */
@@ -1728,6 +1939,7 @@ export function generate(key, w, h, seed, scale, opt={}){
   switch(P.kind){
     case 'quilt':  return genQuilt(w, h, seed, scale, P, opt);
     case 'growth': return genGrowth(w, h, seed, scale, P, opt);
+    case 'stripe': return genStripe(w, h, seed, scale, P, opt);
     default: throw new Error('unknown kind: ' + P.kind);
   }
 }

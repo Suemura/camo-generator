@@ -19,7 +19,7 @@ pnpm typecheck                        # tsc -b (noEmit)
 pnpm tokens                           # docs/design/spacious-DESIGN.md → src/styles/tokens/_primitives.scss
 node tools/render.mjs <outdir> <seed> [scale]   # 全プリセットを 512px PNG で出力（目視検証用）
 #   オプション: --tile (2×2 タイル) / --size=WxH / --preset=key / --crop=512 (中央を等倍切出し、高解像度の階段確認)
-pnpm deploy                           # build → wrangler deploy (Cloudflare Workers Static Assets)
+pnpm deploy                           # 手動デプロイ: build → wrangler deploy。通常は main マージで .github/workflows/deploy.yml が自動実行
 cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.html の再ビルド (src/core を参照)
 ```
 

@@ -2,7 +2,7 @@
 
 exports[`progress / 多段解像度 > 多段化する側 (f > 1) の回帰スナップショット 1`] = `
 {
-  "aor2_1536x768": "d0382fc4faba278edb363042950fd9d2bc8f3d2e",
-  "woodland_1280x1280_s07": "4c19ea1f62e31edea7f38cd7b34c3d4d92e11ca6",
+  "aor2_1536x768": "af5b82c1088e72a49c1a0f1fabf02170ed85e5c4",
+  "woodland_1280x1280_s07": "f0aefb0ca7f015bc2c4144eeaf95e017b6b6e0f0",
 }
 `;

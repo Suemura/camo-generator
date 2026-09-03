@@ -20,7 +20,7 @@ description: タスク完了前のドキュメント同期（docs-sync）と独�
 
 - 独立レビューは **PR 作成後の自動レビューフロー**（pr-reviewer によるインラインレビュー → pr-comment-resolver による対応）が担う。**PR 前の reviewer エージェント起動は不要**（同じ差分の二重フルレビューを避ける）
 - PR 前の必須検証: `pnpm check` / `pnpm typecheck` / `pnpm test` の 3 点成功 + Sprint Contract の自己チェック。生成結果が変わる変更は加えて CLAUDE.md「検証ワークフロー」（render.mjs 目視 → `docs/01-tech-verification.md` 追記 → `pnpm test -u`）
-- マージは人間が判断する。エージェントは `gh pr merge` を自己判断で実行しない（明示依頼 + 直前の `AskUserQuestion` 承認が必須。`workflow-orchestration.md`「main へのマージは必ず明示確認」）。main への直接 push も原則禁止で、明示指示があっても実行前に一度 `AskUserQuestion` で確認する（同「main への直接 push は原則禁止」）
+- マージ・main push は人間が判断する（`workflow-orchestration.md`「main へのマージは必ず明示確認」「main への直接 push は原則禁止」参照）
 
 ### PR を作らないタスク
 

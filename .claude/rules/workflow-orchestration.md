@@ -18,6 +18,7 @@ description: エージェントのワークフロー・オーケストレーシ�
 - main には PR 経由でのみ変更を入れる。エージェントがローカル main にコミットして `git push origin main` することは原則禁止。誤って main 上で作業していた場合はブランチを切って PR にする
 - ユーザーが「main に直接 push して」と明示した場合のみ例外。その場合も実行前に `AskUserQuestion` で push するコミット一覧（`git log origin/main..main --oneline`）と理由を提示し、承認を得てから 1 回だけ実行する。ask 権限ダイアログは確認の代替にならない
 - `git push --force` 系は settings で deny 済み（main 以外でも禁止）
+- settings の ask パターンは `main` を明示した push 形式しか捕捉できない（引数なし `git push` 等は素通りしうる）。この穴は `pre-push-guard.sh` が main チェックアウト中の暗黙 push を検知してブロックする層で埋めている
 
 ## 実装計画の策定
 - **Plan Mode で計画済みの場合**: planner の起動をスキップし、合意済みの計画に基づいて実装を開始する。

@@ -13,7 +13,10 @@ export interface WorkerRequest {
   id: number;
   req: GenerateRequest;
 }
-export type WorkerResponse = { id: number; res: GenResult } | { id: number; error: string };
+export type WorkerResponse =
+  | { id: number; res: GenResult }
+  | { id: number; progress: number }
+  | { id: number; error: string };
 
 let sources: Promise<void> | null = null;
 function ensure(preset: PresetKey) {
@@ -31,7 +34,17 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const { id, req } = e.data;
   try {
     await ensure(req.preset);
-    const res = generate(req.preset, req.w, req.h, req.seed, req.scale, { tileable: req.tileable });
+    let lastSent = -1;
+    const res = generate(req.preset, req.w, req.h, req.seed, req.scale, {
+      tileable: req.tileable,
+      progress: (fraction) => {
+        // 進捗は 2% 刻みで間引く
+        if (fraction - lastSent < 0.02 && fraction < 1) return;
+        lastSent = fraction;
+        const msg: WorkerResponse = { id, progress: fraction };
+        (self as unknown as Worker).postMessage(msg);
+      },
+    });
     const transfer: ArrayBuffer[] = [res.index.buffer as ArrayBuffer];
     if (res.grid) transfer.push(res.grid.cellColor.buffer as ArrayBuffer);
     const msg: WorkerResponse = { id, res };

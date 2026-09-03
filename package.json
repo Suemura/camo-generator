@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm tokens && tsc -b && vite build",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "tokens": "node tools/gen-tokens.mjs",
     "test": "vitest run",
@@ -31,5 +32,9 @@
     "vite": "^8.2.2",
     "vitest": "^4.1.11",
     "wrangler": "^4.128.0"
+  },
+  "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=22"
   }
 }

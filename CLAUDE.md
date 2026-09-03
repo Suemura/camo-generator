@@ -14,7 +14,8 @@ UI 実装時のデザインルールは `.claude/skills/design-system/SKILL.md`�
 pnpm dev                              # Vite 開発サーバー
 pnpm build                            # tokens 生成 → tsc → vite build (dist/)
 pnpm test                             # Vitest: 決定性テスト + index マップのハッシュスナップショット
-pnpm check                            # Biome lint + format
+pnpm check                            # Biome lint + format (--write で自動整形)
+pnpm typecheck                        # tsc -b (noEmit)
 pnpm tokens                           # docs/design/spacious-DESIGN.md → src/styles/tokens/_primitives.scss
 node tools/render.mjs <outdir> <seed> [scale]   # 全プリセットを 512px PNG で出力（目視検証用）
 #   オプション: --tile (2×2 タイル) / --size=WxH / --preset=key / --crop=512 (中央を等倍切出し、高解像度の階段確認)
@@ -32,6 +33,7 @@ cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.h
   - 「形状（index マップ: `Uint8Array` の色インデックス）」と「色（パレット）」を分離。`generate()` → `{w, h, index, grid?}`、着色は `toRGBA()`。この分離がパレット自由変更の根拠なので崩さない
   - 手法は3系統: `genQuilt`（ブロブパッチ合成、M81 主力）/ `genGrowth`（クラスタ成長、デジタル系）/ `genWoodland`・`genDigital`（ノイズ閾値、従来手法・比較用）
   - プリセットは `PRESETS` に集約。`kind` で生成関数にディスパッチ
+  - `generate(key, w, h, seed, scale, opt)`。`opt.tileable`（既定 true）/ `opt.progress(0..1)` / `opt.baseMax`（長辺がこれを超えると縮小生成 → 拡大 → 実寸で後処理。v17）
 - `src/core/m81src.js` / `digsrc.js` — M81 / AOR1 / AOR2 実物図案の 4値インデックスマップ（RLE + base64）。再生成は docs 記載の Python 手順。**`digsrc.js`（280KB）は camo.js から静的 import しない**。利用側が動的 import して `registerSources()` で渡す（ブラウザは `src/lib/generate.ts` の `ensureSources`、Node は `tools/render.mjs` / テストで先頭登録）
 - `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means。`src/data/` — プリセット表示メタ、120 色ライブラリ、リファレンス画像（動的 import）
 - `src/styles/tokens/` がデザイントークン（§デザイン参照）、`src/styles/ui.scss` が共通クラス。コンポーネントの色・余白は `var(--…)` のみ、生値禁止。新しい余白値が要るときは `_semantic.scss` の `$static` に追加してから使う（未定義 var は無効値になり潰れる）
@@ -58,6 +60,16 @@ cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.h
 3. 変更内容と判断を `docs/01-tech-verification.md` に追記
 
 過去に解消済みの問題と対策の全履歴が同ドキュメントにある。**同じ轍を踏む前に必ず読むこと**。
+
+## 開発ハーネス（`.claude/`）
+
+Issue → PR の定型フローは commands / agents / hooks で自走する。手順の正本は各 command ファイル。
+
+- コマンド: `/start-issue <N>`（worktree 作成 → planner → 実装 → 検証 → docs-sync → PR 作成 → 自動レビュー）/ `/review-pr <PR>` / `/resolve-pr-comments <PR>` / `/resolve-conflicts [PR]` / `/land <N>`（マージ + worktree 後片付け）
+- エージェント: `planner`（計画 + Sprint Contract）/ `pr-reviewer` → `pr-comment-resolver`（PR 作成後に自動起動）/ `reviewer`（PR を作らないタスクの独立レビュー）/ `docs-sync`（起動条件は `rules/self-review.md`）
+- フック: Stop 時に `src/ tests/ tools/` のソース変更があれば `pnpm check` / `pnpm typecheck` / `pnpm test` を実行し失敗を差し戻す。`gh pr create` 成功で自動レビューフローを指示。Write/Edit 後に Biome 整形。SessionStart でマージ済み worktree を通知
+- ルール: `rules/workflow-orchestration.md`（planner / subagent / 検証）、`rules/self-review.md`（独立レビューの二本立て・docs-sync ホワイトリスト）
+- 完了条件は上記 3 コマンド成功。生成結果が変わる変更は加えて「検証ワークフロー」（render 目視 → `docs/01-tech-verification.md` 追記 → `pnpm test -u`）。スナップショット更新とデプロイは ask 権限
 
 ## 規約
 

@@ -55,6 +55,7 @@ pnpm dev          # 開発サーバー
 pnpm build        # dist/ 生成 (tokens → tsc → vite)
 pnpm test         # 決定性テスト
 pnpm check        # Biome
+pnpm typecheck    # tsc
 pnpm deploy       # Cloudflare Workers へデプロイ (wrangler login 済み前提)
 
 node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG レンダ (目視検証用)

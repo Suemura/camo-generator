@@ -1,0 +1,91 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push * --force)",
+      "Bash(git push * --force *)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Read(.env*)",
+      "Edit(.env*)",
+      "Write(.env*)",
+      "Read(.dev.vars*)",
+      "Edit(.dev.vars*)",
+      "Write(.dev.vars*)"
+    ],
+    "ask": [
+      "Bash(gh pr merge)",
+      "Bash(gh pr merge *)",
+      "Bash(git reset --hard)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean)",
+      "Bash(git clean *)",
+      "Bash(pnpm deploy)",
+      "Bash(pnpm deploy *)",
+      "Bash(pnpm run deploy)",
+      "Bash(pnpm run deploy *)",
+      "Bash(wrangler deploy *)",
+      "Bash(pnpm exec wrangler deploy *)",
+      "Bash(npx wrangler deploy *)",
+      "Bash(pnpm test -u)",
+      "Bash(pnpm test -u *)",
+      "Bash(pnpm test -- -u*)",
+      "Bash(pnpm vitest -u*)",
+      "Bash(pnpm exec vitest -u*)",
+      "Bash(npx vitest -u*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | { read -r f; case \"$f\" in */prototype/*|*/src/core/*) ;; *.ts|*.tsx|*.js|*.mjs|*.json) pnpm exec biome check --write \"$f\" 2>/dev/null || true;; esac; }",
+            "timeout": 30,
+            "statusMessage": "Biome でフォーマット中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(gh pr create*)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pr-created.sh\"",
+            "timeout": 30,
+            "statusMessage": "PR 作成を検知..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start-worktrees.sh\"",
+            "timeout": 20,
+            "statusMessage": "stale worktree を確認中..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-on-stop.sh\"",
+            "timeout": 300,
+            "statusMessage": "check / typecheck / test を実行中..."
+          }
+        ]
+      }
+    ]
+  }
+}

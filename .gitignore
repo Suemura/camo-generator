@@ -7,3 +7,5 @@ out/
 .wrangler/
 src/styles/tokens/_primitives.scss
 *.tsbuildinfo
+.claude/settings.local.json
+.claude/worktrees/

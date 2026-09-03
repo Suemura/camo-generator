@@ -36,30 +36,40 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
   useEffect(() => {
     let alive = true;
     const t = setTimeout(async () => {
-      setGenerating(true);
-      setProgress(0);
-      const tag = { preset: state.preset, colors: PRESETS[state.preset].colors.length };
-      const req = {
-        preset: state.preset,
-        seed: state.seed,
-        scale: state.scale,
-        tileable: state.tileable,
-      };
-      // 1. 粗いプレビュー (数十 ms) を先に出してフリーズ感を消す
-      const cz = previewSize(out.w, out.h, COARSE_EDGE);
-      const coarseRes = await generateAsync({ ...req, w: cz.w, h: cz.h });
-      if (!alive) return;
-      setRes({ ...coarseRes, ...tag });
-      setCoarse(true);
-      // 2. 本プレビュー (進捗つき)
-      const sz = previewSize(out.w, out.h, PREVIEW_EDGE);
-      const t0 = performance.now();
-      const r = await generateAsync({ ...req, w: sz.w, h: sz.h }, (f) => alive && setProgress(f));
-      if (!alive) return;
-      setMs(Math.round(performance.now() - t0));
-      setRes({ ...r, ...tag });
-      setCoarse(false);
-      setGenerating(false);
+      try {
+        setGenerating(true);
+        setProgress(0);
+        const tag = { preset: state.preset, colors: PRESETS[state.preset].colors.length };
+        const req = {
+          preset: state.preset,
+          seed: state.seed,
+          scale: state.scale,
+          tileable: state.tileable,
+        };
+        // 1. 粗いプレビュー (数十 ms) を先に出してフリーズ感を消す
+        const cz = previewSize(out.w, out.h, COARSE_EDGE);
+        const coarseRes = await generateAsync({ ...req, w: cz.w, h: cz.h });
+        if (!alive) return;
+        setRes({ ...coarseRes, ...tag });
+        setCoarse(true);
+        // 2. 本プレビュー (進捗つき)
+        const sz = previewSize(out.w, out.h, PREVIEW_EDGE);
+        const t0 = performance.now();
+        const r = await generateAsync({ ...req, w: sz.w, h: sz.h }, (f) => alive && setProgress(f));
+        if (!alive) return;
+        setMs(Math.round(performance.now() - t0));
+        setRes({ ...r, ...tag });
+        setCoarse(false);
+        setGenerating(false);
+      } catch (e) {
+        // 失敗 (Worker/メイン双方の確保失敗、チャンク取得失敗など) は粗い結果を残しつつバッジを畳む
+        if (alive) console.error(e);
+      } finally {
+        if (alive) {
+          setGenerating(false);
+          setCoarse(false);
+        }
+      }
     }, 120);
     return () => {
       alive = false;
@@ -141,7 +151,12 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
           {!busy && generating && (
             <div className={styles.badge} role="status" aria-live="polite">
               <span className={styles.spinner} aria-hidden="true" />
-              {coarse ? `高解像度を生成中 ${Math.round(progress * 100)}%` : "生成中…"}
+              <span>{coarse ? "高解像度を生成中" : "生成中…"}</span>
+              {coarse && (
+                <span className="mono" aria-hidden="true">
+                  {Math.round(progress * 100)}%
+                </span>
+              )}
             </div>
           )}
         </div>

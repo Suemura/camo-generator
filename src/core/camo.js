@@ -772,7 +772,8 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   const fullW = w, fullH = h;
   const baseMax = opt.baseMax ?? 1024;
   const f = Math.max(w, h) > baseMax ? Math.max(w, h) / baseMax : 1;
-  if(f > 1){ w = Math.max(64, Math.round(fullW / f)); h = Math.max(64, Math.round(fullH / f)); }
+  // 縮小キャンバスの各辺は 64 以上、ただし実寸を超えない (極端なアスペクトで拡大ループが縮小になるのを防ぐ)
+  if(f > 1){ w = Math.min(fullW, Math.max(64, Math.round(fullW / f))); h = Math.min(fullH, Math.max(64, Math.round(fullH / f))); }
   const load = SRCS[P.src];
   if(!load) throw new Error(`source map '${P.src}' not registered: call registerSources() first`);
   const SRC = load();

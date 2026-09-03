@@ -19,7 +19,7 @@ pnpm typecheck                        # tsc -b (noEmit)
 pnpm tokens                           # docs/design/spacious-DESIGN.md → src/styles/tokens/_primitives.scss
 node tools/render.mjs <outdir> <seed> [scale]   # 全プリセットを 512px PNG で出力（目視検証用）
 #   オプション: --tile (2×2 タイル) / --size=WxH / --preset=key / --crop=512 (中央を等倍切出し、高解像度の階段確認)
-pnpm deploy                           # 手動デプロイ: build → wrangler deploy。通常は main マージで .github/workflows/deploy.yml が自動実行
+pnpm deploy                           # 緊急用の手動デプロイ。通常は main マージで .github/workflows/deploy.yml が自動デプロイ（運用は docs/03-deploy.md）
 cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.html の再ビルド (src/core を参照)
 ```
 
@@ -69,7 +69,8 @@ Issue → PR の定型フローは commands / agents / hooks で自走する。�
 - エージェント: `planner`（計画 + Sprint Contract）/ `pr-reviewer` → `pr-comment-resolver`（PR 作成後に自動起動）/ `reviewer`（PR を作らないタスクの独立レビュー）/ `docs-sync`（起動条件は `rules/self-review.md`）
 - フック: Stop 時に `src/ tests/ tools/` のソース変更があれば `pnpm check` / `pnpm typecheck` / `pnpm test` を実行し失敗を差し戻す。`gh pr create` 成功で自動レビューフローを指示。Write/Edit 後に Biome 整形。SessionStart でマージ済み worktree を通知
 - ルール: `rules/workflow-orchestration.md`（planner / subagent / 検証）、`rules/self-review.md`（独立レビューの二本立て・docs-sync ホワイトリスト）
-- 完了条件は上記 3 コマンド成功。生成結果が変わる変更は加えて「検証ワークフロー」（render 目視 → `docs/01-tech-verification.md` 追記 → `pnpm test -u`）。スナップショット更新とデプロイは ask 権限
+- 完了条件は上記 3 コマンド成功。生成結果が変わる変更は加えて「検証ワークフロー」（render 目視 → `docs/01-tech-verification.md` 追記 → `pnpm test -u`）。スナップショット更新と手動デプロイは ask 権限
+- デプロイは main マージで GitHub Actions が自動実行する（`docs/03-deploy.md`）。`/land` でマージしたら Actions の「Deploy」が成功したことを確認する
 
 ## 規約
 
@@ -83,3 +84,4 @@ Issue → PR の定型フローは commands / agents / hooks で自走する。�
 - React 19 + Vite + TypeScript の SPA。状態の正本は URL クエリ（§2.6）
 - ホスティング: Cloudflare Workers Static Assets、`camo-generator.suemura.app`。生成は完全クライアントサイド
 - 高解像度対応: Web Worker 化は Issue #3。`generate()` 呼び出しは非同期の窓口関数に隠して差し替え可能にする
+- デプロイ: GitHub Actions（`ci.yml` / `deploy.yml`）。手順と権限は `docs/03-deploy.md`

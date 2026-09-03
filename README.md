@@ -73,10 +73,8 @@ node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG �
 
 ### デプロイ
 
-- `main` への push（PR マージ）で `.github/workflows/deploy.yml` が `pnpm check` → `pnpm test` → `pnpm build` → `wrangler deploy` を実行する。PR では `ci.yml` が同じ検証だけを行う
-- 必要な GitHub Secrets: `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`
-- API トークンは Custom Token で最小権限にする: Account `Workers Scripts: Edit` / `Account Settings: Read`、User `User Details: Read`、Zone（`suemura.app` のみ） `Workers Routes: Edit` / `DNS: Edit`（custom domain 用）。Account Resources は対象アカウントのみに限定
-- 手動で再デプロイしたい場合は Actions の「Deploy」を `workflow_dispatch` で実行するか、ローカルで `pnpm deploy`
+`main` への push（PR マージ）で `.github/workflows/deploy.yml` が `pnpm check` → `pnpm test` → `pnpm build` → `wrangler deploy` を実行し、`https://camo-generator.suemura.app` に反映する。PR では `ci.yml` が同じ検証だけを行う。
+初期設定（Cloudflare API トークンの権限・GitHub Secrets）、手動再デプロイ、ロールバック、権限エラーの切り分けは `docs/03-deploy.md` を参照。
 
 ### フェーズ1 の到達点
 

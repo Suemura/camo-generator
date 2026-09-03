@@ -264,7 +264,7 @@ docs/design/spacious-DESIGN.md          spacious トークンの原本
 
 - `.github/workflows/ci.yml`（`pull_request`）: `pnpm install --frozen-lockfile` → `pnpm check` → `pnpm test` → `pnpm build`
 - `.github/workflows/deploy.yml`（`push` to `main` / `workflow_dispatch`）: 同じ検証を再実行してから `cloudflare/wrangler-action` で `wrangler deploy`。マージコミットが PR 時点と異なりうるため CI の結果は再利用しない。`concurrency` で直列化し途中キャンセルはしない
-- Secrets: `CLOUDFLARE_API_TOKEN`（最小権限の Custom Token。権限一覧は README「デプロイ」節）/ `CLOUDFLARE_ACCOUNT_ID`
+- Secrets: `CLOUDFLARE_API_TOKEN`（最小権限の Custom Token）/ `CLOUDFLARE_ACCOUNT_ID`。権限一覧・運用手順・障害対処は `docs/03-deploy.md`
 - 決定性テストが落ちたら生成結果が変わったことを意味する。意図した変更なら `docs/01-tech-verification.md` へ追記してスナップショット更新
 
 ---

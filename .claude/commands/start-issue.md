@@ -144,6 +144,8 @@ pnpm test
 
 ### 10. push と PR 作成
 
+- push 先は必ず作業ブランチ。main への直接 push は禁止（`workflow-orchestration.md`「main への直接 push は原則禁止」）
+
 - `git push -u origin <ブランチ名>` を**単独で**実行する
 - PR 本文を**リポジトリ外の一時ファイル**（例: `/tmp/pr-body.md`）に書き出し、`--body-file` で渡して PR を作成する。本文に `Closes #{Issue番号}` を必ず含める。作業ツリー内に書き出すと untracked ファイルとして残留するため
 - PR 本文には「何を・なぜ」に加え、**生成結果への影響**（index マップが変わるか / スナップショットを更新したか / render.mjs で確認したシードとスケール）を 1 節書く。レビュアーの判断材料になる

@@ -34,7 +34,13 @@
       "Bash(pnpm test -- -u*)",
       "Bash(pnpm vitest -u*)",
       "Bash(pnpm exec vitest -u*)",
-      "Bash(npx vitest -u*)"
+      "Bash(npx vitest -u*)",
+      "Bash(git push origin main)",
+      "Bash(git push origin main *)",
+      "Bash(git push * main)",
+      "Bash(git push * main:*)",
+      "Bash(git push * HEAD:main)",
+      "Bash(git push * HEAD:main *)"
     ]
   },
   "hooks": {

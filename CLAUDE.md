@@ -76,6 +76,8 @@ Issue → PR の定型フローは commands / agents / hooks で自走する。�
 - ルール: `rules/workflow-orchestration.md`（planner / subagent / 検証）、`rules/self-review.md`（独立レビューの二本立て・docs-sync ホワイトリスト）
 - 完了条件は上記 3 コマンド成功。生成結果が変わる変更は加えて「検証ワークフロー」（render 目視 → `docs/01-tech-verification.md` 追記 → `pnpm test -u`）。スナップショット更新と手動デプロイは ask 権限
 - デプロイは main マージで GitHub Actions が自動実行する（`docs/03-deploy.md`）。`/land` でマージしたら Actions の「Deploy」が成功したことを確認する
+- **main へのマージ（`gh pr merge`）は自己判断で行わない（最重要）**。ユーザーが「マージして」「land して」と PR を特定して明示的に依頼した場合に限り、実行直前に `AskUserQuestion` で PR 番号・タイトル・マージ方式を示して承認を得てから実行する。「デプロイして」「反映して」「進めて」等の間接的な依頼からマージを推測してはならない（その場合は「マージが必要。実行してよいか」を確認して止まる）。permissions の ask ダイアログは承認の代替にならない
+- **main への直接 push も原則禁止**。作業は必ずブランチ + PR 経由。ユーザーから「main に直接 push して」と明示指示があった場合でも、実行前に `AskUserQuestion` で対象コミット・件数・理由を示して一度確認し、承認後にのみ実行する（`git push origin main` 等は settings の ask 権限と `pre-push-guard.sh`（main チェックアウト中の引数なし push をブロック）で二重に守っているが、ダイアログは確認の代替にならない）
 
 ## 規約
 

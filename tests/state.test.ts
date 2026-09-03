@@ -9,7 +9,16 @@ describe("URL 状態", () => {
     expect(parseState("")).toEqual(DEFAULT_STATE);
   });
   it("往復で一致する", () => {
-    const s = { ...DEFAULT_STATE, preset: "marpat" as const, seed: 42, scale: 1.35, palette: ["#112233", "#445566", "#778899", "#aabbcc"], w: 2048, h: 1024, tileable: false };
+    const s = {
+      ...DEFAULT_STATE,
+      preset: "marpat" as const,
+      seed: 42,
+      scale: 1.35,
+      palette: ["#112233", "#445566", "#778899", "#aabbcc"],
+      w: 2048,
+      h: 1024,
+      tileable: false,
+    };
     expect(parseState(serializeState(s))).toEqual(s);
   });
   it("実寸モードの往復", () => {
@@ -29,6 +38,10 @@ describe("URL 状態", () => {
   });
   it("パレット色数がプリセットと合わなければ無視", () => {
     expect(parseState("?p=ucp&c=111111,222222,333333,444444").palette).toBeNull();
-    expect(parseState("?p=ucp&c=111111,222222,333333").palette).toEqual(["#111111", "#222222", "#333333"]);
+    expect(parseState("?p=ucp&c=111111,222222,333333").palette).toEqual([
+      "#111111",
+      "#222222",
+      "#333333",
+    ]);
   });
 });

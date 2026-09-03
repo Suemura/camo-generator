@@ -656,112 +656,174 @@ export function hasSources(key){
   if(!P) return false;               // 未知キーは「登録なし」扱い (事前チェック用途なので投げない)
   return P.kind !== 'quilt' || !!SRCS[P.src];
 }
-function pasteBlob(out, w, h, p, cx, cy, bb, rad, srcGet, wrap=false, tstate=null){
-  if(wrap) return pasteBlobTorus(out, w, h, p, cx, cy, bb, rad, srcGet, tstate);
-  const bw2 = 2*bb+1;
-  const state = new Uint8Array(bw2*bw2);   // 0=未訪問 1=キュー済/塗布済
-  const queue = new Int32Array(bw2*bw2);
-  let qh = 0, qt = 0;
-  const push = (dx, dy) => {
-    const li = (dy+bb)*bw2 + (dx+bb);
-    if(state[li]) return;
-    state[li] = 1;
-    queue[qt++] = li;
-  };
-  // コア: 無条件塗布してシード化
-  const coreR = 0.55;
-  for(let dy=-bb;dy<=bb;dy++){
-    const y = cy+dy | 0;
-    if(y<0||y>=h) continue;
-    for(let dx=-bb;dx<=bb;dx++){
-      const x = cx+dx | 0;
-      if(x<0||x>=w) continue;
-      if(Math.hypot(dx,dy) < rad(dx,dy)*coreR){
-        out[y*w+x] = srcGet(p, x, y);
-        push(dx, dy);
-      }
-    }
-  }
-  // 成長: 一致 or 新値の連続のみ拡張
-  while(qh < qt){
-    const li = queue[qh++];
-    const dx = (li % bw2) - bb, dy = ((li / bw2)|0) - bb;
-    const x = cx+dx | 0, y = cy+dy | 0;
-    if(x<0||x>=w||y<0||y>=h) continue;
-    const v = srcGet(p, x, y);   // このピクセルの新値 (塗布済)
-    for(const [ex,ey] of [[dx-1,dy],[dx+1,dy],[dx,dy-1],[dx,dy+1]]){
-      if(ex<-bb||ex>bb||ey<-bb||ey>bb) continue;
-      const li2 = (ey+bb)*bw2 + (ex+bb);
-      if(state[li2]) continue;
-      const x2 = cx+ex | 0, y2 = cy+ey | 0;
-      if(x2<0||x2>=w||y2<0||y2>=h) continue;
-      if(Math.hypot(ex,ey) >= rad(ex,ey)) continue;
-      const nv = srcGet(p, x2, y2);
-      const ov = out[y2*w+x2];
-      // 塗れる条件: 旧と一致(継ぎ目不可視) / 隣接塗布済み新値と同色(新シェイプの続き) / 未塗布
-      if(nv === ov || nv === v || ov === 255){
-        out[y2*w+x2] = nv;
-        state[li2] = 1;
-        queue[qt++] = li2;
-      }
-    }
-  }
-}
-// トーラス版 pasteBlob (シームレスタイリング用)。
-// 相違点:
-// - 訪問管理をパッチローカル座標ではなくキャンバス座標 (state: w*h) で行う。M81 のパッチ半径は
-//   キャンバス幅の最大 0.8 倍あり、トーラス上で自分自身と重なる。ローカル管理だと同一ピクセルを
-//   2 つの相対座標から別サンプルで塗ろうとして成長が止まり、継ぎ目が直線の切断面になる
-// - 座標は Math.floor で丸める (|0 は負側で 0 方向に切り捨てられ x=0 の列が 2 重になる)
-// - ソース参照は非ラップの相対座標 (dx,dy) で行い、キャンバス書込だけラップする
-function pasteBlobTorus(out, w, h, p, cx, cy, bb, rad, srcGet, state){
+// ブロブパッチの貼付: 領域成長型シーム (v11) + シェイプ完走/撤回 (v18)。
+// 円弧切断の根因: 成長をブロブ半径 rad(θ) で無条件に打ち切ると、半径をまたぐシェイプが
+// 「続きの無い滑らかな弧」で切り落とされる (M81 の半円状の切れ目、AOR ではセル格子に沿わない曲線)。
+// → 半径の内側は従来の規則 (旧と一致 / 新シェイプ自身の連続 / 未塗布) で成長し、
+//   半径をまたいで続く新シェイプ (外側の旧色と不一致 = 切れ目になる箱所) は、シェイプ単位で二択にする:
+//   完走: 半径の外でも同じ色 (nv === v) の続きを自然な輪郭まで塗り足す。上書きできる旧色は
+//         またいだ地点で下にあった色 (複数可) と未塗布のみ → 遷移は新シェイプの実輪郭か旧シェイプの実輪郭に乗る。
+//         半径比 OUT_HI (bb 箱) に達したら「続きが長すぎる」として完走を取り消し、撤回に切り替える
+//   撤回: そのシェイプを内側も含めて塗る前の状態に戻す (oldBuf)。境界は新シェイプの実輪郭上に移る
+//   途中で止める選択肢を持たないことが要点: 半径関数・ノイズ域のどこで止めても、その形の切れ目や帯が残る。
+//   完走 / 撤回の選択は色の不足度 (allowExtend) に委ねる。完走は面積の大きい色を優遇するので、
+//   過剰色は撤回・不足色は完走にすると面積比のフィードバック制御になる。
+// トーラス (wrap): 訪問管理はキャンバス座標 (state: w*h)。M81 のパッチ半径はキャンバス幅の
+//   最大 0.8 倍ありトーラス上で自分自身と重なるため、ローカル管理だと成長が止まり直線の切断面になる。
+//   ソース参照は非ラップの相対座標で行い、キャンバス書込だけラップする。
+// quant (デジタル系): マスク判定座標をキャンバス格子 (cellPx) のセル中心に丸め、
+//   輪郭を階段状にする (未塗布や合流に接する部分でも実物のピクセル輪郭と同じ見え方にする)。
+// state: 0 未訪問 / 1 内側塗布 (未処理) / 2 内側塗布 (処理済) / 3 完走塗布 / 4 撤回済 / 5 島判定済。呼出し後は全て 0 に戻す
+// bbIn: 内側半径を覆う箱 (コア走査範囲)、bb: 完走まで含む箱 (成長の上限範囲)
+function pasteBlob(out, w, h, p, cx, cy, bbIn, bb, rad, outHi, allowExtend, srcGet, srcIn, wrap, state, oldBuf, quant=0){
   const fl = Math.floor;
+  // トーラスでは成長範囲をキャンバスの半分に抑え、各ピクセルへ 1 つの相対位置からしか到達しないようにする
+  // (自己重なりの前線同士が出会う直線の切断面を防ぐ)。完走がこの範囲に達したら撤回になる
+  const bbX = wrap ? Math.min(bb, ((w-1)>>1)) : bb, bbY = wrap ? Math.min(bb, ((h-1)>>1)) : bb;
+  const inBox = (ex, ey) => ex>=-bbX && ex<=bbX && ey>=-bbY && ey<=bbY;
   let cap = Math.min(w*h, (2*bb+1)*(2*bb+1));
   let qdx = new Int32Array(cap), qdy = new Int32Array(cap);
-  let qh = 0, qt = 0;
+  let qt = 0;
   const grow = () => {
     cap *= 2;
-    const ndx = new Int32Array(cap); ndx.set(qdx); qdx = ndx;
-    const ndy = new Int32Array(cap); ndy.set(qdy); qdy = ndy;
+    const a = new Int32Array(cap); a.set(qdx); qdx = a;
+    const b = new Int32Array(cap); b.set(qdy); qdy = b;
   };
-  const pix = (dx, dy) => wrapI(fl(cy+dy), h)*w + wrapI(fl(cx+dx), w);
-  const push = (dx, dy) => {
-    const i = pix(dx, dy);
-    if(state[i]) return;
-    state[i] = 1;
-    if(qt >= cap) grow();
-    qdx[qt] = dx; qdy[qt] = dy; qt++;
+  const push = (dx, dy) => { if(qt >= cap) grow(); qdx[qt] = dx; qdy[qt] = dy; qt++; };
+  const pix = (dx, dy) => {
+    let x = fl(cx+dx), y = fl(cy+dy);
+    if(wrap){ x = wrapI(x, w); y = wrapI(y, h); }
+    else if(x<0||x>=w||y<0||y>=h) return -1;
+    return y*w + x;
   };
+  // マスク判定座標: デジタル系はセル中心に量子化 (キャンバス絶対格子。パッチ間で格子を共有)
+  const mq = quant > 0 ? (d, c) => (fl((c+d)/quant) + 0.5) * quant - c : (d) => d;
+  // 半径比 r / rad(θ)。< 1 が内側
+  const ratio = (dx, dy) => {
+    const qx = mq(dx, cx), qy = mq(dy, cy);
+    return Math.hypot(qx, qy) / rad(qx, qy);
+  };
+  const paint = (i, dx, dy, nv, st) => { oldBuf[i] = out[i]; out[i] = nv; state[i] = st; push(dx, dy); };
+  const N4 = [[-1,0],[1,0],[0,-1],[0,1]];
+
+  // --- 1. コア: 無条件塗布してシード化
   const coreR = 0.55;
-  for(let dy=-bb;dy<=bb;dy++){
-    for(let dx=-bb;dx<=bb;dx++){
-      if(Math.hypot(dx,dy) < rad(dx,dy)*coreR){
-        const i = pix(dx, dy);
-        if(state[i]) continue;          // 自己重複: 先着優先
-        out[i] = srcGet(p, fl(cx+dx), fl(cy+dy));
-        push(dx, dy);
-      }
+  for(let dy=-bbIn;dy<=bbIn;dy++){
+    for(let dx=-bbIn;dx<=bbIn;dx++){
+      if(Math.hypot(dx,dy) >= rad(dx,dy)*coreR) continue;
+      const i = pix(dx, dy);
+      if(i < 0 || state[i]) continue;          // 自己重複: 先着優先
+      paint(i, dx, dy, srcGet(p, fl(cx+dx), fl(cy+dy)), 1);
     }
   }
+  // --- 2. 内側の成長。半径の外に続く不一致シェイプは「またぎ点」として記録
+  const cross = [];   // 内側ピクセルのキュー添字
+  let qh = 0;
   while(qh < qt){
     const dx = qdx[qh], dy = qdy[qh]; qh++;
-    const v = out[pix(dx, dy)];   // このピクセルの新値 (塗布済)
-    for(const [ex,ey] of [[dx-1,dy],[dx+1,dy],[dx,dy-1],[dx,dy+1]]){
-      if(ex<-bb||ex>bb||ey<-bb||ey>bb) continue;
-      if(Math.hypot(ex,ey) >= rad(ex,ey)) continue;
+    const v = out[pix(dx, dy)];
+    for(const [ox,oy] of N4){
+      const ex = dx+ox, ey = dy+oy;
+      if(!inBox(ex, ey)) continue;
       const i2 = pix(ex, ey);
-      if(state[i2]) continue;
+      if(i2 < 0 || state[i2]) continue;
       const nv = srcGet(p, fl(cx+ex), fl(cy+ey));
       const ov = out[i2];
-      if(nv === ov || nv === v || ov === 255){
-        out[i2] = nv;
-        state[i2] = 1;
-        if(qt >= cap) grow();
-        qdx[qt] = ex; qdy[qt] = ey; qt++;
+      if(ratio(ex, ey) >= 1){
+        if(nv === v && ov !== v) cross.push(qh-1);   // 半径をまたいで続く新シェイプ (旧と不一致 → 切れ目候補)
+        continue;
       }
+      // 塗れる条件: 旧と一致(継ぎ目不可視) / 隣接塗布済み新値と同色(新シェイプの続き) / 未塗布
+      if(nv === ov || nv === v || ov === 255) paint(i2, ex, ey, nv, 1);
     }
   }
-  for(let k=0;k<qt;k++) state[pix(qdx[k], qdy[k])] = 0;   // 共有バッファを掃除
+  // --- 3. またぎ点ごとにシェイプ単位で 完走 or 撤回
+  const shape = [], seeds = [], ext = [];
+  for(const ci of cross){
+    const sdx = qdx[ci], sdy = qdy[ci];
+    const si = pix(sdx, sdy);
+    if(state[si] !== 1) continue;             // 既に別のまたぎ点から処理済
+    const v = out[si];
+    // 3a. 内側シェイプ (state 1 かつ同色の連結成分) を収集。外側に続く不一致ピクセルを完走のシードに
+    shape.length = 0; seeds.length = 0;
+    let ocMask = 0;
+    state[si] = 2; shape.push(sdx, sdy);
+    for(let k=0;k<shape.length;k+=2){
+      const dx = shape[k], dy = shape[k+1];
+      for(const [ox,oy] of N4){
+        const ex = dx+ox, ey = dy+oy;
+        if(!inBox(ex, ey)) continue;
+        const i2 = pix(ex, ey);
+        if(i2 < 0) continue;
+        if(state[i2] === 1){ if(out[i2] === v){ state[i2] = 2; shape.push(ex, ey); } continue; }
+        if(state[i2] !== 0) continue;
+        if(ratio(ex, ey) < 1) continue;       // 内側の未塗布 (成長条件で止まった箇所) は対象外
+        const nv = srcGet(p, fl(cx+ex), fl(cy+ey));
+        const ov = out[i2];
+        if(nv !== v || ov === v) continue;
+        if(ov !== 255) ocMask |= 1 << ov;
+        seeds.push(ex, ey);
+      }
+    }
+    // 3b. 完走を試す
+    let ok = allowExtend(v);
+    ext.length = 0;
+    if(ok){
+      for(let k=0;k<seeds.length && ok;k+=2){
+        const sx = seeds[k], sy = seeds[k+1];
+        const i0 = pix(sx, sy);
+        if(state[i0]) continue;
+        paint(i0, sx, sy, v, 3); ext.push(sx, sy);
+        for(let m=ext.length-2; m<ext.length && ok; m+=2){
+          const dx = ext[m], dy = ext[m+1];
+          for(const [ox,oy] of N4){
+            const ex = dx+ox, ey = dy+oy;
+            if(!inBox(ex, ey)){ ok = false; break; }                 // 箱に到達: 続きが長すぎる (→ 撤回)
+            const i2 = pix(ex, ey);
+            if(i2 < 0 || state[i2]) continue;
+            if(!srcIn(p, fl(cx+ex), fl(cy+ey))){ ok = false; break; } // ソース範囲外 (鏡映になる): 撤回へ
+            if(srcGet(p, fl(cx+ex), fl(cy+ey)) !== v) continue;     // 新シェイプの実輪郭で終わる
+            const ov = out[i2];
+            if(ov === v) continue;                                   // 旧同色に合流 (継ぎ目なし)
+            if(ratio(ex, ey) >= outHi){ ok = false; break; }         // 半径比の上限: 撤回へ
+            if(ov !== 255 && !((ocMask >> ov) & 1)) continue;        // 旧シェイプの実輪郭で止まる
+            paint(i2, ex, ey, v, 3); ext.push(ex, ey);
+          }
+        }
+      }
+    }
+    if(!ok){
+      // 3c. 撤回: 完走分と内側シェイプを塗る前に戻す。境界は新シェイプの実輪郭に移る
+      for(let k=0;k<ext.length;k+=2){ const i = pix(ext[k], ext[k+1]); out[i] = oldBuf[i]; state[i] = 4; }
+      for(let k=0;k<shape.length;k+=2){ const i = pix(shape[k], shape[k+1]); out[i] = oldBuf[i]; state[i] = 4; }
+    }
+  }
+  // --- 4. 撤回した地の中に孤立した新シェイプ (撤回域にしか接しない島) も撤回する。
+  // 残すと旧内容の上に新パッチの図柄 (黒枝など) が重なって図柄だけが蓄積し、面積比が偏る
+  if(cross.length){
+    for(let k=0;k<qt;k++){
+      const dx0 = qdx[k], dy0 = qdy[k], i0 = pix(dx0, dy0);
+      if(state[i0] === 0 || state[i0] === 4 || state[i0] === 5) continue;
+      // 連結成分を辿り、撤回域以外 (旧キャンバス / 未塗布 / 箱外) に接するかを調べる
+      shape.length = 0; shape.push(dx0, dy0); state[i0] = 5;   // 5: 判定中
+      let open = false;
+      for(let m=0;m<shape.length;m+=2){
+        const dx = shape[m], dy = shape[m+1];
+        for(const [ox,oy] of N4){
+          const ex = dx+ox, ey = dy+oy;
+          if(!inBox(ex, ey)){ open = true; continue; }
+          const i2 = pix(ex, ey);
+          if(i2 < 0){ open = true; continue; }
+          const st = state[i2];
+          if(st === 0){ open = true; continue; }
+          if(st === 4 || st === 5) continue;
+          state[i2] = 5; shape.push(ex, ey);
+        }
+      }
+      if(!open) for(let m=0;m<shape.length;m+=2){ const i = pix(shape[m], shape[m+1]); out[i] = oldBuf[i]; state[i] = 4; }
+    }
+  }
+  for(let k=0;k<qt;k++){ const i = pix(qdx[k], qdy[k]); if(i >= 0) state[i] = 0; }   // 共有バッファを掃除
 }
 export function genQuilt(w, h, seed, scale, P, opt={}){
   const wrap = opt.tileable !== false;   // キャンバスをトーラスとして扱う (シームレスタイル)
@@ -813,6 +875,11 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
       cx: 0, cy: 0,
     };
   };
+  // 完走の参照がソース範囲内か (範囲外は折返し鏡映になるので完走を諦めて撤回する)
+  const srcIn = (p, x, y) => {
+    const u = p.sx + p.mx * (x - p.cx) * km, v = p.sy + p.my * (y - p.cy) * km;
+    return u >= 0 && u <= SWm-1 && v >= 0 && v <= SHm-1;
+  };
   const srcGet = (p, x, y) => {
     // x,y: canvas 座標。パッチ中心 (p.cx,p.cy) からの相対でソース参照
     let u = p.sx + p.mx * (x - p.cx) * km, v = p.sy + p.my * (y - p.cy) * km;
@@ -824,11 +891,28 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   // ベースは敷かない: 全面をパッチのみで被覆 (未塗布=255)。
   // 高スケール時にベースの折返し鏡映が出る問題を根絶
   out.fill(255);
-  const tstate = wrap ? new Uint8Array(w*h) : null;   // トーラス貼付の訪問管理 (共有)
-  const fl = wrap ? Math.floor : (v)=>v|0;            // 非ラップ時は旧挙動 (|0) を維持
+  const tstate = new Uint8Array(w*h);   // 貼付の訪問管理 (キャンバス座標、共有)
+  const oldBuf = new Uint8Array(w*h);   // 撤回用: 塗る直前の値 (共有)
+  const fl = Math.floor;
+  // シェイプ完走帯 (v18): ブロブ半径をまたいだ同一シェイプは半径比 OUT_HI まで伸ばしてよい。
+  // 許容域は 2D fbm の閾値域: 半径比が上がるほど閾値を上げる (外へ向かって痩せる) が、
+  // 輪郭はノイズ等高線なので円弧にならない。ノイズの特徴長 L はブロブ半径の 1/3 程度
+  // (M81 のシェイプのローブと同じオーダー)
+  // シェイプ完走 / 撤回 (v18、pasteBlob 参照)。完走は面積の大きい色 (M81 の緑/茶の地) を優遇する:
+  // 塗り足す面積は「新シェイプ ∩ 旧色」で地の色ほど交差が大きく、放置するとサンド比が 0.24 → 0.17 に落ちる。
+  // → 現況で目標比を上回っている色は撤回、それ以外は完走 (面積比のフィードバック制御)
+  const OUT_HI = 2.2;                                  // 完走を許す半径比の上限 (超えたら撤回)
+  const mkAllowExtend = (deficit) => (v) => deficit[v] >= 0.02;   // 目標比を 2% 以上下回る色だけ完走 (閾値 -0.02〜0.02 を比較し最も目標に近い)
+  // デジタル系: マスク輪郭をセル格子に量子化 (ソースのセル ≈ P.cellSrc px → キャンバス px)
+  const quant = P.organic === false ? Math.max(1, (P.cellSrc ?? 10) / km) : 0;
   // 2. ブロブパッチ: 有機輪郭 (半径を角度ノイズで変調した星型領域)
   const R = (P.patchR ?? 185) / k;             // パッチ基準半径 (target px)
-  const nPatch = Math.ceil(2.2 * (w*h) / (Math.PI*R*R));
+  // ブロブ半径の上限 (v18): 輪郭 rad(θ) の最大 1.17·bR がキャンバス短辺の半分を超えると、トーラス上で
+  // パッチが自分自身と重なり、同じピクセルへ 2 方向から別内容の前線が到達する。両前線の出会う線は
+  // パッチ中心の対蹠点を通る直線の切断面になる (旧実装から存在、撤回で旧内容が残るようになり露出が増えた)
+  const bRcap = 0.42 * Math.min(w, h);
+  const Rn = Math.min(R, bRcap);               // 被覆枚数の見積りに使う代表半径
+  const nPatch = Math.ceil(2.2 * (w*h) / (Math.PI*Rn*Rn));
   for(let pi=0; pi<nPatch; pi++){
     if(progress) progress(0.75 * pi / nPatch);
     // キャンバス現況の色比 → 不足色をパッチ選択で補う (未塗布は除外)
@@ -838,16 +922,18 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     const bSeed = (seed ^ 0x3d1) + pi*37;
     // 25% は「マクロパッチ」: 大径 + 多様性緩和 → 実物にある大判の平坦掃引領域
     const isMacro = rng() < 0.25;
-    const bR = R * (isMacro ? randRange(rng, 1.6, 2.1) : randRange(rng, 0.7, 1.3));
+    const bR = Math.min(bRcap, R * (isMacro ? randRange(rng, 1.6, 2.1) : randRange(rng, 0.7, 1.3)));
     const divWeight = isMacro ? 0.35 : 1.2;
     // パッチ中心は最大3回抽選: 境界リング誤差が低い(=貼っても境界線が出ない)場所を探す
     let cx = 0, cy = 0;
     // 境界半径 r(θ) = bR * (0.62 + 0.55 * fbm(周期θ))
+    // (v18 で高周波ローブ化を試したが、隣接パッチの輪郭が小半径で交差して細い C 字帯が増えたため据え置き)
     const rad = (dx, dy) => {
       const th = Math.atan2(dy, dx);
       return bR * (0.62 + 0.55 * fbm(Math.cos(th)*1.4+7, Math.sin(th)*1.4+7, bSeed, 2, 2, .5));
     };
-    const bb = Math.ceil(bR * 1.2);
+    const bbIn = Math.ceil(bR * 1.2);           // 内側半径を覆う箱 (rad の最大値 ≈ 1.17 bR)
+    const bb = Math.ceil(bbIn * OUT_HI);        // 完走まで含む成長範囲
     // 候補: 境界リング上の不一致(重み大) + 内部の色多様性。
     // リング誤差が高止まりなら中心を再抽選 (境界線の露出防止)
     let best = null, bestScore = Infinity, bestRing = Infinity;
@@ -857,13 +943,13 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
       const tx = randRange(rng, 0, w), ty = randRange(rng, 0, h);
       let aBest = null, aScore = Infinity, aRing = Infinity;
       for(let c=0;c<nCand;c++){
-        const p = pick(rng, bb*km, bb*km);
+        const p = pick(rng, bbIn*km, bbIn*km);
         p.cx = tx; p.cy = ty;
         let err = 0, cnt = 0;
         const hist = [0,0,0,0]; let hn = 0;
-        const es = Math.max(2, (bb/32)|0);
-        for(let dy=-bb;dy<=bb;dy+=es){
-          for(let dx=-bb;dx<=bb;dx+=es){
+        const es = Math.max(2, (bbIn/32)|0);   // 走査は内側半径の箱 (bb は完走帯込みで大きい)
+        for(let dy=-bbIn;dy<=bbIn;dy+=es){
+          for(let dx=-bbIn;dx<=bbIn;dx+=es){
             const x = fl(tx+dx), y = fl(ty+dy);
             const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
             if(xi<0||xi>=w||yi<0||yi>=h) continue;
@@ -889,7 +975,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     // 貼り付け: 領域成長型シーム。コア(0.55R)は無条件、
     // 外側は「旧と一致」or「新シェイプ自身の連続」だけ塗り広げる →
     // 遷移が必ず実シェイプの輪郭上に乗り、切断面が出ない
-    pasteBlob(out, w, h, best, cx, cy, bb, rad, srcGet, wrap, tstate);
+    pasteBlob(out, w, h, best, cx, cy, bbIn, bb, rad, OUT_HI, mkAllowExtend(deficit), srcGet, srcIn, wrap, tstate, oldBuf, quant);
   }
   // 未塗布セルが残っていれば、その位置を中心に追加パッチで埋める
   let guard = 0;
@@ -902,21 +988,25 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     }
     const hx = hole % w, hy = (hole / w) | 0;
     const bSeed = (seed ^ 0x7f3) + guard*53;
-    const bR = R * randRange(rng, 0.9, 1.3);
+    const bR = Math.min(bRcap, R * randRange(rng, 0.9, 1.3));
     const rad2 = (dx, dy) => {
       const th = Math.atan2(dy, dx);
       return bR * (0.7 + 0.5 * fbm(Math.cos(th)*1.4+7, Math.sin(th)*1.4+7, bSeed, 2, 2, .5));
     };
-    const bb = Math.ceil(bR * 1.3);
+    const cur2 = [0,0,0,0]; let cn2 = 0;
+    for(let i=0;i<w*h;i+=997){ if(out[i]<4){ cur2[out[i]]++; cn2++; } }
+    const allow2 = mkAllowExtend(cn2 ? TARGET_FRAC.map((t,ci)=> t - cur2[ci]/cn2) : [0,0,0,0]);
+    const bbIn = Math.ceil(bR * 1.3);
+    const bb = Math.ceil(bbIn * OUT_HI);
     // 通常パッチ同様: 境界リング一致で候補選択 → 領域成長型で貼付
     let hp = null, hs = Infinity;
     for(let c=0;c<30;c++){
-      const p = pick(rng, bb*km, bb*km);
+      const p = pick(rng, bbIn*km, bbIn*km);
       p.cx = hx; p.cy = hy;
       let err = 0, cnt = 0;
-      const es = Math.max(2, (bb/24)|0);
-      for(let dy=-bb;dy<=bb;dy+=es){
-        for(let dx=-bb;dx<=bb;dx+=es){
+      const es = Math.max(2, (bbIn/24)|0);
+      for(let dy=-bbIn;dy<=bbIn;dy+=es){
+        for(let dx=-bbIn;dx<=bbIn;dx+=es){
           const x = fl(hx+dx), y = fl(hy+dy);
           const xi = wrap ? wrapI(x, w) : x, yi = wrap ? wrapI(y, h) : y;
           if(xi<0||xi>=w||yi<0||yi>=h) continue;
@@ -928,12 +1018,12 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
       const sc = cnt ? err/cnt : rng()*0.01;
       if(sc < hs){ hs = sc; hp = p; }
     }
-    pasteBlob(out, w, h, hp, hx, hy, bb, rad2, srcGet, wrap, tstate);
+    pasteBlob(out, w, h, hp, hx, hy, bbIn, bb, rad2, OUT_HI, allow2, srcGet, srcIn, wrap, tstate, oldBuf, quant);
     // 成長で埋まらなかった未塗布セルは無条件で充填 (取り残し防止)
-    for(let dy=-bb;dy<=bb;dy++){
+    for(let dy=-bbIn;dy<=bbIn;dy++){
       const y = fl(hy+dy), yi = wrap ? wrapI(y, h) : y;
       if(yi<0||yi>=h) continue;
-      for(let dx=-bb;dx<=bb;dx++){
+      for(let dx=-bbIn;dx<=bbIn;dx++){
         const x = fl(hx+dx), xi = wrap ? wrapI(x, w) : x;
         if(xi<0||xi>=w) continue;
         if(out[yi*w+xi]===255 && Math.hypot(dx,dy) < rad2(dx,dy)) out[yi*w+xi] = srcGet(hp, x, y);
@@ -1062,7 +1152,7 @@ export const PRESETS = {
   },
   aor1: {
     name: 'AOR1 (デザート)', kind: 'quilt', src: 'aor1', ref: 'aor1',
-    kBase: 1.5, patchR: 170, organic: false,
+    kBase: 1.5, patchR: 170, organic: false, cellSrc: 10,   // cellSrc: ソース図案の 1 セル ≈ 10 px (960px スウォッチ実測)
     frac: [0.42, 0.325, 0.214, 0.041], divw: [1, 1, 1.3, 2.6],
     colors: [
       {name:'ライトタン',  hex:'#b5a78c'},
@@ -1073,7 +1163,7 @@ export const PRESETS = {
   },
   aor2: {
     name: 'AOR2 (ウッドランド)', kind: 'quilt', src: 'aor2', ref: 'aor2',
-    kBase: 1.5, patchR: 170, organic: false,
+    kBase: 1.5, patchR: 170, organic: false, cellSrc: 10,   // cellSrc: ソース図案の 1 セル ≈ 10 px (960px スウォッチ実測)
     frac: [0.043, 0.289, 0.454, 0.214], divw: [2, 1, 1, 1.3],
     colors: [
       {name:'タン',       hex:'#a39678'},

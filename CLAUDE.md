@@ -55,7 +55,7 @@ cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.h
 
 ## UI の実画面確認
 
-`pnpm dev --port 5199` を起動し、Playwright（`channel: "chrome"` でシステムの Chrome を使う、ブラウザダウンロード不要）でスクリーンショットと書き出しファイルを検証する。デスクトップ 1440 / モバイル 390、ライト / ダーク、書き出した PNG の pHYs と SVG の rect 数を見る。3D モード追加後は、各表示モード（単一 / タイル 2×2 / 実物比較 / 3D）とモデル切り替え、WebGL 非対応時のフォールバック（Chrome の `--disable-webgl --disable-webgl2` で再現）も確認する。
+`pnpm dev --port 5199` を起動し、Playwright（`channel: "chrome"` でシステムの Chrome を使う、ブラウザダウンロード不要）でスクリーンショットと書き出しファイルを検証する。デスクトップ 1440 / モバイル 390、ライト / ダーク、書き出した PNG の pHYs と SVG の rect 数を見る。各表示モード（単一 / タイル 2×2 / 3D）とモデル切り替え、WebGL 非対応時のフォールバック（Chrome の `--disable-webgl --disable-webgl2` で再現）も確認する。
 
 ## 検証ワークフロー（重要）
 

@@ -32,7 +32,8 @@ cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.h
   - 手法は3系統: `genQuilt`（ブロブパッチ合成、M81 主力）/ `genGrowth`（クラスタ成長、デジタル系）/ `genWoodland`・`genDigital`（ノイズ閾値、従来手法・比較用）
   - プリセットは `PRESETS` に集約。`kind` で生成関数にディスパッチ
 - `src/core/m81src.js` / `digsrc.js` — M81 / AOR1 / AOR2 実物図案の 4値インデックスマップ（RLE + base64）。再生成は docs 記載の Python 手順
-- `src/app/` — React UI。`src/styles/tokens/` がデザイントークン（§デザイン参照）。コンポーネントの色・余白は `var(--…)` のみ、生値禁止
+- `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means。`src/data/` — プリセット表示メタ、120 色ライブラリ、リファレンス画像（動的 import）
+- `src/styles/tokens/` がデザイントークン（§デザイン参照）、`src/styles/ui.scss` が共通クラス。コンポーネントの色・余白は `var(--…)` のみ、生値禁止。新しい余白値が要るときは `_semantic.scss` の `$static` に追加してから使う（未定義 var は無効値になり潰れる）
 - `tools/render.mjs` — Node レンダリングハーネス。`tools/gen-tokens.mjs` — トークン生成
 - `prototype/app-template.html` — フェーズ1 UI（参照のみ）。`//__INLINE_CAMO__` / `//__INLINE_REFS__` マーカーに build.mjs がインライン展開する。**index.html を直接編集しない**（ビルドで上書きされる）
 - `prototype/index.html` — ビルド成果物。Artifact/配布用の単一ファイル
@@ -43,6 +44,10 @@ cd prototype && node build.mjs        # フェーズ1 プロトタイプ index.h
 - ルール: `.claude/skills/design-system/SKILL.md`（spacious）。マーカー内は `npx typeui.sh pull spacious -p claude-code -f skill` の管理領域、プロジェクト固有ルールはマーカー外に書く
 - トークン 3 層: `_primitives.scss`（生成物、編集禁止）→ `_semantic.scss`（役割名、light/dark map。**色を変えるのはここ**）→ `_emit.scss`（CSS カスタムプロパティ出力）
 - テーマは `<html data-theme>` で切替。`index.html` の inline script が描画前に確定する
+
+## UI の実画面確認
+
+`pnpm dev --port 5199` を起動し、Playwright（`channel: "chrome"` でシステムの Chrome を使う、ブラウザダウンロード不要）でスクリーンショットと書き出しファイルを検証する。デスクトップ 1440 / モバイル 390、ライト / ダーク、書き出した PNG の pHYs と SVG の rect 数を見る。
 
 ## 検証ワークフロー（重要）
 

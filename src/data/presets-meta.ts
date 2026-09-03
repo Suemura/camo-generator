@@ -64,8 +64,8 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     svg: false,
   },
   frogskin: {
-    label: "フロッグスキン風 (M1942)",
-    note: "1942〜 5 色。丸い斑点 (グリーン面)",
+    label: "フロッグスキン風 (ジャングル面)",
+    note: "1942〜 5 色。丸い斑点",
     country: "米国",
     group: "woodland",
     svg: false,

@@ -9,7 +9,7 @@
 - RAL Classic は encycolorpedia の換算値、RAL F9 (連邦軍迷彩色) は nuancier-ral の換算値を採用した。RAL 7028 Dunkelgelb は RAL Classic 廃番のため模型塗料の画面近似値を採用し、`source` に approx. と明記した。
 - BS 381C は scalemates の BS 381C パレットの値を採用した。
 - 公式 sRGB 値が存在しない色 (4BO / 7K / 日本陸海軍色 / 陸自 OD 色) は、研究者・模型誌で通説となっている FS 近似色またはマンセル値を経由して換算し、`source` に approx. と明記した。
-- アプリのプリセット (MARPAT / AOR1 / AOR2 / DCU / DBDU / 陸自迷彩 2 型) は公的規格の色番号が存在しないため、`src/core/camo.js` の実測パレット (Wikimedia Commons 参照画像からの抽出値) をそのまま収録した。M81 と UCP は FS 595 の公式色番号が存在するため FS 系エントリで代表させている。新しい迷彩プリセットを追加したら、その既定色も同じ方式で登録する (`docs/04-add-preset.md` §3)。
+- アプリのプリセット (MARPAT / AOR1 / AOR2 / DCU / DBDU / 陸自迷彩 2 型 / DPM / DDPM) は公的規格の色番号が存在しないため、`src/core/camo.js` の実測パレット (Wikimedia Commons 参照画像からの抽出値) をそのまま収録した。M81 と UCP は FS 595 の公式色番号が存在するため FS 系エントリで代表させている。新しい迷彩プリセットを追加したら、その既定色も同じ方式で登録する (`docs/04-add-preset.md` §3)。
 - 陸自迷彩 2 型については、車両用塗料の NDS Z 8201E 3414 / 3606 は規格として公開されているが**被服 (迷彩服) 4 色の色指定は公表されていない** (防衛省規格目録に「迷彩」の規格は存在せず、日塗工番号との公式対応もない) ため、生地の実測値を収録し、塗料色エントリとは別物として `note` に明記した。
 - タグは色味 (hue) / 用途 (use) / 国 (country) の 3 軸。用途タグの camo-* はアプリのプリセット名に対応する。
 
@@ -108,7 +108,20 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグ `camo-jgsdf2`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「陸自迷彩 2 型」を追加した
 - 近接する既存エントリ: `jgsdf2-green` #5e775c は車両色 `jsdf-dgreen-3414` #434941 と 20 以上離れており別色。`jgsdf2-brown` #74524e ↔ `jsdf-brown-3606` #5c5243 も同様（生地の染色色と塗料色の違い）
 
-## 第5弾（迷彩プリセット追加に伴う実測色: CADPAT / 07 式 / EMR）
+## 第5弾（迷彩プリセット追加に伴う実測色: DPM / DDPM）
+
+アプリに英軍 DPM とデザート DPM（Issue #26）のプリセットを追加したのに合わせ、既定色 4 + 2 色を追記した。
+
+### 方法
+
+- `std` は「DPM (実測)」「DDPM (実測)」、hex は `src/core/camo.js` の `PRESETS.dpm.colors` / `PRESETS.ddpm.colors` と完全一致させている
+- 英国防省は DPM の色を仕様書（被服の調達仕様）で規定しているが公表されておらず、BS 381C にも DPM の被服色は無い。したがって `code` は index 値の順に `dpm-1`〜`dpm-4` / `ddpm-1`〜`ddpm-2` を振った
+- DPM の参照画像は英国防省の布地接写写真（OGL v1.0）で、右側が暗い照明ムラがある。パレット実測は `tools/gen-src.mjs refs/dpm.jpg … 4 DPM --resize=800 --blur=1.5 --flatten=250` の量子化重心（ソース図案と同じ前処理・同じ k-means）を採った。`extract-palette.mjs --core` は照明ムラで砂色が明部 / 暗部の 2 クラスタに割れ、k=4 では黒とブラウンが分離しなかったため。詳細は `docs/01-tech-verification.md` v26
+- DDPM はフラットなスキャンなので `node tools/extract-palette.mjs refs/ddpm.jpg 2 --core` をそのまま使った
+- 用途タグは既存の `camo-dpm`（ラベル「DPM」。従来は descriptive の `khaki` のみが持っていた）と新規の `camo-ddpm`（`src/data/palette.ts` の `USE_LABEL` に「デザート DPM (DDPM)」を追加）
+- 近接する既存エントリ: `dpm-sand` #d8a858 は `bs381c-362` Middle Stone #ac7c42 と 40 以上離れており別色。`khaki` #c3b091 も同様（参照写真の照明が暖色寄りである影響を含む。残課題は v26 節）
+
+## 第6弾（迷彩プリセット追加に伴う実測色: CADPAT / 07 式 / EMR）
 
 アプリにデジタル系派生 3 種（Issue #30）のプリセットを追加したのに合わせ、既定色 12 色を追記した。
 
@@ -117,7 +130,7 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - これまでと同じく `std` は「CADPAT (実測)」「07 式 (実測)」「EMR (実測)」とし、hex は `src/core/camo.js` の `PRESETS[key].colors` と完全一致させている
 - **3 種とも公的な色番号が見つからなかった**ため、`code` には index 値の順に `cadpat-1`〜`cadpat-4` / `type07-1`〜`type07-4` / `emr-1`〜`emr-4` を振った。CADPAT の色指定はカナダ国防省の非公開仕様、07 式は中国人民解放軍の内部規格、EMR はロシア国防省の調達仕様で、いずれも公表資料がない
 - 参照画像がいずれも合成スウォッチ（布地写真ではない）なので `--flatten` は使わず、`--core=2`（領域内部の中央値）と `--max-edge` を原寸に上げた実測のみを行った。コマンドは各エントリの `source` に記載
-- 例外は `pla07-brown`。参照画像が JPEG で、細い茶の筆致がリンギングにより暗く濁って k-means の重心が灰側へ流れる。筆致内部（近傍 5×5 がすべて暖色）の中央値 #605645 を採った。詳細は `docs/01-tech-verification.md` v26
+- 例外は `pla07-brown`。参照画像が JPEG で、細い茶の筆致がリンギングにより暗く濁って k-means の重心が灰側へ流れる。筆致内部（近傍 5×5 がすべて暖色）の中央値 #605645 を採った。詳細は `docs/01-tech-verification.md` v27
 - 用途タグ `camo-cadpat` / `camo-pla07` / `camo-emr`（いずれも新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベルを追加した。国タグ `ca` / `cn` も新規なので `COUNTRY_LABEL` に追加した
 - 近接する既存エントリ: `cadpat-mgreen` #525d3c は `fs34079` #555548 と近いが、CADPAT は緑側に寄っており別色として登録した
 
@@ -243,6 +256,12 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `jgsdf2-green` | 陸自迷彩 2 型 (実測) type2-2 | #5e775c | 同上 |
 | `jgsdf2-brown` | 陸自迷彩 2 型 (実測) type2-3 | #74524e | 同上 |
 | `jgsdf2-black` | 陸自迷彩 2 型 (実測) type2-4 | #46444b | 同上 |
+| `dpm-sand` | DPM (実測) dpm-1 | #d8a858 | app プリセット実測値 (src/core/camo.js、`node tools/gen-src.mjs refs/dpm.jpg src/core/dpmsrc.js 4 DPM --resize=800 --blur=1.5 --flatten=250` の量子化重心。参照画像は Wikimedia Commons [File:DPM Combat 95 Camouflage Material MOD 45149982.jpg](https://commons.wikimedia.org/wiki/File:DPM_Combat_95_Camouflage_Material_MOD_45149982.jpg) OGL v1.0) |
+| `dpm-green` | DPM (実測) dpm-2 | #616022 | 同上 |
+| `dpm-brown` | DPM (実測) dpm-3 | #50311d | 同上 |
+| `dpm-black` | DPM (実測) dpm-4 | #28221f | 同上 |
+| `ddpm-sand` | DDPM (実測) ddpm-1 | #d5d5c9 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/ddpm.jpg 2 --core`。参照画像は Wikimedia Commons [File:Desert pattern camouflage material MOD 45148363.jpg](https://commons.wikimedia.org/wiki/File:Desert_pattern_camouflage_material_MOD_45148363.jpg) OGL v1.0) |
+| `ddpm-brown` | DDPM (実測) ddpm-2 | #7a5825 | 同上 |
 | `jmsdf-grey-2704` | NDS Z 8201E 2704 | #797979 | approx.: NDS Z 8201E 標準色 (マンセル N 5, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
 | `jmsdf-dgrey-2705` | NDS Z 8201E 2705 | #606060 | approx.: NDS Z 8201E 標準色 (マンセル N 4, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
 | `su-amt4` | FS 595 AMT-4 (FS 34102 近似) | #595b45 | approx.: FS 24102/34102 近似 (https://massimotessitori.altervista.org/sovietwarplanes/pages/colors/color-table.html) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換 |

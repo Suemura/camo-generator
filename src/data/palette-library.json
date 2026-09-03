@@ -1848,6 +1848,90 @@
     "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は Natick color designation (Evaluation of Desert Camouflage Uniforms by Ground Observers, U.S. Army Belvoir RD&E Center / Natick RD&E Center, §2.1 Test Uniforms, https://commons.wikimedia.org/wiki/File:Evaluation_of_Desert_Camouflage_Uniforms_by_Ground_Observers.pdf)"
   },
   {
+    "id": "dpm-sand",
+    "name": "DPM サンド",
+    "std": "DPM (実測)",
+    "code": "dpm-1",
+    "hex": "#d8a858",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-dpm"],
+      "country": ["uk"]
+    },
+    "note": "英軍 DPM (Combat 95) の地色。参照が布地写真なので照明ムラを平坦化した上での実測",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons File:DPM Combat 95 Camouflage Material MOD 45149982.jpg (OGL v1.0) から k-means 抽出。tools/gen-src.mjs --resize=800 --blur=1.5 --flatten=250 の量子化重心)"
+  },
+  {
+    "id": "dpm-green",
+    "name": "DPM グリーン",
+    "std": "DPM (実測)",
+    "code": "dpm-2",
+    "hex": "#616022",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-dpm"],
+      "country": ["uk"]
+    },
+    "note": "英軍 DPM のミッドグリーン。最大面積 (実測 29%)",
+    "source": "同上"
+  },
+  {
+    "id": "dpm-brown",
+    "name": "DPM ブラウン",
+    "std": "DPM (実測)",
+    "code": "dpm-3",
+    "hex": "#50311d",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-dpm"],
+      "country": ["uk"]
+    },
+    "note": "英軍 DPM のダークブラウン (実測 33%)",
+    "source": "同上"
+  },
+  {
+    "id": "dpm-black",
+    "name": "DPM ブラック",
+    "std": "DPM (実測)",
+    "code": "dpm-4",
+    "hex": "#28221f",
+    "tags": {
+      "hue": "black",
+      "use": ["camo-dpm"],
+      "country": ["uk"]
+    },
+    "note": "英軍 DPM の黒。細長い筆跡として他色の上に乗る (実測 21%)",
+    "source": "同上"
+  },
+  {
+    "id": "ddpm-sand",
+    "name": "DDPM サンド",
+    "std": "DDPM (実測)",
+    "code": "ddpm-1",
+    "hex": "#d5d5c9",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-ddpm"],
+      "country": ["uk"]
+    },
+    "note": "英軍デザート DPM の地色。2 色構成の明色",
+    "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons File:Desert pattern camouflage material MOD 45148363.jpg (OGL v1.0) から k-means 抽出。node tools/extract-palette.mjs refs/ddpm.jpg 2 --core)"
+  },
+  {
+    "id": "ddpm-brown",
+    "name": "DDPM ブラウン",
+    "std": "DDPM (実測)",
+    "code": "ddpm-2",
+    "hex": "#7a5825",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-ddpm"],
+      "country": ["uk"]
+    },
+    "note": "英軍デザート DPM のブラウン (実測 55%)",
+    "source": "同上"
+  },
+  {
     "id": "cadpat-lgreen",
     "name": "CADPAT TW ライトグリーン",
     "std": "CADPAT (実測)",

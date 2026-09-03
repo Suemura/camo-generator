@@ -289,24 +289,48 @@ function drawBranch(index, w, h, rng, x, y, heading, color, o, depth=0){
 
 /* ---- M81 新手法 v2: 形状文法地形 + 改良黒枝 ----
    実物構造: 緑/茶の巨大領域 + 横に蛇行するサンド帯 + 鹿角状の太い黒枝 */
-// 多数決フィルタ: 輪郭の融合・平滑化
+// 多数決フィルタ: 輪郭の融合・平滑化 (円形カーネル)
+// 実装は行スライディング: x を 1 進めるごとに各行 dy で左端 1 px を減らし右端 1 px を足す → O(r)/px。
+// 素朴な O(r²)/px と結果は同一 (4096px で半径 7 なら 200 倍速い)
 function modeFilter(index, w, h, radius, passes, nColors, wrap=false){
   let cur = index;
-  const offs = [];
-  for(let dy=-radius;dy<=radius;dy++)
-    for(let dx=-radius;dx<=radius;dx++)
-      if(dx*dx+dy*dy <= radius*radius) offs.push(dx, dy);
+  // 各 dy の半幅 (円内判定 dx²+dy² <= r² と同じ)
+  const hw = new Int32Array(2*radius+1);
+  for(let dy=-radius;dy<=radius;dy++) hw[dy+radius] = Math.floor(Math.sqrt(radius*radius - dy*dy));
   const counts = new Int32Array(nColors);
+  const rows = new Int32Array(2*radius+1);   // 各 dy の行ポインタ (境界外は -1)。行ごとに再利用
+  const rowAt = (y) => {
+    if(wrap) return wrapI(y, h);
+    return (y<0||y>=h) ? -1 : y;
+  };
   for(let p=0;p<passes;p++){
     const next = new Uint8Array(cur.length);
     for(let y=0;y<h;y++){
+      for(let dy=-radius;dy<=radius;dy++) rows[dy+radius] = rowAt(y+dy);
+      // x=0 の窓を初期化
+      counts.fill(0);
+      for(let k=0;k<=2*radius;k++){
+        const ry = rows[k]; if(ry<0) continue;
+        const half = hw[k], base = ry*w;
+        for(let dx=-half;dx<=half;dx++){
+          const nx = wrap ? wrapI(dx, w) : dx;
+          if(nx<0||nx>=w) continue;
+          counts[cur[base+nx]]++;
+        }
+      }
       for(let x=0;x<w;x++){
-        counts.fill(0);
-        for(let k=0;k<offs.length;k+=2){
-          let nx = x+offs[k], ny = y+offs[k+1];
-          if(wrap){ nx = wrapI(nx, w); ny = wrapI(ny, h); }
-          else if(nx<0||nx>=w||ny<0||ny>=h) continue;
-          counts[cur[ny*w+nx]]++;
+        if(x>0){
+          // 窓を右に 1: 各行で左端 (x-1-half) を除去、右端 (x+half) を追加
+          for(let k=0;k<=2*radius;k++){
+            const ry = rows[k]; if(ry<0) continue;
+            const half = hw[k], base = ry*w;
+            let xl = x-1-half, xr = x+half;
+            if(wrap){ xl = wrapI(xl, w); xr = wrapI(xr, w); counts[cur[base+xl]]--; counts[cur[base+xr]]++; }
+            else{
+              if(xl>=0 && xl<w) counts[cur[base+xl]]--;
+              if(xr>=0 && xr<w) counts[cur[base+xr]]++;
+            }
+          }
         }
         let best = 0;
         for(let c=1;c<nColors;c++) if(counts[c]>counts[best]) best = c;
@@ -907,7 +931,9 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     // 有機系: nearest サンプリング起因のギザ除去 (必要最小限)
     let smoothR = 0;
     if(k > 1.05) smoothR = Math.max(1, Math.round(1.2*(w/512)));       // 縮小: エイリアス除去
-    else if(k < 0.95) smoothR = Math.max(1, Math.round(0.8/k*(w/512))); // 拡大: 階段除去
+    // 拡大: 階段除去。階段幅は 1/k px なので半径は 1/k に比例させる
+    // (v16 以前は ×(w/512) が掛かり二重スケールで 4096px で半径 54 → 数分かかった)
+    else if(k < 0.95) smoothR = Math.max(1, Math.round(1.2/k));
     if(smoothR) sm = modeFilter(out, w, h, smoothR, 1, 4, wrap);
     // 微小フラグメント除去 (画面上で点に見えるサイズの絶対下限つき)
     const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),

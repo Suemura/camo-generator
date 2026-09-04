@@ -7,9 +7,14 @@ export type PresetKey =
   | "aor1"
   | "aor2"
   | "ucp"
+  | "cadpat"
+  | "pla07"
+  | "emr"
   | "dcu"
   | "dbdu"
   | "jgsdf2"
+  | "dpm"
+  | "ddpm"
   | "auscam";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {

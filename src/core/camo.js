@@ -4,8 +4,9 @@
 import { M81_SRC_W, M81_SRC_H, M81_SRC_RLE } from './m81src.js';
 import { DCU_SRC_W, DCU_SRC_H, DCU_SRC_RLE } from './dcusrc.js';
 import { JGSDF2_SRC_W, JGSDF2_SRC_H, JGSDF2_SRC_RLE } from './jgsdf2src.js';
+import { DPM_SRC_W, DPM_SRC_H, DPM_SRC_RLE } from './dpmsrc.js';
 import { AUSCAM_SRC_W, AUSCAM_SRC_H, AUSCAM_SRC_BITS, AUSCAM_SRC_RLE } from './auscamsrc.js';
-// 静的 import の目安: m81src (24KB) / dcusrc (18KB) / jgsdf2src (24KB) / auscamsrc (28KB) は
+// 静的 import の目安: m81src (24KB) / dcusrc (18KB) / jgsdf2src (24KB) / dpmsrc (22KB) / auscamsrc (20KB) は
 // 数十 KB オーダーで初期バンドルへの影響が小さいため静的 import する。
 // AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は 1 桁大きく初期バンドルを膨らませるため、
 // 利用側が動的 import して registerSources() で渡す (ブラウザ: src/lib/generate.ts、Node: tools/render.mjs)。
@@ -655,7 +656,8 @@ const SRCS = {
   m81:  () => decodeSrc('m81',  M81_SRC_RLE,  M81_SRC_W,  M81_SRC_H),
   dcu:  () => decodeSrc('dcu',  DCU_SRC_RLE,  DCU_SRC_W,  DCU_SRC_H),   // 18KB なので静的 import で足りる
   jgsdf2: () => decodeSrc('jgsdf2', JGSDF2_SRC_RLE, JGSDF2_SRC_W, JGSDF2_SRC_H), // 30KB なので静的 import で足りる
-  // Auscam は 5 値なので 3bit RLE (bits を渡す)。28KB なので静的 import で足りる
+  dpm:  () => decodeSrc('dpm',  DPM_SRC_RLE,  DPM_SRC_W,  DPM_SRC_H),   // 22KB なので静的 import で足りる
+  // Auscam は 5 値なので 3bit RLE (bits を渡す)。20KB なので静的 import で足りる
   auscam: () => decodeSrc('auscam', AUSCAM_SRC_RLE, AUSCAM_SRC_W, AUSCAM_SRC_H, AUSCAM_SRC_BITS),
 };
 // 外部ソースマップの登録: registerSources(await import('./digsrc.js'))
@@ -1300,6 +1302,12 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   // (3) minFrag (512px で 70〜224px 相当) の欠片除去に丸ごと食われる ため、
   // 1〜2px の黒縁を持つ数 px の斑点はこの位置でしか成立しない。
   if(P.chips) applyChips(sm, w, h, seed, (w/512)/scale, P.chips, wrap);
+  // 値の統合 (P.remap): 多色図案を少ない色数で刷った派生迷彩 (DDPM = DPM の 4 版を 2 色で刷ったもの) を、
+  // 元図案のソースで合成してから index を写像する。合成を 4 値で行うのは、2 値ソースだと
+  // 同色どうしの継ぎ目にコストが無くパッチ輪郭が直線の切断面としてそのまま出るため
+  // (実測: DDPM の 2 値ソースでは kBase / patchR を変えても矩形の切り口が残った)。
+  // 統合される色どうしの境界は写像で消えるので、残る輪郭は 4 値で整合の取れた継ぎ目だけになる
+  if(P.remap) for(let i=0;i<sm.length;i++) sm[i] = P.remap[sm[i]];
   if(progress) progress(1);
   return {type:'organic', w, h, index: sm};
 }
@@ -1575,6 +1583,86 @@ export const PRESETS = {
       {name:'フォリッジグリーン', hex:'#798d72'},
     ],
   },
+  cadpat: {
+    // CADPAT TW (温帯林、カナダ)。MARPAT の原型なのでピクセル粒度は同等 (cell 4)。
+    // 実物の特徴 (refs/cadpat.png の 4 色実測。面積比 17 / 44 / 29 / 10%):
+    //   - 緑 3 段 + タンの構成で、MARPAT のような明るいタン地を持たない。
+    //     ミッドグリーンが最大面積 (44%) を占め、全体が緑に寄る
+    //   - ダークグリーンは MARPAT のブラウンブラック (17%) より広い 29% で、
+    //     枝状に細く散るのではなく大きめの塊として連なる → min/max を MARPAT より大きく、
+    //     compact を上げて塊寄りにする
+    //   - タンは最小面積 (10%)。緑の塊の縁に沿って点在するので seedNear でダークグリーンに寄せる
+    name: 'CADPAT TW (カナダ)', kind: 'growth', ref: 'cadpat',
+    cell: 4, growDither: 1,
+    layers: [
+      {color: 1, ratio: 0.74, eat: [0], min: 0.0015, max: 0.006, compact: 1.3, drift: 2.2, jitter: 1.3, wander: 0.4, stratify: 5},
+      {color: 2, ratio: 0.36, eat: [0,1], seedNear: 1, min: 0.0012, max: 0.005, compact: 1.4, drift: 2.0, jitter: 1.1, wander: 0.35},
+      {color: 3, ratio: 0.11, eat: [0,1,2], seedNear: 2, min: 0.0005, max: 0.0025, compact: 1.5, drift: 1.4, jitter: 1.0, wander: 0.30},
+    ],
+    growSpeckle: [
+      {on: 1, dot: 0, density: 0.06}, {on: 0, dot: 1, density: 0.05},
+      {on: 2, dot: 1, density: 0.05}, {on: 3, dot: 2, density: 0.04},
+    ],
+    colors: [
+      {name:'ライトグリーン', hex:'#81925c'},
+      {name:'ミッドグリーン', hex:'#525d3c'},
+      {name:'ダークグリーン', hex:'#35392d'},
+      {name:'タン',        hex:'#847b5d'},
+    ],
+  },
+  pla07: {
+    // 07 式 通用迷彩 (中国)。実物の特徴 (refs/pla07.jpg 実測。面積比 42 / 36 / 10 / 10%):
+    //   - ライトグレーの地が最大面積で、明暗コントラストが MARPAT より強い
+    //   - グリーンの塊は輪郭が整い、MARPAT のような細い蛇行が少ない
+    //     → wander / drift を下げて compact を上げ、丸みのある塊にする
+    //   - ブラックは緑塊の内側に落ちる (eat: [1] で緑だけを食う)。
+    //     ブラウンは緑と地の境界を縫う細い帯 (eat: [0,1])
+    //   - ピクセルが MARPAT より粗い (Issue #30) → cell 5。粗いセルでスペックルを強くすると
+    //     微小点アーティファクトが目立つので density は MARPAT より低くする
+    name: '07 式 通用迷彩 (中国)', kind: 'growth', ref: 'pla07',
+    cell: 5, growDither: 1,
+    layers: [
+      {color: 1, ratio: 0.545, eat: [0], min: 0.0025, max: 0.009, compact: 1.7, drift: 1.6, jitter: 1.1, wander: 0.25, stratify: 5},
+      {color: 3, ratio: 0.11, eat: [1], seedNear: 1, min: 0.001, max: 0.004, compact: 1.6, drift: 1.4, jitter: 1.0, wander: 0.25},
+      {color: 2, ratio: 0.11, eat: [0,1], seedNear: 1, min: 0.0008, max: 0.0035, compact: 1.4, drift: 2.6, jitter: 1.0, wander: 0.30},
+    ],
+    growSpeckle: [
+      {on: 1, dot: 0, density: 0.05}, {on: 0, dot: 1, density: 0.04},
+      {on: 3, dot: 1, density: 0.04}, {on: 2, dot: 0, density: 0.03},
+    ],
+    colors: [
+      {name:'ライトグレー', hex:'#d8d7dc'},
+      {name:'グリーン',   hex:'#48594f'},
+      {name:'ブラウン',    hex:'#605645'},
+      {name:'ブラック',    hex:'#292d30'},
+    ],
+  },
+  emr: {
+    // EMR (デジタルフローラ、ロシア)。実物の特徴 (refs/emr.png 実測。面積比 43 / 42 / 10 / 6%):
+    //   - カーキとダークグリーンがほぼ同面積で噛み合い、地色がどちらとも言えない
+    //   - ピクセルが極小 (参照スウォッチで幅の約 1/290) → cell 3
+    //   - クラスタが縦方向へ細長く伸びる。UCP の横長 (elongX) と対称に elongY を使う。
+    //     縦異方性を蛇行で崩さないよう drift を MARPAT より下げ、
+    //     縦縞の反復に退化しないよう elongY は 1.8 に留めて min/max の分散で崩す
+    //   - ブラウンとブラックは緑の縁に沿う細片なので seedNear で連鎖させる
+    name: 'EMR (ロシア)', kind: 'growth', ref: 'emr',
+    cell: 2, growDither: 1,
+    layers: [
+      {color: 1, ratio: 0.52, eat: [0], min: 0.0003, max: 0.0015, compact: 1.3, drift: 1.2, jitter: 1.2, wander: 0.25, elongY: 1.8, stratify: 6},
+      {color: 2, ratio: 0.15, eat: [0,1], seedNear: 1, min: 0.0002, max: 0.0009, compact: 1.4, drift: 1.0, jitter: 1.0, wander: 0.22, elongY: 1.8},
+      {color: 3, ratio: 0.06, eat: [1,2], seedNear: 2, min: 0.00012, max: 0.0005, compact: 1.5, drift: 1.0, jitter: 1.0, wander: 0.22, elongY: 1.8},
+    ],
+    growSpeckle: [
+      {on: 1, dot: 0, density: 0.10}, {on: 0, dot: 1, density: 0.10},
+      {on: 2, dot: 1, density: 0.07}, {on: 3, dot: 1, density: 0.06},
+    ],
+    colors: [
+      {name:'カーキ',      hex:'#7d7d50'},
+      {name:'ダークグリーン', hex:'#434e38'},
+      {name:'ブラウン',     hex:'#513d32'},
+      {name:'ブラック',     hex:'#302d31'},
+    ],
+  },
   dcu: {
     // 3 カラーデザート (DCU / コーヒーステイン)。実物の特徴:
     //   - ブロブが M81 より大きく丸みが強く、輪郭の入り組みが少ない → 専用ソース図案 (dcusrc) が担う
@@ -1639,6 +1727,44 @@ export const PRESETS = {
       {name:'ブラック',   hex:'#46444b'},
     ],
   },
+  dpm: {
+    // 英軍 DPM (Disruptive Pattern Material、1960 年代〜2010 年頃)。実物の特徴:
+    //   - M81 と同系の 4 色ブロブだが、輪郭が筆で描いたようなブラシ状で先端が尖る。
+    //     ブロブの縁に刷毛目 (かすれ) が残る。クイルトは局所形状 = ソース図案そのものなので、
+    //     この筆致は専用ソース図案 (dpmsrc) が担う
+    //   - 黒がブラウン / グリーンの中に細長く入り込む「筆跡」が識別の核。実物は網版印刷で
+    //     黒を最後に刷るためこの性質は topLayer (woodland / cce と同じ v21/v22 の構造) が
+    //     合致するが、dpmsrc は不採用 (v26)。黒成分 18 個中 12 個が参照画像の縁で切れており
+    //     applyTopLayer が除外するため usable 面積が目標の 15% しかなく、残り成分が 6〜7 回
+    //     反復してしまう。代わりに下記 divw[3]: 2.4 で下刷りの黒を厚くして確保する
+    name: 'DPM 風 (英国)', kind: 'quilt', src: 'dpm', ref: 'dpm',
+    // ソース図案の生成:
+    //   node tools/gen-src.mjs refs/dpm.jpg src/core/dpmsrc.js 4 DPM --resize=800 --blur=1.5 --flatten=250
+    //   (参照は英国防省の布地接写写真 (OGL v1.0)。右側が暗く皺の陰影もあるので前処理が要る。
+    //    --blur: 織り目を落とす。--flatten: 照明ムラの平坦化。ブロブが大きい (幅 200px 前後) ので
+    //    jgsdf2 の sigma 80 だと図案そのものを照明成分と誤認して砂色が 3% に潰れる。
+    //    250 以上で安定 (250 と 400 で面積比の差は 1pt 未満))
+    // kBase 1.5: 参照が M81 スウォッチより 2 倍寄って撮られており、800px ソース上のブロブ幅 (200px 前後) が
+    // patchR 185 のパッチと同程度になる。1.1 では継ぎ目がブロブ内部を横切り直線の切断面が多発した (v26)。
+    // patchR 185: ソースが M81 / jgsdf2 と同じ 800px なので同値。
+    // 1 未満 (ソースの拡大参照) にすると最近傍サンプリングで輪郭が階段化する (v25)
+    kBase: 1.5, patchR: 185, organic: true,
+    // frac はソース図案の実測面積比 (tools/gen-src.mjs の出力)。
+    // divw[3] 2.4: topLayer は使えない (参照の黒成分が縁で切れていて反復する、v26) ので、M81 と同じ重みを与えて
+    // 完走が大面積色を優遇する性質で痩せないようにする
+    frac: [0.172, 0.289, 0.331, 0.208], divw: [1, 1, 1, 2.4],
+    // 実測: ソース図案生成と同じ前処理・同じ k-means の量子化重心を採用 (stderr 出力より)
+    //   node tools/gen-src.mjs refs/dpm.jpg src/core/dpmsrc.js 4 DPM --resize=800 --blur=1.5 --flatten=250
+    //   → 量子化パレット (明度降順): #d8a858 #616022 #50311d #28221f
+    // extract-palette.mjs --core は不採用: 照明ムラで砂色が明部 / 暗部の 2 クラスタに割れ、
+    // k=4 では黒とブラウンが 1 色に融合する。k=6 なら分離するが砂色が明部側に寄る
+    colors: [
+      {name:'サンド',     hex:'#d8a858'},
+      {name:'グリーン',   hex:'#616022'},
+      {name:'ブラウン',   hex:'#50311d'},
+      {name:'ブラック',   hex:'#28221f'},
+    ],
+  },
   dbdu: {
     // 6 カラーデザート (DBDU / チョコレートチップ)。実物の特徴:
     //   - ブロブ層は DCU と同系の大ぶりで丸い形状 → ソース図案は dcu を共有する
@@ -1663,6 +1789,28 @@ export const PRESETS = {
       {name:'ブラウン',      hex:'#704c44'},
       {name:'小石ホワイト',   hex:'#e5d5cd'},
       {name:'ブラック',      hex:'#1d1f23'},
+    ],
+  },
+  ddpm: {
+    // 英軍デザート DPM (DDPM、1990 年代〜2010 年頃)。実物の特徴:
+    //   - サンド地にブラウン 1 色の 2 色構成。図案は DPM と同じ設計言語 (筆致状の輪郭・細長い筆跡) で、
+    //     実物も DPM の 4 版のうち明 2 色をサンド、暗 2 色をブラウンにまとめて刷った派生図案
+    //   - ブロブの縁がハーフトーンの点描で崩れる (布地写真では点の群れとして見える。未再現)
+    // → DPM のソース図案を 4 値のまま合成し、最後に remap で {サンド, グリーン} → 0 / {ブラウン, 黒} → 1 に統合する。
+    //   面積比は DPM 実測 (0.172 + 0.289) : (0.331 + 0.208) = 0.46 : 0.54 で、DDPM 実物スキャンの実測
+    //   0.45 : 0.55 (node tools/gen-src.mjs refs/ddpm.jpg /dev/null 2 X --resize=800 --blur=1.0) と一致する。
+    //   DDPM スキャンから直接 2 値ソースを作る案は、2 値だと同色どうしの継ぎ目にコストが無く
+    //   パッチ輪郭が矩形の切断面として残る (kBase 1.1〜1.8 / patchR 185〜320 で確認) ので採らない。
+    //   Issue #26 当初案の「黒 + グリーン → ブラウン」だと 0.17 : 0.83 でサンド地にならない
+    name: 'デザート DPM 風 (DDPM)', kind: 'quilt', src: 'dpm', ref: 'ddpm',
+    // kBase / patchR / frac / divw は合成段階が DPM そのものなので dpm と同値
+    kBase: 1.5, patchR: 185, organic: true,
+    frac: [0.172, 0.289, 0.331, 0.208], divw: [1, 1, 1, 2.4],
+    remap: [0, 0, 1, 1],
+    // 実測: node tools/extract-palette.mjs refs/ddpm.jpg 2 --core
+    colors: [
+      {name:'サンド',   hex:'#d5d5c9'},
+      {name:'ブラウン', hex:'#7a5825'},
     ],
   },
   auscam: {
@@ -1699,7 +1847,7 @@ export const PRESETS = {
     // (--core = 領域内部の中央値。斑の輪郭が滲んだ写真なので素の重心だと混色に引かれる。
     //  --flatten は 256px 縮小後の px なので、640px でソースマップに使った 120 と相対値が揃う)
     // 参照写真は全体が青寄りに転んでおり、ダークグリーンが青緑 (#2d4d57) として出る。
-    // 感覚で補正せず実測値のまま採用している (docs/01-tech-verification.md v26)
+    // 感覚で補正せず実測値のまま採用している (docs/01-tech-verification.md v28)
     colors: [
       {name:'サンド',        hex:'#a8a996'},
       {name:'ミッドグリーン',  hex:'#769b65'},

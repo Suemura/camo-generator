@@ -28,6 +28,8 @@ export const HUE_LABEL: Record<Hue, string> = {
 export const COUNTRY_LABEL: Record<string, string> = {
   us: "米国",
   ru: "ソ連 / ロシア",
+  ca: "カナダ",
+  cn: "中国",
   uk: "英国",
   de: "ドイツ",
   jp: "日本",
@@ -50,10 +52,14 @@ export const USE_LABEL: Record<string, string> = {
   "camo-multicam": "MultiCam 系",
   "camo-flecktarn": "フレクター",
   "camo-dpm": "DPM",
+  "camo-ddpm": "デザート DPM (DDPM)",
   "camo-3color-desert": "3 色デザート",
   "camo-6color-desert": "6 色デザート (チョコチップ)",
   "camo-jgsdf2": "陸自迷彩 2 型",
   "camo-auscam": "オーストラリア DPCU",
+  "camo-cadpat": "CADPAT",
+  "camo-pla07": "07 式",
+  "camo-emr": "EMR",
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

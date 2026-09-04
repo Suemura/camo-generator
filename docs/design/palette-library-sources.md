@@ -155,7 +155,20 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグはジャングル面と共通の `camo-frogskin`（両面が同じ被服なので 1 つのタブにまとめる）
 - ジャングル面との比較: ビーチ面のグリーン #979467 はジャングル面のダークグリーン #576b44 より明るく黄味が強い。ブラウン #a98c6a も #7e6043 より明るい
 
-## 第8弾（迷彩プリセット追加に伴う実測色: タイガーストライプ）
+## 第8弾（迷彩プリセット追加に伴う実測色: オーストラリア DPCU / Auscam）
+
+アプリに Auscam（Issue #27）のプリセットを追加したのに合わせ、既定色 5 色を追記した。
+
+### 方法
+
+- `std` は「オーストラリア DPCU (実測)」、hex は `src/core/camo.js` の `PRESETS.auscam.colors` と完全一致させている
+- **公的な色指定は見つからなかった**。オーストラリア国防省の被服仕様（DEF(AUST) 系）は公開されておらず、DPCU の 5 色に対応する規格番号・測色値の一次資料は存在しない。したがって `code` は index 値の順に `auscam-1`〜`auscam-5` を振った（陸自迷彩 2 型と同じ扱い）
+- 参照画像が着用中の布地写真なので、パレット実測には `--core`（領域内部の中央値）と `--flatten`（照明ムラの平坦化）を使った。コマンドは `node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60`
+- **参照写真は全体が青寄りに転んでおり、ダークグリーンが青緑 #2d4d57 として実測される**。実物の DPCU のダークグリーンはより緑寄りだが、規約どおり感覚での補正はせず実測値のまま登録した。より中立な光源のリファレンスが入手できたら再実測する（`docs/01-tech-verification.md` v29 の残課題）
+- 用途タグ `camo-auscam`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「オーストラリア DPCU」、`COUNTRY_LABEL` に `au`「オーストラリア」を追加した
+- 近接する既存エントリ（RGB 距離で確認）: `auscam-midbrown` #765d3e は `aor1-brown` #776140 と距離 4.6 でほぼ同色、`auscam-sand` #a8a996 は `bs381c-210 Sky` #adaf97 と距離 7.9。いずれも由来（被服の染色色 / 航空機塗料）と用途タグが異なるため別エントリとして登録し、統合はしていない。他の 3 色は最近接でも距離 13 以上で独立している
+
+## 第9弾（迷彩プリセット追加に伴う実測色: タイガーストライプ）
 
 アプリにタイガーストライプ風（Issue #31）のプリセットを追加したのに合わせ、4 色を追記した。
 
@@ -167,7 +180,7 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - **`--max-edge` を既定の 256 のままにしてはならない**。この図案はグリーン面の内部を走るライトカーキの細線が 1〜2px しかなく、256px に縮小すると細線が周囲と混色して消え、4 色すべてが暗側へ寄る（`#303230 / #474b40 / #5a5f4c / #75725d`）。原寸 771px で測ると `#2e3131 / #515d49 / #6f6953 / #9d977d` になり、明度のレンジが実物どおりに開く
 - 用途タグ `camo-tigerstripe`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「タイガーストライプ」を追加した。国タグは `us` と `vn`（`COUNTRY_LABEL` に `vn: "ベトナム"` を新設）
 - 近接する既存エントリ: `tigerstripe-green` #515d49 は `frogskin-dgreen` #576b44 と黄味の差で区別でき、`tigerstripe-khaki` #6f6953 は `m81-brown` #5f5345 より明るく緑寄り。いずれも統合せず別エントリとした
-- 参照スウォッチは**再配布できないため `refs/private/` に置き、リポジトリには含めない**（`.gitignore` + 4 層の push 防止）。git 管理する `refs/tigerstripe.jpg` は別途 Wikimedia Commons の PD-USGov 画像
+- 参照スウォッチは**再配布できないため `refs/private/` に置き、リポジトリには含めない**（`.gitignore` + 4 層の push 防止）
 
 ## 出典一覧
 
@@ -297,6 +310,11 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `dpm-black` | DPM (実測) dpm-4 | #28221f | 同上 |
 | `ddpm-sand` | DDPM (実測) ddpm-1 | #d5d5c9 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/ddpm.jpg 2 --core`。参照画像は Wikimedia Commons [File:Desert pattern camouflage material MOD 45148363.jpg](https://commons.wikimedia.org/wiki/File:Desert_pattern_camouflage_material_MOD_45148363.jpg) OGL v1.0) |
 | `ddpm-brown` | DDPM (実測) ddpm-2 | #7a5825 | 同上 |
+| `auscam-sand` | オーストラリア DPCU (実測) auscam-1 | #a8a996 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60`。参照画像は Wikimedia Commons [File:DPCU closeup, 2005.jpg](https://commons.wikimedia.org/wiki/File:DPCU_closeup,_2005.jpg) パブリックドメイン) |
+| `auscam-midgreen` | オーストラリア DPCU (実測) auscam-2 | #769b65 | 同上 |
+| `auscam-orangebrown` | オーストラリア DPCU (実測) auscam-3 | #a87c4f | 同上 |
+| `auscam-midbrown` | オーストラリア DPCU (実測) auscam-4 | #765d3e | 同上 |
+| `auscam-darkgreen` | オーストラリア DPCU (実測) auscam-5 | #2d4d57 | 同上 |
 | `jmsdf-grey-2704` | NDS Z 8201E 2704 | #797979 | approx.: NDS Z 8201E 標準色 (マンセル N 5, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
 | `jmsdf-dgrey-2705` | NDS Z 8201E 2705 | #606060 | approx.: NDS Z 8201E 標準色 (マンセル N 4, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
 | `su-amt4` | FS 595 AMT-4 (FS 34102 近似) | #595b45 | approx.: FS 24102/34102 近似 (https://massimotessitori.altervista.org/sovietwarplanes/pages/colors/color-table.html) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換 |

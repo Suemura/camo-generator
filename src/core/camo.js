@@ -5,8 +5,10 @@ import { M81_SRC_W, M81_SRC_H, M81_SRC_RLE } from './m81src.js';
 import { DCU_SRC_W, DCU_SRC_H, DCU_SRC_RLE } from './dcusrc.js';
 import { JGSDF2_SRC_W, JGSDF2_SRC_H, JGSDF2_SRC_RLE } from './jgsdf2src.js';
 import { DPM_SRC_W, DPM_SRC_H, DPM_SRC_RLE } from './dpmsrc.js';
+import { AUSCAM_SRC_W, AUSCAM_SRC_H, AUSCAM_SRC_BITS, AUSCAM_SRC_RLE } from './auscamsrc.js';
 import { TIGERSTRIPE_SRC_W, TIGERSTRIPE_SRC_H, TIGERSTRIPE_SRC_RLE } from './tigerstripesrc.js';
-// 静的 import の目安: m81src (24KB) / dcusrc (18KB) / jgsdf2src (24KB) / dpmsrc (22KB) は
+// 静的 import の目安: m81src (24KB) / dcusrc (18KB) / jgsdf2src (24KB) / dpmsrc (22KB) /
+// auscamsrc (20KB) / tigerstripesrc (45KB) は
 // 数十 KB オーダーで初期バンドルへの影響が小さいため静的 import する。
 // AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は 1 桁大きく初期バンドルを膨らませるため、
 // 利用側が動的 import して registerSources() で渡す (ブラウザ: src/lib/generate.ts、Node: tools/render.mjs)。
@@ -637,13 +639,17 @@ export function genGrowth(w, h, seed, scale, P, opt={}){
    実物図案(パブリックドメイン)のインデックスマップからブロックを
    最小誤差シームで継ぎ合わせる。局所=実物図案そのもの、大域=シード配置。 */
 const _srcCache = {};
-function decodeSrc(key, rle, W, H){
+// bits: RLE 1 バイトの値ビット数 (既定 2 = 値 0..3 / ラン最大 63)。
+// 5 値以上の図案 (Auscam) は 3 bit 値 + 5 bit ラン (ラン最大 31) で符号化されており、
+// ソースファイル側が <PREFIX>_SRC_BITS で申告する。既定 2 のおかげで既存ソースは無変更で動く
+function decodeSrc(key, rle, W, H, bits=2){
   if(_srcCache[key]) return _srcCache[key];
   const bin = atob(rle);
   const map = new Uint8Array(W*H);
+  const shift = 8 - bits, runMask = (1<<shift) - 1;
   let p = 0;
   for(let i=0;i<bin.length;i++){
-    const b = bin.charCodeAt(i), v = b>>6, len = b&63;
+    const b = bin.charCodeAt(i), v = b>>shift, len = b&runMask;
     map.fill(v, p, p+len); p += len;
   }
   return _srcCache[key] = {map, W, H};
@@ -653,6 +659,8 @@ const SRCS = {
   dcu:  () => decodeSrc('dcu',  DCU_SRC_RLE,  DCU_SRC_W,  DCU_SRC_H),   // 18KB なので静的 import で足りる
   jgsdf2: () => decodeSrc('jgsdf2', JGSDF2_SRC_RLE, JGSDF2_SRC_W, JGSDF2_SRC_H), // 30KB なので静的 import で足りる
   dpm:  () => decodeSrc('dpm',  DPM_SRC_RLE,  DPM_SRC_W,  DPM_SRC_H),   // 22KB なので静的 import で足りる
+  // Auscam は 5 値なので 3bit RLE (bits を渡す)。20KB なので静的 import で足りる
+  auscam: () => decodeSrc('auscam', AUSCAM_SRC_RLE, AUSCAM_SRC_W, AUSCAM_SRC_H, AUSCAM_SRC_BITS),
   tigerstripe: () => decodeSrc('tigerstripe', TIGERSTRIPE_SRC_RLE, TIGERSTRIPE_SRC_W, TIGERSTRIPE_SRC_H), // 45KB なので静的 import で足りる
 };
 // 外部ソースマップの登録: registerSources(await import('./digsrc.js'))
@@ -843,7 +851,8 @@ function pasteBlob(out, w, h, p, cx, cy, bbInX, bbInY, bbX0, bbY0, rad, outHi, a
 //    (2) ソース図案の黒の連結成分を丸ごと貼る。成分単位なので輪郭は実物の黒枝そのもので、途中で切れない。
 // 置く位置は「ソースでその成分の周りにあった色」がキャンバス側にもある場所を優先する
 // (実物では黒枝は茶や暗部の上に乗るため、無作為に置くと下地との関係が壊れる)。
-function applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, top, targetFrac, seed, wrap){
+// nc: 色数 (既定 4)。5 値以上の図案で topLayer を使う場合に周囲色の集計を色数へ合わせる
+function applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, top, targetFrac, seed, wrap, nc=4){
   const N4 = [[-1,0],[1,0],[0,-1],[0,1]];
   // --- 1. ソースの黒成分をラベリング (bbox・面積・周囲の代表色つき)
   const lab = new Int32Array(SWm*SHm).fill(-1);
@@ -854,7 +863,7 @@ function applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, top, targetFrac, see
     const id = comps.length;
     let sp = 0; stack[sp++] = i0; lab[i0] = id;
     let u0 = SWm, u1 = -1, v0 = SHm, v1 = -1, area = 0;
-    const ring = [0,0,0,0];
+    const ring = new Int32Array(nc);
     while(sp > 0){
       const i = stack[--sp];
       const u = i % SWm, v = (i / SWm) | 0;
@@ -871,7 +880,7 @@ function applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, top, targetFrac, see
       }
     }
     let rc = 0;
-    for(let c=1;c<4;c++) if(ring[c] > ring[rc]) rc = c;
+    for(let c=1;c<nc;c++) if(ring[c] > ring[rc]) rc = c;
     comps.push({id, u0, u1, v0, v1, area, ring: rc});
   }
   if(!comps.length) return;
@@ -889,7 +898,7 @@ function applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, top, targetFrac, see
   const fill = new Int32Array(w*h);
   for(let guard=0; guard<64; guard++){
     let ft = 0;
-    const cnt = [0,0,0,0];
+    const cnt = new Int32Array(nc);
     for(let y=0;y<h;y++){
       for(let x=0;x<w;x++){
         const i = y*w + x;
@@ -905,7 +914,7 @@ function applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, top, targetFrac, see
         }
         if(!n) continue;
         let b = 0;
-        for(let c=1;c<4;c++) if(cnt[c] > cnt[b]) b = c;   // 同数タイは小さい色番号
+        for(let c=1;c<nc;c++) if(cnt[c] > cnt[b]) b = c;   // 同数タイは小さい色番号
         fill[ft++] = i | (b << 28);                        // 反映はスイープ後 (順序依存を避ける)
       }
     }
@@ -1020,20 +1029,25 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   // ブロブマスク・パッチ合成: 有機輪郭のパッチを実物ソースから貼り重ねる。
   // 矩形グリッド/直線シームが構造的に存在しない (Graphcut Textures の簡略版)
   const src = srcMap, rng = mulberry32(seed ^ 0x77a1);
+  // 色数 (ソース図案の値域)。P.frac の要素数を正本にする。
+  // 既存プリセットは全て 4 要素なので NC = 4 で従来と同じ経路を通る (出力はビット一致)。
+  // Auscam のように 5 値の図案では、面積比フィードバック・多数決ミップ・平滑化・欠片除去の
+  // すべてが NC 色を数えないと、値 4 が「未塗布」や「集計対象外」に落ちて静かに消える
+  const NC = P.frac.length;
   const k = (P.kBase ?? 0.95) * (512/w) * scale;           // target px → src px
   // 多数決ミップマップ: 縮小サンプリング時のエイリアス(市松ノイズ)防止
   let srcM = src, SWm = SW, SHm = SH, km = k;
   while(km > 1.4 && SWm > 64){
     const nw = SWm>>1, nh = SHm>>1;
     const d = new Uint8Array(nw*nh);
-    const cnt4 = [0,0,0,0];
+    const cntC = new Int32Array(NC);
     for(let y=0;y<nh;y++){
       for(let x=0;x<nw;x++){
-        cnt4[0]=cnt4[1]=cnt4[2]=cnt4[3]=0;
-        cnt4[srcM[(2*y)*SWm+2*x]]++; cnt4[srcM[(2*y)*SWm+2*x+1]]++;
-        cnt4[srcM[(2*y+1)*SWm+2*x]]++; cnt4[srcM[(2*y+1)*SWm+2*x+1]]++;
+        cntC.fill(0);
+        cntC[srcM[(2*y)*SWm+2*x]]++; cntC[srcM[(2*y)*SWm+2*x+1]]++;
+        cntC[srcM[(2*y+1)*SWm+2*x]]++; cntC[srcM[(2*y+1)*SWm+2*x+1]]++;
         let v = srcM[(2*y)*SWm+2*x];   // 同数タイは左上優先
-        for(let c=0;c<4;c++) if(cnt4[c] > cnt4[v]) v = c;
+        for(let c=0;c<NC;c++) if(cntC[c] > cntC[v]) v = c;
         d[y*nw+x] = v;
       }
     }
@@ -1052,7 +1066,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   const kmX = km / sA, kmY = km;   // 以降 pick / srcIn / srcGet は軸別レートのみを使う
   const out = new Uint8Array(w*h);
   const TARGET_FRAC = P.frac;
-  const DIVW = P.divw ?? [1, 1, 1, 2];
+  const DIVW = P.divw ?? Array.from({length: NC}, (_, i) => (i === NC-1 ? 2 : 1));
   // ソース参照: パッチ中心相対 + 折返し不要な範囲選択 (鏡映対称アーティファクト防止)
   // span: パッチが参照するソース半径。範囲内に収まる sx,sy を選ぶ
   // P.slopeLock: ソース参照の x 反転と y 反転を連動させる (既定 false = 従来どおり独立)。
@@ -1115,9 +1129,9 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   for(let pi=0; pi<nPatch; pi++){
     if(progress) progress(0.75 * pi / nPatch);
     // キャンバス現況の色比 → 不足色をパッチ選択で補う (未塗布は除外)
-    const cur = [0,0,0,0]; let cn = 0;
-    for(let i=0;i<w*h;i+=997){ if(out[i]<4){ cur[out[i]]++; cn++; } }
-    const deficit = cn ? TARGET_FRAC.map((t,ci)=> t - cur[ci]/cn) : [0,0,0,0];
+    const cur = new Int32Array(NC); let cn = 0;
+    for(let i=0;i<w*h;i+=997){ if(out[i]<NC){ cur[out[i]]++; cn++; } }
+    const deficit = cn ? TARGET_FRAC.map((t,ci)=> t - cur[ci]/cn) : TARGET_FRAC.map(()=>0);
     const bSeed = (seed ^ 0x3d1) + pi*37;
     // 25% は「マクロパッチ」: 大径 + 多様性緩和 → 実物にある大判の平坦掃引領域
     const isMacro = rng() < 0.25;
@@ -1159,7 +1173,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
         const p = pick(rng, bbInX*kmX, bbInY*kmY);
         p.cx = tx; p.cy = ty;
         let err = 0, cnt = 0;
-        const hist = [0,0,0,0]; let hn = 0;
+        const hist = new Int32Array(NC); let hn = 0;
         const es = Math.max(2, (bbInY/32)|0);   // 走査は内側半径の箱 (bb は完走帯込みで大きい)
         const esX = sA === 1 ? es : Math.max(2, (bbInX/32)|0);
         for(let dy=-bbInY;dy<=bbInY;dy+=es){
@@ -1170,13 +1184,13 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
             const rr = Math.hypot(dx,dy), rb = rad(dx,dy);
             if(rr >= rb) continue;
             const v = srcGet(p, x, y);
-            if(rr > rb*0.72 && out[yi*w+xi] < 4){ if(out[yi*w+xi] !== v) err++; cnt++; }  // 境界リング(塗布済のみ)
+            if(rr > rb*0.72 && out[yi*w+xi] < NC){ if(out[yi*w+xi] !== v) err++; cnt++; }  // 境界リング(塗布済のみ)
             hist[v]++; hn++;
           }
         }
         const ring = cnt ? err/cnt : 0;
         let div = 0;
-        for(let ci=0;ci<4;ci++){
+        for(let ci=0;ci<NC;ci++){
           const want = Math.max(0, TARGET_FRAC[ci]*0.55 + deficit[ci]*1.5);
           div += DIVW[ci] * Math.max(0, want - hist[ci]/Math.max(1,hn));
         }
@@ -1213,9 +1227,9 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
           const th = Math.atan2(uy, ux);
           return bR * (0.7 + 0.5 * fbm(Math.cos(th)*1.4+7, Math.sin(th)*1.4+7, bSeed, 2, 2, .5)) / un;
         };
-    const cur2 = [0,0,0,0]; let cn2 = 0;
-    for(let i=0;i<w*h;i+=997){ if(out[i]<4){ cur2[out[i]]++; cn2++; } }
-    const allow2 = mkAllowExtend(cn2 ? TARGET_FRAC.map((t,ci)=> t - cur2[ci]/cn2) : [0,0,0,0]);
+    const cur2 = new Int32Array(NC); let cn2 = 0;
+    for(let i=0;i<w*h;i+=997){ if(out[i]<NC){ cur2[out[i]]++; cn2++; } }
+    const allow2 = mkAllowExtend(cn2 ? TARGET_FRAC.map((t,ci)=> t - cur2[ci]/cn2) : TARGET_FRAC.map(()=>0));
     const bbInY = Math.ceil(bR * 1.3);
     const bbInX = sA === 1 ? bbInY : Math.ceil(bR * 1.3 * sA);
     const bbY = Math.ceil(bbInY * OUT_HI);
@@ -1235,7 +1249,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
           if(xi<0||xi>=w||yi<0||yi>=h) continue;
           if(Math.hypot(dx,dy) >= rad2(dx,dy)) continue;
           const ov = out[yi*w+xi];
-          if(ov < 4){ if(ov !== srcGet(p, x, y)) err++; cnt++; }
+          if(ov < NC){ if(ov !== srcGet(p, x, y)) err++; cnt++; }
         }
       }
       const sc = cnt ? err/cnt : rng()*0.01;
@@ -1255,7 +1269,7 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   }
   // 最上層の版を刷り直す (黒がパッチ輪郭に切られる問題。applyTopLayer のコメント参照)
   if(P.topLayer != null){
-    applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, P.topLayer, TARGET_FRAC[P.topLayer], seed, wrap);
+    applyTopLayer(out, w, h, srcM, SWm, SHm, kmX, kmY, P.topLayer, TARGET_FRAC[P.topLayer], seed, wrap, NC);
   }
   if(progress) progress(0.8);
   let sm = out;
@@ -1280,16 +1294,16 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     // 拡大: 階段除去。階段幅は 1/k px なので半径は 1/k に比例させる
     // (v16 以前は ×(w/512) が掛かり二重スケールで 4096px で半径 54 → 数分かかった)
     else if(kFullMin < 0.95) smoothR = Math.max(1, Math.round(1.2/kFullMin));
-    if(smoothR) sm = modeFilter(sm, w, h, smoothR, 1, 4, wrap);
+    if(smoothR) sm = modeFilter(sm, w, h, smoothR, 1, NC, wrap);
     if(progress) progress(0.92);
     // 微小フラグメント除去 (画面上で点に見えるサイズの絶対下限つき)
     const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),
                                         110 * (w/512)*(w/512) / (scale*scale)));
-    cleanupFragments(sm, w, h, minFrag, wrap);
+    cleanupFragments(sm, w, h, minFrag, wrap, NC);
     cleanupSlivers(sm, w, h, wrap);   // 幅 1px の筋 (輪郭交差の残り) を除去
   }else{
     // デジタル系: ピクセル輪郭を保持。サブセルの欠片だけ除去
-    cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)), wrap);
+    cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)), wrap, NC);
   }
   // 小石層 (DBDU のチョコチップ): 平滑化・欠片除去の「後」に実寸で置く。
   // 先に置くと (1) 多数決ミップで消える (2) 領域成長シームに途中で切られる
@@ -1432,7 +1446,8 @@ function cleanupSlivers(index, w, h, wrap=false){
     }
   }
 }
-// 面積 < minArea の連結成分を近傍多数色へ併合。nColors は index に現れる色数 (既定 4 = クイルト系)
+// 面積 < minArea の連結成分を近傍多数色へ併合。nColors は index に現れる色数 (既定 4 = クイルト系)。
+// 既定のままだと 5 値図案で cnt[4] が数えられず、5 色目が併合先として選ばれない
 // 戻り値: 1 px 以上を書き換えたら true (呼び出し側が不動点ループを打ち切る判定に使う)
 function cleanupFragments(index, w, h, minArea, wrap=false, nColors=4){
   let changed = false;
@@ -2048,6 +2063,49 @@ export const PRESETS = {
     colors: [
       {name:'サンド',   hex:'#d5d5c9'},
       {name:'ブラウン', hex:'#7a5825'},
+    ],
+  },
+  auscam: {
+    // オーストラリア DPCU (Auscam / 通称ヘリーテディー、1980 年代〜)。実物の特徴:
+    //   - 5 色。サンド地に、ミッドグリーン / オレンジブラウン / ミッドブラウン / ダークグリーンの
+    //     斑が「互いに離れて」置かれる。斑は M81 より小ぶりで丸く、輪郭の入り組みが浅い
+    //     → クイルトは局所形状 = ソース図案そのものなので、この丸みと斑の孤立配置は
+    //       専用ソース図案 (auscamsrc、5 値) が担う。パラメータでは作れない
+    //   - Issue #27 の「パッチ密度を下げて地色を残す」案は現行の genQuilt では効かない:
+    //     v17 以降ベースを敷かず全面をパッチで被覆する設計なので、patchR は継ぎ目の頻度しか
+    //     決めない。地色比を決めるのはソース図案の面積比 (frac) と面積比フィードバック
+    //   - オレンジブラウンの小斑が識別性の核 (jelly bean の由来)。5 色目が平滑化・欠片除去で
+    //     消えないよう genQuilt は P.frac.length を色数として全経路に通している
+    name: 'オーストラリア DPCU 風', kind: 'quilt', src: 'auscam', ref: 'auscam',
+    // ソース図案の生成:
+    //   node tools/gen-src.mjs refs/auscam.jpg src/core/auscamsrc.js 5 AUSCAM --blur=1.2 --flatten=120 --thin=5
+    //   (参照はスウォッチではなく着用中の布地写真。--blur: 織り目を落とさないと k-means が
+    //    設計色ではなく明度で切る。--flatten=120: たたみ皺の陰影を残すとサンド地が
+    //    「明部サンド + 暗部サンド」に分かれて 5 色目が失われる。--thin=5: 皺の稜線と影が
+    //    細帯・縁取りとして残るとパッチがそれを拾い、出力に直線状の筋が並ぶ)
+    // kBase 1.0: ソース図案 (640px) を等倍参照する。実物と同じ「512px の画面に斑が 10 個前後」の
+    // 見え方になる倍率。1 未満 (拡大参照) は最近傍サンプリングで輪郭が階段化し、
+    // 1.4 超は多数決ミップの発動域に入るため 1.0〜1.35 の帯に収める
+    // patchR 150: 斑の大きさはソース図案側で決まるので patchR は継ぎ目の頻度だけを決める。
+    // ソースが 640px と小ぶりなので、DCU と同じ 150 でパッチ / キャンバス比を揃える
+    kBase: 1.0, patchR: 150, organic: true,
+    // frac はソース図案の実測面積比 (tools/gen-src.mjs の出力)。
+    // divw[3] 1.6: ミッドブラウンは面積が最小 (10%) なので重みを足す。重みが 1 のままだと
+    // シェイプ完走が大面積色を優遇する性質で更に痩せる (jgsdf2 の黒と同じ扱い)。
+    // ただし DCU と同様に候補選択は境界リング誤差項に支配されるので、この重みを 2.4 に
+    // 上げても出力の面積比はシード依存の振れ (ブラウン 0.04〜0.08) に埋もれる
+    frac: [0.269, 0.207, 0.220, 0.101, 0.202], divw: [1, 1, 1, 1.6, 1],
+    // 実測: node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60
+    // (--core = 領域内部の中央値。斑の輪郭が滲んだ写真なので素の重心だと混色に引かれる。
+    //  --flatten は 256px 縮小後の px なので、640px でソースマップに使った 120 と相対値が揃う)
+    // 参照写真は全体が青寄りに転んでおり、ダークグリーンが青緑 (#2d4d57) として出る。
+    // 感覚で補正せず実測値のまま採用している (docs/01-tech-verification.md v28)
+    colors: [
+      {name:'サンド',        hex:'#a8a996'},
+      {name:'ミッドグリーン',  hex:'#769b65'},
+      {name:'オレンジブラウン', hex:'#a87c4f'},
+      {name:'ミッドブラウン',  hex:'#765d3e'},
+      {name:'ダークグリーン',  hex:'#2d4d57'},
     ],
   },
 };

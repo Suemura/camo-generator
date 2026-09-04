@@ -25,20 +25,7 @@ export const HUE_LABEL: Record<Hue, string> = {
   other: "その他",
 };
 
-export const COUNTRY_LABEL: Record<string, string> = {
-  us: "米国",
-  ru: "ソ連 / ロシア",
-  ca: "カナダ",
-  cn: "中国",
-  uk: "英国",
-  de: "ドイツ",
-  jp: "日本",
-  fr: "フランス",
-  it: "イタリア",
-  il: "イスラエル",
-  vn: "ベトナム",
-  other: "その他",
-};
+export { COUNTRY_LABEL } from "./countries";
 
 export const USE_LABEL: Record<string, string> = {
   tank: "戦車 / 車両",
@@ -56,6 +43,7 @@ export const USE_LABEL: Record<string, string> = {
   "camo-3color-desert": "3 色デザート",
   "camo-6color-desert": "6 色デザート (チョコチップ)",
   "camo-jgsdf2": "陸自迷彩 2 型",
+  "camo-auscam": "オーストラリア DPCU",
   "camo-cadpat": "CADPAT",
   "camo-pla07": "07 式",
   "camo-emr": "EMR",

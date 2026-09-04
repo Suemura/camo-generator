@@ -17,6 +17,7 @@ export type PresetKey =
   | "frogskin_beach"
   | "dpm"
   | "ddpm"
+  | "auscam"
   | "tigerstripe";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {

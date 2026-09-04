@@ -56,6 +56,21 @@ export function About() {
       <ul>
         <li>M81 ソースマップは米政府図案 (パブリックドメイン) のインデックス化データ</li>
         <li>
+          陸自迷彩 2 型のソースマップは{" "}
+          <a href="https://commons.wikimedia.org/wiki/File:%E8%BF%B7%E5%BD%A9%E6%9C%8D2%E5%9E%8B%E3%81%AE%E8%BF%B7%E5%BD%A9%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3.jpg">
+            迷彩服2型の迷彩パターン
+          </a>{" "}
+          (Crescent moon 撮影、CC BY 3.0) のインデックス化データ
+        </li>
+        <li>
+          DPM / デザート DPM のソースマップは{" "}
+          <a href="https://commons.wikimedia.org/wiki/File:DPM_Combat_95_Camouflage_Material_MOD_45149982.jpg">
+            DPM Combat 95 Camouflage Material
+          </a>{" "}
+          (Cpl Adrian Harlen RLC 撮影、UK MOD) のインデックス化データ。Contains public sector
+          information licensed under the Open Government Licence v1.0
+        </li>
+        <li>
           クイルト方式は Efros &amp; Freeman (2001) Image Quilting
           の考え方を有機輪郭パッチに拡張したもの
         </li>

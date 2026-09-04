@@ -2518,5 +2518,173 @@
     },
     "note": "英軍デザート DPM のブラウン (実測 55%)",
     "source": "同上"
+  },
+  {
+    "id": "cadpat-lgreen",
+    "name": "CADPAT TW ライトグリーン",
+    "std": "CADPAT (実測)",
+    "code": "cadpat-1",
+    "hex": "#81925c",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-cadpat", "uniform"],
+      "country": ["ca"]
+    },
+    "note": "CADPAT 温帯林の明色。実測面積比は約 17% で、ミッドグリーンの地に散る明るい斑",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/cadpat.png 4 --max-edge=1024 --core=2。参照画像は Wikimedia Commons 「Temperate CADPAT camouflage pattern swatch.png」パブリックドメイン)"
+  },
+  {
+    "id": "cadpat-mgreen",
+    "name": "CADPAT TW ミッドグリーン",
+    "std": "CADPAT (実測)",
+    "code": "cadpat-2",
+    "hex": "#525d3c",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-cadpat", "uniform"],
+      "country": ["ca"]
+    },
+    "note": "CADPAT 温帯林の主色。実測面積比は約 44% で 4 色中最大。MARPAT がタン地なのに対し CADPAT は緑地",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/cadpat.png 4 --max-edge=1024 --core=2。参照画像は Wikimedia Commons 「Temperate CADPAT camouflage pattern swatch.png」パブリックドメイン)"
+  },
+  {
+    "id": "cadpat-dgreen",
+    "name": "CADPAT TW ダークグリーン",
+    "std": "CADPAT (実測)",
+    "code": "cadpat-3",
+    "hex": "#35392d",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-cadpat", "uniform"],
+      "country": ["ca"]
+    },
+    "note": "CADPAT 温帯林の最暗色 (約 29%)。純黒ではなく暗い緑で、MARPAT のブラウンブラックより面積が広い",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/cadpat.png 4 --max-edge=1024 --core=2。参照画像は Wikimedia Commons 「Temperate CADPAT camouflage pattern swatch.png」パブリックドメイン)"
+  },
+  {
+    "id": "cadpat-tan",
+    "name": "CADPAT TW タン",
+    "std": "CADPAT (実測)",
+    "code": "cadpat-4",
+    "hex": "#847b5d",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-cadpat", "uniform"],
+      "country": ["ca"]
+    },
+    "note": "CADPAT 温帯林の最小色 (約 10%)。緑の塊の縁に点在する",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/cadpat.png 4 --max-edge=1024 --core=2。参照画像は Wikimedia Commons 「Temperate CADPAT camouflage pattern swatch.png」パブリックドメイン)"
+  },
+  {
+    "id": "pla07-lgray",
+    "name": "07 式 通用迷彩 ライトグレー",
+    "std": "07 式 (実測)",
+    "code": "type07-1",
+    "hex": "#d8d7dc",
+    "tags": {
+      "hue": "grey",
+      "use": ["camo-pla07", "uniform"],
+      "country": ["cn"]
+    },
+    "note": "07 式通用迷彩の地色 (約 42%)。他の 3 色との明度差が大きく、遠目のコントラストを作る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/pla07.jpg 4 --max-edge=873 --core=2。ブラウンのみ JPEG のリンギングを避けるため筆致内部の中央値で実測。参照画像は Wikimedia Commons 「Type 07 universal.jpg」CC BY-SA 4.0)"
+  },
+  {
+    "id": "pla07-green",
+    "name": "07 式 通用迷彩 グリーン",
+    "std": "07 式 (実測)",
+    "code": "type07-2",
+    "hex": "#48594f",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-pla07", "uniform"],
+      "country": ["cn"]
+    },
+    "note": "07 式通用迷彩の主色 (約 36%)。青みのある濃緑",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/pla07.jpg 4 --max-edge=873 --core=2。ブラウンのみ JPEG のリンギングを避けるため筆致内部の中央値で実測。参照画像は Wikimedia Commons 「Type 07 universal.jpg」CC BY-SA 4.0)"
+  },
+  {
+    "id": "pla07-brown",
+    "name": "07 式 通用迷彩 ブラウン",
+    "std": "07 式 (実測)",
+    "code": "type07-3",
+    "hex": "#605645",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-pla07", "uniform"],
+      "country": ["cn"]
+    },
+    "note": "07 式通用迷彩の茶 (約 10%)。緑と地色の境界を縫う細い帯として出る暗いオリーブブラウン",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/pla07.jpg 4 --max-edge=873 --core=2。ブラウンのみ JPEG のリンギングを避けるため筆致内部の中央値で実測。参照画像は Wikimedia Commons 「Type 07 universal.jpg」CC BY-SA 4.0)"
+  },
+  {
+    "id": "pla07-black",
+    "name": "07 式 通用迷彩 ブラック",
+    "std": "07 式 (実測)",
+    "code": "type07-4",
+    "hex": "#292d30",
+    "tags": {
+      "hue": "black",
+      "use": ["camo-pla07", "uniform"],
+      "country": ["cn"]
+    },
+    "note": "07 式通用迷彩の最暗色 (約 10%)。緑の塊の内側に落ちる",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/pla07.jpg 4 --max-edge=873 --core=2。ブラウンのみ JPEG のリンギングを避けるため筆致内部の中央値で実測。参照画像は Wikimedia Commons 「Type 07 universal.jpg」CC BY-SA 4.0)"
+  },
+  {
+    "id": "emr-khaki",
+    "name": "EMR カーキ",
+    "std": "EMR (実測)",
+    "code": "emr-1",
+    "hex": "#7d7d50",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-emr", "uniform"],
+      "country": ["ru"]
+    },
+    "note": "EMR (デジタルフローラ) の明色 (約 43%)。ダークグリーンとほぼ同面積で噛み合い、地色が定まらない見えを作る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/emr.png 4 --max-edge=2320 --core=2。参照画像は Wikimedia Commons 「Russian Armed Forces EMR patten.png」CC0)"
+  },
+  {
+    "id": "emr-dgreen",
+    "name": "EMR ダークグリーン",
+    "std": "EMR (実測)",
+    "code": "emr-2",
+    "hex": "#434e38",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-emr", "uniform"],
+      "country": ["ru"]
+    },
+    "note": "EMR の濃緑 (約 42%)。縦方向に伸びる微細クラスタを作る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/emr.png 4 --max-edge=2320 --core=2。参照画像は Wikimedia Commons 「Russian Armed Forces EMR patten.png」CC0)"
+  },
+  {
+    "id": "emr-brown",
+    "name": "EMR ブラウン",
+    "std": "EMR (実測)",
+    "code": "emr-3",
+    "hex": "#513d32",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-emr", "uniform"],
+      "country": ["ru"]
+    },
+    "note": "EMR の茶 (約 10%)。緑の縁に沿う細片として出る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/emr.png 4 --max-edge=2320 --core=2。参照画像は Wikimedia Commons 「Russian Armed Forces EMR patten.png」CC0)"
+  },
+  {
+    "id": "emr-black",
+    "name": "EMR ブラック",
+    "std": "EMR (実測)",
+    "code": "emr-4",
+    "hex": "#302d31",
+    "tags": {
+      "hue": "black",
+      "use": ["camo-emr", "uniform"],
+      "country": ["ru"]
+    },
+    "note": "EMR の最暗色 (約 6%)。4 色中最小で、微細な点として散る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/emr.png 4 --max-edge=2320 --core=2。参照画像は Wikimedia Commons 「Russian Armed Forces EMR patten.png」CC0)"
   }
 ]

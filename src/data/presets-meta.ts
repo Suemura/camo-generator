@@ -77,6 +77,20 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "desert",
     svg: false,
   },
+  dpm: {
+    label: "DPM 風 (英国)",
+    note: "1960 年代〜 4 色。筆致状の有機形状",
+    country: "英国",
+    group: "woodland",
+    svg: false,
+  },
+  ddpm: {
+    label: "デザート DPM 風 (DDPM)",
+    note: "1990 年代〜 2 色。サンド地にブラウン",
+    country: "英国",
+    group: "desert",
+    svg: false,
+  },
   marpat: {
     label: "デジタル・ウッドランド風",
     note: "MARPAT 系 4 色。ピクセル",

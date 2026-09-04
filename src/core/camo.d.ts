@@ -11,7 +11,9 @@ export type PresetKey =
   | "dbdu"
   | "jgsdf2"
   | "frogskin"
-  | "frogskin_beach";
+  | "frogskin_beach"
+  | "dpm"
+  | "ddpm";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;

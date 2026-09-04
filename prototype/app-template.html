@@ -48,6 +48,13 @@
     display:block; object-fit:cover;
   }
   .pix canvas#view{image-rendering:pixelated}
+  [hidden]{display:none !important}
+  /* 参照画像なし（既定）の代替表示。img と同じ枠を保って左右のペイン幅を揃える */
+  .refnone{
+    width:100%; aspect-ratio:1; border:1px dashed var(--line); background:#0b0b0b;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    color:var(--muted); font-size:13px; padding:0 24px; box-sizing:border-box;
+  }
   .meta{color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums}
   .group>label, .group>.glabel{
     display:block; font:600 13px "Barlow Condensed",sans-serif;
@@ -144,8 +151,9 @@
       </figure>
       <figure class="pane">
         <figcaption>実物リファレンス</figcaption>
-        <img id="refimg" alt="実物迷彩のリファレンス画像">
-        <p class="hint" style="margin:6px 0 0">出典: Wikimedia Commons（比較用ベンチマーク）</p>
+        <img id="refimg" alt="実物迷彩のリファレンス画像" hidden>
+        <div id="refnone" class="refnone">参照画像は同梱していません</div>
+        <p class="hint" style="margin:6px 0 0" id="refhint">手元で比較する場合は refs/private/ の画像から prototype/refs.js を作り、node prototype/build.mjs で再ビルドする</p>
       </figure>
     </div>
     <div class="meta" id="meta"></div>
@@ -214,7 +222,11 @@ function render(){
   $('stageBox').classList.toggle('pix', dig);
   $('exsvg').disabled = !dig;
   const refKey = PRESETS[cur.key].ref;
-  $('refimg').src = REFS[refKey] || '';
+  const refSrc = REFS[refKey] || '';
+  if(refSrc) $('refimg').src = refSrc;
+  $('refimg').hidden = !refSrc;
+  $('refnone').hidden = !!refSrc;
+  $('refhint').hidden = !!refSrc;
   $('svgHint').textContent = dig
     ? 'SVG: セル矩形を水平方向に結合して出力。'
     : 'SVG: 有機形状はベクタ化（marching squares）をフェーズ2で検証。';

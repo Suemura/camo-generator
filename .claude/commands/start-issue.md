@@ -136,7 +136,7 @@ pnpm test
 
 **新プリセットの追加・生成精度の変更**は、CLAUDE.md「検証プロトタイプ（Artifact）」の更新まで行って初めて完了とする:
 
-1. 新プリセットなら `prototype/refs.js` に参照画像の data URI を追加する（420px・JPEG quality 82 程度、キー名は `PRESETS[key].ref` と一致させる）
+1. `prototype/refs.js` は空のまま（参照画像は同梱しない）
 2. `node prototype/build.mjs` で `prototype/index.html` を再ビルドする
 3. `Artifact` ツールに `file_path: prototype/index.html` と CLAUDE.md 記載の既存 Artifact URL を `url` で渡し、**同じ URL に再デプロイ**する（`url` を省くと別 Artifact になりリンクが変わる）
 4. 最終報告に Artifact の URL を含める

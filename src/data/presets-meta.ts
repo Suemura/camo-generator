@@ -259,11 +259,13 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     svg: false,
   },
   m90desert: {
-    // 図案は m90 と同一で版の色だけが変わる (実物の ökenkamouflage も同じ関係)
+    // 図案は m90 と同一で版の色だけが変わる (実物の ökenkamouflage も同じ関係)。
+    // group は配色でなく図案の系統を表すので m90 / m90winter と同じ geometric。
+    // 砂漠環境での絞り込みは env: arid が担う
     label: "M90 デザート風 (スウェーデン)",
     note: "1990 年代〜 4 色。M90 の砂漠配色",
     country: "se",
-    group: "desert",
+    group: "geometric",
     env: ["arid"],
     era: "1990s",
     svg: false,

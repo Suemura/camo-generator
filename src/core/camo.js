@@ -6,7 +6,9 @@ import { DCU_SRC_W, DCU_SRC_H, DCU_SRC_RLE } from './dcusrc.js';
 import { JGSDF2_SRC_W, JGSDF2_SRC_H, JGSDF2_SRC_RLE } from './jgsdf2src.js';
 import { DPM_SRC_W, DPM_SRC_H, DPM_SRC_RLE } from './dpmsrc.js';
 import { AUSCAM_SRC_W, AUSCAM_SRC_H, AUSCAM_SRC_BITS, AUSCAM_SRC_RLE } from './auscamsrc.js';
-// 静的 import の目安: m81src (24KB) / dcusrc (18KB) / jgsdf2src (24KB) / dpmsrc (22KB) / auscamsrc (20KB) は
+import { TIGERSTRIPE_SRC_W, TIGERSTRIPE_SRC_H, TIGERSTRIPE_SRC_RLE } from './tigerstripesrc.js';
+// 静的 import の目安: m81src (24KB) / dcusrc (18KB) / jgsdf2src (24KB) / dpmsrc (22KB) /
+// auscamsrc (20KB) / tigerstripesrc (45KB) は
 // 数十 KB オーダーで初期バンドルへの影響が小さいため静的 import する。
 // AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は 1 桁大きく初期バンドルを膨らませるため、
 // 利用側が動的 import して registerSources() で渡す (ブラウザ: src/lib/generate.ts、Node: tools/render.mjs)。
@@ -659,6 +661,7 @@ const SRCS = {
   dpm:  () => decodeSrc('dpm',  DPM_SRC_RLE,  DPM_SRC_W,  DPM_SRC_H),   // 22KB なので静的 import で足りる
   // Auscam は 5 値なので 3bit RLE (bits を渡す)。20KB なので静的 import で足りる
   auscam: () => decodeSrc('auscam', AUSCAM_SRC_RLE, AUSCAM_SRC_W, AUSCAM_SRC_H, AUSCAM_SRC_BITS),
+  tigerstripe: () => decodeSrc('tigerstripe', TIGERSTRIPE_SRC_RLE, TIGERSTRIPE_SRC_W, TIGERSTRIPE_SRC_H), // 45KB なので静的 import で足りる
 };
 // 外部ソースマップの登録: registerSources(await import('./digsrc.js'))
 export function registerSources(mod){
@@ -1066,13 +1069,18 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   const DIVW = P.divw ?? Array.from({length: NC}, (_, i) => (i === NC-1 ? 2 : 1));
   // ソース参照: パッチ中心相対 + 折返し不要な範囲選択 (鏡映対称アーティファクト防止)
   // span: パッチが参照するソース半径。範囲内に収まる sx,sy を選ぶ
+  // P.slopeLock: ソース参照の x 反転と y 反転を連動させる (既定 false = 従来どおり独立)。
+  // 意図: タイガーストライプのような縞図案では、実物の縞は全体が同じ向きに傾いている。
+  // 反転を独立に振ると mx·my = -1 のパッチだけ縞の傾きが逆転し、隣り合うパッチで縞が
+  // 「く」の字に折れて長距離の流れが壊れる (ブロブ図案では傾きに意味がないので問題にならない)。
+  // mx·my = +1 に固定すれば傾きの符号が保たれ、反転の多様性 (4 通り中 2 通り) は残る。
+  const slopeLock = P.slopeLock === true;
   const pick = (rng2, spanX, spanY) => {
     const fx = Math.min(spanX, (SWm-2)/2), fy = Math.min(spanY, (SHm-2)/2);
-    return {
-      sx: randRange(rng2, fx, SWm-1-fx), sy: randRange(rng2, fy, SHm-1-fy),
-      mx: rng2()<0.5 ? -1 : 1, my: rng2()<0.35 ? -1 : 1,
-      cx: 0, cy: 0,
-    };
+    // rng2 の消費順 (sx → sy → mx → my) は変えない。順序を入れ替えると既存プリセットの出力が変わる
+    const sx = randRange(rng2, fx, SWm-1-fx), sy = randRange(rng2, fy, SHm-1-fy);
+    const mx = rng2()<0.5 ? -1 : 1;
+    return { sx, sy, mx, my: slopeLock ? mx : (rng2()<0.35 ? -1 : 1), cx: 0, cy: 0 };
   };
   // 完走の参照がソース範囲内か (範囲外は折返し鏡映になるので完走を諦めて撤回する)
   const srcIn = (p, x, y) => {
@@ -1936,6 +1944,40 @@ export const PRESETS = {
       {name:'グリーン',   hex:'#616022'},
       {name:'ブラウン',   hex:'#50311d'},
       {name:'ブラック',   hex:'#28221f'},
+    ],
+  },
+  tigerstripe: {
+    // タイガーストライプ (ベトナム戦争期、1960 年代〜)。実物の特徴:
+    //   - 横方向に流れる細長い縞。黒縞が主役で、太さが途中で変わり先端が鋭く尖る。
+    //     縞は互いに噛み合い、緩やかにうねりながら分岐・合流する
+    //   - 黒縞の縁からは「爪」状の細いフリンジが多数生える。これが識別の核で、
+    //     異方性ノイズの閾値化 (等高線バンド) では原理的に出せない。局所形状が
+    //     ソース図案そのものになるクイルトなら、この筆致がそのまま保たれる
+    //   - グリーン面の内部には、さらに細いライトカーキの線が櫛状に走る。面積比は
+    //     6% 弱しかないが、これが無いと「黒縞入りのウッドランド」に見えてしまう
+    name: 'タイガーストライプ風', kind: 'quilt', src: 'tigerstripe', ref: 'tigerstripe',
+    // ソース図案の生成:
+    //   node tools/gen-src.mjs refs/private/tigerstripe.webp src/core/tigerstripesrc.js 4 TIGERSTRIPE
+    //   (参照はフラットなスウォッチなので --blur / --flatten は不要。--resize も掛けない:
+    //    600px に落とすとライトカーキ細線の面積比が 0.056 → 0.050 に痩せる)
+    // slopeLock: 縞の傾きの向きを揃える (pick のコメント参照)。これが無いと mx·my = -1 のパッチで
+    // 縞が逆傾きになり、隣接パッチで「く」の字に折れて長距離の流れが消える
+    // patchR 120: M81 系 (185) より小さい。ソースの局所形状が「面」でなく「線」なので、パッチが
+    // 大きいとソースの数枚のコピーになり面積比フィードバックが働かない (patchR 200 では 512px あたり
+    // 5 枚しか貼られず divw が無効化した)。120 なら 14 枚前後で、黒の面積比が実測 0.455 に収束する
+    // topLayer は不採用: 黒は縞として参照画像の端まで貫くため、applyTopLayer が除外しない
+    // (= 縁に接しない) 黒成分の合計面積は全黒面積の 1.9% しかない (M81 は 0.82、DPM は 0.15 で破綻)。
+    // 逆にライトカーキは 0.95 と十分だが、topLayer: 0 で刷ると細線でなく淡い塊が浮いて見える
+    kBase: 0.95, patchR: 120, organic: true, slopeLock: true,
+    // frac はソース図案の実測面積比 (tools/gen-src.mjs の出力)
+    frac: [0.056, 0.210, 0.279, 0.455], divw: [1, 1, 1, 2],
+    // 実測: node tools/extract-palette.mjs refs/private/tigerstripe.webp 4 --max-edge=771 --core=2
+    //   既定の --max-edge=256 では縞とライトカーキ細線が潰れて 4 色とも暗側に寄るため原寸で測る
+    colors: [
+      {name:'ライトカーキ', hex:'#9d977d'},
+      {name:'カーキ',     hex:'#6f6953'},
+      {name:'グリーン',    hex:'#515d49'},
+      {name:'ブラック',    hex:'#2e3131'},
     ],
   },
   dbdu: {

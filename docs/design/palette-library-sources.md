@@ -134,7 +134,28 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグ `camo-cadpat` / `camo-pla07` / `camo-emr`（いずれも新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベルを追加した。国タグ `ca` / `cn` も新規なので `COUNTRY_LABEL` に追加した
 - 近接する既存エントリ: `cadpat-mgreen` #525d3c は `fs34079` #555548 と近いが、CADPAT は緑側に寄っており別色として登録した
 
-## 第7弾（迷彩プリセット追加に伴う実測色: オーストラリア DPCU / Auscam）
+## 第7弾（迷彩プリセット追加に伴う実測色: フロッグスキン 両面）
+
+アプリにフロッグスキン風（M1942、Issue #29）のプリセットを追加したのに合わせ、ジャングル面 5 色 + ビーチ面 4 色を追記した。
+
+### 方法
+
+- 第3弾・第4弾と同じく `std` は「フロッグスキン (実測)」、hex は `src/core/camo.js` の `PRESETS.frogskin.colors` と完全一致させている
+- **公的な色番号は見つからなかった**。M1942 の捺染色は当時の Quartermaster Corps の仕様書で定義されているが、Natick color designation（DCU / DBDU にある 3 桁番号）に相当する公開データは存在しない。したがって `code` には index 値の順に `m1942-1`〜`m1942-5` を振った
+- 参照画像が布地の接写写真なので、パレット実測に `--blur`（織り目の平坦化）と `--core`（領域内部の中央値）を使った。コマンドは `node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2`。**k を色数より多く取る**のは、織り目と陰影が 1 つの版の色を 2〜3 クラスタに割るため。役割ごとに内部画素数が最大のクラスタを採用した。`--blur` 無しではブラウンが 3 分裂して代表色が定まらない。詳細は `docs/01-tech-verification.md` v27
+- 用途タグ `camo-frogskin`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「フロッグスキン (M1942)」を追加した
+- 近接する既存エントリ: `frogskin-dgreen` #576b44 は `jgsdf2-green` #5e775c と 20 以上離れており別色。`frogskin-brown` #7e6043 も DCU / DBDU の褐色系（#8f590b / #704c44）とは十分離れている
+- 参照画像は CC BY-SA 3.0 のため、この画像から派生したソースマップはアプリに同梱していない（形状は手続き生成）。実測した hex は「事実の記述」であって画像の派生物ではないという整理で、DBDU（第3弾）と同じ扱い
+
+### ビーチ面（リバーシブルの裏面）
+
+- M1942 は両面リバーシブルで、ジャングル面（淡緑地 5 色）の裏がビーチ面（淡タン地）。ビーチ面は**インク 4 色**（クリーム / カーキ / グリーン / ブラウン）で、`code` は `m1942b-1`〜`m1942b-4`
+- 文献（Wikipedia "Frog skin"）はビーチ面を「淡タン地に褐色の 3 色」と記述するが、入手した実物スウォッチは緑を含む 4 色だった。M1942 の生産は複数の製造元・時期にまたがり配色に幅があるため、**実測を優先**して 4 色で登録した。この差異は `docs/01-tech-verification.md` v27 にも記載
+- 参照スウォッチは**再配布できないため `refs/private/` に置き、リポジトリには含めない**（`.gitignore` + 4 層の push 防止）。平坦なスウォッチなので `--flatten` / `--blur` は不要で、コマンドは `node tools/extract-palette.mjs refs/private/frogskin_beach.jpg 4 --core=2 --max-edge=294`。k を 6 まで上げても内部画素を持つクラスタは 4 つのままで、インクが 4 色であることの裏付けになる
+- 用途タグはジャングル面と共通の `camo-frogskin`（両面が同じ被服なので 1 つのタブにまとめる）
+- ジャングル面との比較: ビーチ面のグリーン #979467 はジャングル面のダークグリーン #576b44 より明るく黄味が強い。ブラウン #a98c6a も #7e6043 より明るい
+
+## 第8弾（迷彩プリセット追加に伴う実測色: オーストラリア DPCU / Auscam）
 
 アプリに Auscam（Issue #27）のプリセットを追加したのに合わせ、既定色 5 色を追記した。
 
@@ -143,7 +164,7 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - `std` は「オーストラリア DPCU (実測)」、hex は `src/core/camo.js` の `PRESETS.auscam.colors` と完全一致させている
 - **公的な色指定は見つからなかった**。オーストラリア国防省の被服仕様（DEF(AUST) 系）は公開されておらず、DPCU の 5 色に対応する規格番号・測色値の一次資料は存在しない。したがって `code` は index 値の順に `auscam-1`〜`auscam-5` を振った（陸自迷彩 2 型と同じ扱い）
 - 参照画像が着用中の布地写真なので、パレット実測には `--core`（領域内部の中央値）と `--flatten`（照明ムラの平坦化）を使った。コマンドは `node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60`
-- **参照写真は全体が青寄りに転んでおり、ダークグリーンが青緑 #2d4d57 として実測される**。実物の DPCU のダークグリーンはより緑寄りだが、規約どおり感覚での補正はせず実測値のまま登録した。より中立な光源のリファレンスが入手できたら再実測する（`docs/01-tech-verification.md` v28 の残課題）
+- **参照写真は全体が青寄りに転んでおり、ダークグリーンが青緑 #2d4d57 として実測される**。実物の DPCU のダークグリーンはより緑寄りだが、規約どおり感覚での補正はせず実測値のまま登録した。より中立な光源のリファレンスが入手できたら再実測する（`docs/01-tech-verification.md` v29 の残課題）
 - 用途タグ `camo-auscam`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「オーストラリア DPCU」、`COUNTRY_LABEL` に `au`「オーストラリア」を追加した
 - 近接する既存エントリ（RGB 距離で確認）: `auscam-midbrown` #765d3e は `aor1-brown` #776140 と距離 4.6 でほぼ同色、`auscam-sand` #a8a996 は `bs381c-210 Sky` #adaf97 と距離 7.9。いずれも由来（被服の染色色 / 航空機塗料）と用途タグが異なるため別エントリとして登録し、統合はしていない。他の 3 色は最近接でも距離 13 以上で独立している
 
@@ -306,6 +327,15 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `emr-dgreen` | EMR (実測) emr-2 | #434e38 | 同上 |
 | `emr-brown` | EMR (実測) emr-3 | #513d32 | 同上 |
 | `emr-black` | EMR (実測) emr-4 | #302d31 | 同上 |
+| `frogskin-lgreen` | フロッグスキン (実測) m1942-1 | #93a587 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2`。参照画像は Wikimedia Commons [File:Frog Skin camouflage pattern.jpg](https://commons.wikimedia.org/wiki/File:Frog_Skin_camouflage_pattern.jpg) CC BY-SA 3.0) |
+| `frogskin-lime` | フロッグスキン (実測) m1942-2 | #85926c | 同上 |
+| `frogskin-tan` | フロッグスキン (実測) m1942-3 | #978d70 | 同上 |
+| `frogskin-dgreen` | フロッグスキン (実測) m1942-4 | #576b44 | 同上 |
+| `frogskin-brown` | フロッグスキン (実測) m1942-5 | #7e6043 | 同上 |
+| `frogskin-beach-cream` | フロッグスキン (実測) m1942b-1 | #e2cc9d | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/frogskin_beach.jpg 4 --core=2 --max-edge=294`。参照スウォッチは再配布不可のため `refs/private/` に置きリポジトリには含めない) |
+| `frogskin-beach-khaki` | フロッグスキン (実測) m1942b-2 | #bfa96d | 同上 |
+| `frogskin-beach-green` | フロッグスキン (実測) m1942b-3 | #979467 | 同上 |
+| `frogskin-beach-brown` | フロッグスキン (実測) m1942b-4 | #a98c6a | 同上 |
 
 ## 注意事項
 

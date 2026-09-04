@@ -7,7 +7,7 @@
 
 ## 概要
 
-- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / DPM・デザート DPM（英国） / オーストラリア DPCU（Auscam） / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP / CADPAT TW（カナダ） / 07 式 通用迷彩（中国） / EMR（ロシア） の迷彩に近い模様を計算で生成する
+- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / DPM・デザート DPM（英国） / オーストラリア DPCU（Auscam） / フロッグスキン (M1942 ジャングル面・ビーチ面) / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP / CADPAT TW（カナダ） / 07 式 通用迷彩（中国） / EMR（ロシア） の迷彩に近い模様を計算で生成する
 - シード値により、同じアルゴリズムから無数のバリエーションを決定的に再現できる
 - 各パターンのパレット（例: ウッドランドの緑・茶・サンド・黒）を自由な色にその場で差し替えられる
 - 生成結果を PNG / JPG / WebP / SVG（デジタル系のみ）で任意サイズ・実寸（mm / inch × DPI、PNG に DPI 埋込）でエクスポートできる
@@ -16,12 +16,13 @@
 
 ## 生成手法（フェーズ1 で確立）
 
-パターンごとに最適な手法が異なることが検証で判明し、3系統を実装している。
+パターンごとに最適な手法が異なることが検証で判明し、4系統を実装している。
 
 | 手法 | 対象 | 概要 |
 |------|------|------|
 | **ブロブパッチ合成（クイルト）** | M81 ウッドランド / CCE / DCU 3 カラーデザート / DBDU 6 カラーデザート / 陸自迷彩 2 型 / DPM / DDPM / オーストラリア DPCU / AOR1 / AOR2 | 実物図案のインデックスマップから、有機輪郭のパッチを領域成長型シームで貼り合わせる。局所形状・色・面積比は実物の設計言語そのもの。多数決ミップマップ・フラグメント除去・シェイプ完走成長などの後処理を含む。**主力手法**（ユーザー評価 88+） |
 | **クラスタ成長** | MARPAT (ウッドランド/デザート) / UCP / CADPAT TW / 07 式 通用迷彩 / EMR | セルグリッド上で色ごとに面積予算つきシード成長。蛇行ドリフト・seedNear 連鎖・境界ディザ・スペックルで実物のクラスタ構造を再現。クラスタの異方性は `elongX` / `elongY`（UCP は横長、EMR は縦長） |
+| **斑点配置** | フロッグスキン (M1942 ジャングル面 / ビーチ面) | 地色の上に、版（色）ごとに独立した丸い斑点を刷り重ねる手続き生成。輪郭は極座標の低次高調波で作る解析形状で、Mitchell のベストキャンディデート法で間隔を均す。実物図案を使わないため、参照画像のライセンスが派生物に及ぶ迷彩でも実装できる。層に `halo` を指定すると、斑を刷る直前に同じ輪郭をひと回り大きく別の版で刷り、重ね刷りで下の版が縁として残る構造を再現する |
 | **ノイズ閾値（従来手法）** | （選択肢からは退役） | シード付き値ノイズ + fBm + ドメインワープ + 分位点閾値。到達上限 ~75点。コードは保持し、フェーズ2 のカスタム迷彩生成の基盤候補 |
 
 技術詳細・検証履歴（v1〜v14 の全反復記録）は `docs/01-tech-verification.md` を参照。
@@ -43,6 +44,7 @@ tools/
 refs/               実物リファレンス画像 (開発時専用、アプリ非同梱。refs/README.md)
   <presetKey>.<ext>   自由ライセンス (Wikimedia Commons)。git 管理、出典は本 README のクレジット節
   private/            再配布不可の画像。gitignore + 4 層の push 防止で絶対にコミットしない
+                      (フロッグスキン ビーチ面の参照スウォッチがここ。生成は手続き的なので画像なしでも動く)
 .gitattributes      マージ方針 (snap / refs.js は union、prototype/index.html は ours)
 .githooks/pre-push  refs/private/ を含む push を拒否 (pnpm install の prepare が core.hooksPath を設定)
 tests/              Vitest (決定性・回帰スナップショット)
@@ -130,8 +132,8 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 ## クレジット・ライセンス注記
 
 - 3D プレビューの環境光 HDRI は Poly Haven「Kloofendal 48d Partly Cloudy (Pure Sky)」（Greg Zaal / Jarod Guest、CC0）、布地の normal / roughness マップは ambientCG「Fabric 036」「Fabric 062」（CC0）を 512px に縮小して `public/3d/` に同梱。3D 描画は three.js（MIT）
-- M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）。DCU ソースマップ（`src/core/dcusrc.js`）は `refs/dcu.png` から生成した 3 値インデックス、陸自迷彩 2 型ソースマップ（`src/core/jgsdf2src.js`）は `refs/jgsdf2.jpg`（CC BY 3.0、下記クレジット）から生成した 4 値インデックス、DPM ソースマップ（`src/core/dpmsrc.js`）は `refs/dpm.jpg`（OGL v1.0、下記クレジット）から生成した 4 値インデックス、オーストラリア DPCU ソースマップ（`src/core/auscamsrc.js`）は `refs/auscam.jpg`（パブリックドメイン）から生成した 5 値インデックス（クイルト系で唯一の 5 値なので RLE は値 3bit で符号化する）。DDPM は専用ソースマップを持たず、`dpmsrc.js` を 4 値のまま合成して明 2 色 → サンド / 暗 2 色 → ブラウンに統合する。CCE は専用ソースマップを持たず、`m81src.js` を横方向に伸長サンプリングして生成する。DBDU も専用ソースマップを持たず、ブロブ層は `dcusrc.js` を共有し小石層を手続き生成する。CADPAT / 07 式 / EMR はクラスタ成長（`genGrowth`）なのでソースマップ自体を持たない
-- 実物リファレンス画像（`refs/`、開発時専用・アプリ非同梱）の出典。いずれも Wikimedia Commons。米政府図案はパブリックドメイン、`cce.png` / `emr.png` は CC0、`dbdu.jpg` は CC BY-SA 3.0、`jgsdf2.jpg` は CC BY 3.0、`pla07.jpg` は CC BY-SA 4.0、`dpm.jpg` / `ddpm.jpg` は英国政府の Open Government Licence v1.0（OGL）
+- M81 / AOR1 / AOR2 ソースマップ（`src/core/m81src.js` / `digsrc.js`）は下記 Wikimedia Commons 画像から生成した 4 値インデックス（いずれも米政府図案でパブリックドメイン）。DCU ソースマップ（`src/core/dcusrc.js`）は `refs/dcu.png` から生成した 3 値インデックス、陸自迷彩 2 型ソースマップ（`src/core/jgsdf2src.js`）は `refs/jgsdf2.jpg`（CC BY 3.0、下記クレジット）から生成した 4 値インデックス、DPM ソースマップ（`src/core/dpmsrc.js`）は `refs/dpm.jpg`（OGL v1.0、下記クレジット）から生成した 4 値インデックス、オーストラリア DPCU ソースマップ（`src/core/auscamsrc.js`）は `refs/auscam.jpg`（パブリックドメイン）から生成した 5 値インデックス（クイルト系で唯一の 5 値なので RLE は値 3bit で符号化する）。DDPM は専用ソースマップを持たず、`dpmsrc.js` を 4 値のまま合成して明 2 色 → サンド / 暗 2 色 → ブラウンに統合する。CCE は専用ソースマップを持たず、`m81src.js` を横方向に伸長サンプリングして生成する。DBDU も専用ソースマップを持たず、ブロブ層は `dcusrc.js` を共有し小石層を手続き生成する。フロッグスキン (M1942) の両面はソースマップを持たず、斑点を完全に手続き生成する（ジャングル面は参照画像が CC BY-SA、ビーチ面は参照画像が再配布不可のため、いずれも図案の派生データを同梱しない）。CADPAT / 07 式 / EMR はクラスタ成長（`genGrowth`）なのでソースマップ自体を持たない
+- 実物リファレンス画像（`refs/`、開発時専用・アプリ非同梱）の出典。いずれも Wikimedia Commons。米政府図案はパブリックドメイン、`cce.png` / `emr.png` は CC0、`dbdu.jpg` と `frogskin.jpg` は CC BY-SA 3.0、`jgsdf2.jpg` は CC BY 3.0、`pla07.jpg` は CC BY-SA 4.0、`dpm.jpg` / `ddpm.jpg` は英国政府の Open Government Licence v1.0（OGL）
   - `woodland.png` — [File:"M81" U.S. woodland camouflage pattern swatch.png](https://commons.wikimedia.org/wiki/File:%22M81%22_U.S._woodland_camouflage_pattern_swatch.png)（U.S. Army）
   - `cce.png` — [File:Bariolage Centre-Europe.png](https://commons.wikimedia.org/wiki/File:Bariolage_Centre-Europe.png)（Commons 利用者 Youri BRIAND による作図、CC0）
   - `marpat.jpg` — [File:MARPAT woodland pattern.jpg](https://commons.wikimedia.org/wiki/File:MARPAT_woodland_pattern.jpg)（Henrik Clausen 撮影、パブリックドメイン）
@@ -148,4 +150,5 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
   - `jgsdf2.jpg` — [File:迷彩服2型の迷彩パターン.jpg](https://commons.wikimedia.org/wiki/File:%E8%BF%B7%E5%BD%A9%E6%9C%8D2%E5%9E%8B%E3%81%AE%E8%BF%B7%E5%BD%A9%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3.jpg)（Crescent moon 撮影、**CC BY 3.0**。無改変で収録）
   - `dpm.jpg` — [File:DPM Combat 95 Camouflage Material MOD 45149982.jpg](https://commons.wikimedia.org/wiki/File:DPM_Combat_95_Camouflage_Material_MOD_45149982.jpg)（Cpl Adrian Harlen RLC 撮影、UK MOD、**OGL v1.0**。長辺 1600px に縮小して収録。Contains public sector information licensed under the Open Government Licence v1.0）
   - `ddpm.jpg` — [File:Desert pattern camouflage material MOD 45148363.jpg](https://commons.wikimedia.org/wiki/File:Desert_pattern_camouflage_material_MOD_45148363.jpg)（Graeme Main 撮影、UK MOD、**OGL v1.0**。長辺 1600px に縮小して収録。目視比較とパレット実測にのみ使用）
+  - `frogskin.jpg` — [File:Frog Skin camouflage pattern.jpg](https://commons.wikimedia.org/wiki/File:Frog_Skin_camouflage_pattern.jpg)（Commons 利用者 IQ125 撮影、**CC BY-SA 3.0**。無改変で収録）。**目視比較とパレット実測にのみ使う開発時専用の画像で、この画像から派生したデータはアプリに同梱していない**（フロッグスキンの斑点は手続き生成）
 - `experimental/` の一部は [camogen](https://github.com/glederrey/camogen) (MIT) のアルゴリズムを参考にした

@@ -13,13 +13,15 @@ export type PresetKey =
   | "dcu"
   | "dbdu"
   | "jgsdf2"
+  | "frogskin"
+  | "frogskin_beach"
   | "dpm"
   | "ddpm"
   | "auscam";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth";
+  kind: "quilt" | "growth" | "spots";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;

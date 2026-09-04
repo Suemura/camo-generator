@@ -91,7 +91,8 @@ export function PresetPickerDrawer({ open, current, onPick, onClose }: Props) {
       }))
       .filter((g) => g.items.length);
   }, [axis, tag, needle]);
-  const total = groups.reduce((n, g) => n + g.items.length, 0);
+  // 用途は複数タグを持てるので、グループの合計ではなく実プリセット数を数える
+  const total = new Set(groups.flatMap((g) => g.items)).size;
 
   if (!open) return null;
   return (

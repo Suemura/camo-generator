@@ -8,7 +8,8 @@ const EXTS = ["png", "jpg", "jpeg", "webp"];
 
 /**
  * プリセットキーに対応するリファレンス画像のパスを探す。
- * refs/private/<key>.* (再配布不可、ローカル専用) を優先し、無ければ refs/<key>.*。
+ * refs/private/<key>.* (リポジトリ非管理、ローカル専用) を見る。refs/<key>.* も
+ * 後方互換で探すが、リポジトリでは画像を管理しないので通常はヒットしない。
  * @param {string} key
  * @param {string} [root] リポジトリルート
  * @returns {string | null}

@@ -12,3 +12,4 @@ src/styles/tokens/_primitives.scss
 
 # リファレンス画像のうち再配布できないもの (絶対にコミットしない。tools/check-private-refs.sh が防ぐ)
 refs/private/
+prototype/index.local.html

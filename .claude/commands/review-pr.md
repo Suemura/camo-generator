@@ -21,7 +21,7 @@ PR: $ARGUMENTS
    - **形状 / 色の分離**: `generate()` が index マップを返し着色は `toRGBA()` に留まっているか。パレット情報が形状生成に漏れていないか
    - **`src/core/camo.js` の制約**: browser / Node 共用 ES module・外部依存ゼロ・JS のまま（型は `camo.d.ts`）。`digsrc.js` を静的 import していないか（初期 JS サイズの根拠）
    - **スナップショットの扱い**: `tests/__snapshots__/` が変わっているなら、`docs/01-tech-verification.md` への追記と render.mjs 目視検証の記述が PR 本文または docs にあるか。無ければ [重要]
-   - **パレット・リファレンス**: 既定パレットの変更が実測抽出値に基づくか（感覚調整は [重要]）。リファレンス画像追加が Wikimedia Commons 由来で README クレジットが更新されているか
+   - **パレット・リファレンス**: 既定パレットの変更が実測抽出値に基づくか（感覚調整は [重要]）。リファレンス画像がリポジトリに混入していないか（`refs/private/` のみ。混入は [重要]）
    - **URL 状態**: `src/lib/state.ts` の変更に往復テストが伴うか、既存の共有 URL が壊れないか（後方互換）
    - **デザイントークン**: SCSS / TSX に生の色・余白値がなく `var(--…)` のみか。新規余白は `_semantic.scss` の `$static` に定義されているか。`_primitives.scss`（生成物）を直接編集していないか
    - **パフォーマンス**: 高解像度（〜4096²）で O(n²) 以上の処理や巨大配列のコピーを増やしていないか。Worker 境界（`src/lib/generate.ts`）を迂回してメインスレッドで生成していないか

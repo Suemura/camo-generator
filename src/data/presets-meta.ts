@@ -63,6 +63,20 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "woodland",
     svg: false,
   },
+  frogskin: {
+    label: "フロッグスキン風 (ジャングル面)",
+    note: "1942〜 5 色。丸い斑点",
+    country: "米国",
+    group: "woodland",
+    svg: false,
+  },
+  frogskin_beach: {
+    label: "フロッグスキン風 (ビーチ面)",
+    note: "1942〜 4 色。リバーシブルの裏面",
+    country: "米国",
+    group: "desert",
+    svg: false,
+  },
   dpm: {
     label: "DPM 風 (英国)",
     note: "1960 年代〜 4 色。筆致状の有機形状",

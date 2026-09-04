@@ -21,6 +21,7 @@ node tools/render.mjs <outdir> <seed> [scale]   # 全プリセットを 512px PN
 #   オプション: --tile (2×2 タイル) / --size=WxH / --preset=key / --crop=512 (中央を等倍切出し、高解像度の階段確認)
 #             --compare (左=生成 / 右=refs/ の実物リファレンス。精度改善の基本ループ。refs/private/<key>.* があれば優先)
 node tools/extract-palette.mjs refs/<key>.png 4   # 参照画像からパレット既定値を実測（UI の抽出と同じ k-means）
+#   オプション: --core[=R]（領域内部の中央値）/ --flatten=SIGMA（周辺減光の平坦化）/ --blur=SIGMA（織り目の平坦化。布地写真で版の色が複数クラスタに割れるのを防ぐ）
 #   オプション: --core[=R]（領域内部の中央値。輪郭の混色を除く）/ --flatten=SIGMA（周辺減光の平坦化）
 node tools/gen-src.mjs refs/<key>.png src/core/<key>src.js <k> <PREFIX>   # 参照画像 → クイルト用インデックスマップ（新プリセットの図案化。面積比も出力）
 #   オプション: --resize=N / --blur=SIGMA（織り目を落とす）/ --flatten=SIGMA。布地写真をリファレンスにする場合に必要（既定オフ = 従来と同一出力）
@@ -37,7 +38,7 @@ node prototype/build.mjs              # 検証プロトタイプ index.html の�
 - `src/core/camo.js` — 生成コア（旧 `prototype/camo.js`）。**browser / Node 共用の ES module、外部依存ゼロ、JS のまま**。型は `camo.d.ts` で与える。この制約は維持すること
   - すべての乱数は座標ハッシュ (`hash2`) または `mulberry32` によるシード決定的生成。`Math.random` 禁止（同一シード→同一出力の保証が製品要件）
   - 「形状（index マップ: `Uint8Array` の色インデックス）」と「色（パレット）」を分離。`generate()` → `{w, h, index, grid?}`、着色は `toRGBA()`。この分離がパレット自由変更の根拠なので崩さない
-  - 手法は3系統: `genQuilt`（ブロブパッチ合成、M81 主力）/ `genGrowth`（クラスタ成長、デジタル系）/ `genWoodland`・`genDigital`（ノイズ閾値、従来手法・比較用）
+  - 手法は4系統: `genQuilt`（ブロブパッチ合成、M81 主力）/ `genGrowth`（クラスタ成長、デジタル系）/ `genSpots`（斑点配置、フロッグスキン系。地色に版ごとの丸い斑点を刷り重ねる手続き生成でソース図案を持たない。層の `halo` で「暗色の斑をひと回り大きい別の版が縁取る」重ね刷り構造を表現する）/ `genWoodland`・`genDigital`（ノイズ閾値、従来手法・比較用）
   - プリセットは `PRESETS` に集約。`kind` で生成関数にディスパッチ
   - `generate(key, w, h, seed, scale, opt)`。`opt.tileable`（既定 true）/ `opt.progress(0..1)` / `opt.baseMax`（長辺がこれを超えると縮小生成 → 拡大 → 実寸で後処理。v17）
   - クイルト系のソース異方サンプリングは**プリセット側**の `P.srcAspect`（既定 1.0 = 等方、`>1` で横に伸びる。CCE は M81 ソースを 1.5 倍伸長）。`opt` ではない（図案固有の性質なので URL 状態に持たせない）。ノイズ周波数倍率の `P.aspectX` / `aspectY` とは別物

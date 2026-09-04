@@ -1,6 +1,6 @@
 // リファレンス画像からパレット既定値を実測する (規約: 既定色は感覚で決めず参照画像から抽出)。
 // UI の「画像から抽出」と同じ k-means (src/core/kmeans.js) を Node から呼ぶので結果が一致する。
-// usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--max-edge=N] [--flatten=SIGMA]
+// usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--max-edge=N] [--flatten=SIGMA] [--blur=SIGMA]
 //   例: node tools/extract-palette.mjs refs/woodland.png 4
 //       node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core
 // 出力: 暗→明の hex 一覧と、PRESETS.colors にそのまま貼れるスニペット
@@ -12,6 +12,9 @@
 // --flatten=SIGMA: フラットフィールド補正 (周辺減光・照明ムラの平坦化) を先にかける。
 //   布地の写真をリファレンスにする場合、ソースマップ生成 (tools/gen-src.mjs) と同じ値を渡して
 //   量子化とパレットの前提を揃える。
+// --blur=SIGMA: 縮小後にガウシアンぼかしをかける (tools/gen-src.mjs と同じ)。織り目 (ツイルの筋) が
+//   強い布地写真では、k-means が 1 つの版の色を「筋の明部 / 暗部」に割ってしまい設計色が出ない。
+//   ぼかして織り目を落とすと版の色に収束する (フロッグスキンのブラウンはこれが無いと 3 分裂する)。
 
 import { kmeans, rgbToHex } from "../src/core/kmeans.js";
 import { loadRgba } from "./image.mjs";
@@ -24,7 +27,7 @@ const [file, kArg] = argv.filter((a) => !a.startsWith("--"));
 const k = Number(kArg || 4);
 if (!file) {
   console.error(
-    "usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--max-edge=N] [--flatten=SIGMA]",
+    "usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--max-edge=N] [--flatten=SIGMA] [--blur=SIGMA]",
   );
   process.exit(1);
 }
@@ -34,10 +37,13 @@ const edgeArg = flags.find((a) => a.startsWith("--max-edge="));
 const maxEdge = edgeArg ? Number(edgeArg.slice(11)) : DEFAULT_MAX_EDGE;
 const flattenArg = flags.find((a) => a.startsWith("--flatten="));
 const flattenSigma = flattenArg ? Number(flattenArg.slice(10)) : undefined;
+const blurArg = flags.find((a) => a.startsWith("--blur="));
+const blurSigma = blurArg ? Number(blurArg.slice(7)) : undefined;
 
 const { data, w, h } = await loadRgba(file, {
   maxEdge,
   ...(flattenSigma ? { flatten: flattenSigma } : {}),
+  ...(blurSigma ? { blur: blurSigma } : {}),
 });
 const centers = kmeans(data, k);
 
@@ -101,7 +107,7 @@ const measured = coreR
   : centers.map((c) => ({ hex: rgbToHex(c), n: null }));
 
 console.log(
-  `${file} (${w}×${h} に縮小、k=${k}${flattenSigma ? `、--flatten=${flattenSigma}` : ""}${coreR ? `、--core=${coreR}: 領域内部の中央値` : ""})`,
+  `${file} (${w}×${h} に縮小、k=${k}${flattenSigma ? `、--flatten=${flattenSigma}` : ""}${blurSigma ? `、--blur=${blurSigma}` : ""}${coreR ? `、--core=${coreR}: 領域内部の中央値` : ""})`,
 );
 for (const m of measured) console.log(`  ${m.hex}${m.n === null ? "" : `  (内部画素 ${m.n})`}`);
 console.log("\n// PRESETS.colors 用スニペット (name は実物の呼称に置き換える)");

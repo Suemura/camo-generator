@@ -23,7 +23,7 @@ Issue（#21 のサブ Issue）
 ## 1. 着手前に確認すること
 
 - **リファレンス画像が用意できるか**。リファレンス無しの実装は不可（Issue #21 共通ルール）。画像はライセンスによらず `refs/private/<key>.<ext>` に置いて手元だけで使う。リポジトリには入れない（`refs/README.md`）
-- **ライセンスが派生物に及ぶか**。参照画像そのものはリポジトリに入れないが、量子化したソースマップをアプリに同梱すると派生物になる（CC BY-SA なら share-alike、CC BY / OGL なら帰属表示）。DBDU ではこの理由で参照画像を目視比較とパレット実測にのみ使い、ブロブ層はパブリックドメインの DCU 図案を共有した（`docs/01-tech-verification.md` v24）。同梱する派生データが出る場合は README「クレジット・ライセンス注記」と `src/app/About.tsx` に帰属を書く。同じ判断が要る迷彩は Issue の段階で方針を決める
+- **ライセンスが派生物に及ぶか**。参照画像そのものはリポジトリに入れないが、量子化したソースマップをアプリに同梱すると派生物になる（CC BY-SA なら share-alike、CC BY / OGL なら帰属表示）。DBDU・ベリョースカは参照画像が CC BY-SA / CC BY-SA 4.0 であり、インデックスマップを同梱する派生物扱いを避けるため、参照画像を目視比較とパレット実測にのみ使い、ソースマップを作らない選択をした。代わりに `genGrowth` など既存手法のパラメータのみで生成する（`docs/01-tech-verification.md` v24 v30）。同梱する派生データが出る場合は README「クレジット・ライセンス注記」と `src/app/About.tsx` に帰属を書く。同じ判断が要る迷彩は Issue の段階で方針を決める
 - **商標・意匠**。MultiCam / CADPAT / M05 などは図案の複製ではなく特徴の再現にとどめ、名称は「〜風」表記にする（`src/data/presets-meta.ts` の方針、Issue #21「知的財産の注意」）
 - **既存手法で作れるか**。`genQuilt`（ブロブ系）/ `genGrowth`（デジタル系）の流用で足りるなら A 群、新手法なら B 群。`docs/01-tech-verification.md` の該当手法の節を読み、解消済みアーティファクトを再発させない
 
@@ -32,7 +32,7 @@ Issue（#21 のサブ Issue）
 | # | 何を | どこに | 備考 |
 |---|------|--------|------|
 | 1 | 生成パラメータ | `src/core/camo.js` の `PRESETS[key]` | `kind` で生成関数にディスパッチ。`ref` は参照画像のキー（= `key`）。コメントには「実物のどの特徴を再現する意図か」を書く |
-| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（選択 UI の見出し）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`transitional` から選択）/ `era`（採用年代: `1940s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
+| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（選択 UI の見出し）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`transitional` から選択）/ `era`（採用年代: `1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
 | 3 | 参照画像 | `refs/private/<key>.<ext>`（手元のみ・非コミット） | ファイル名は `PRESETS` のキーに一致させる |
 | 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `docs/design/palette-library.json` + `src/data/palette.ts` + `docs/design/palette-library-sources.md` | §3 参照。**PR に含める**（後追いにしない） |

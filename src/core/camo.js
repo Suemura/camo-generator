@@ -2082,7 +2082,8 @@ export const PRESETS = {
     //   インデックスマップを同梱すると share-alike の派生物になる (docs/04-add-preset.md §1、DBDU と同じ判断)。
     //   参照画像は目視比較とパレット実測にのみ使う
     name: 'ベリョースカ風 (KLMK)', kind: 'growth', ref: 'berezka',
-    // cell 6: 実物の階段ステップは 785px 幅の参照写真上で 8〜12px。512px・scale 1.0 換算で 5.2〜7.8px
+    // cell 8: 実物の階段ステップは 785px 幅の参照写真上で 8〜12px。512px・scale 1.0 換算で 5.2〜7.8px。
+    //   6 から始めたが --compare で実物より細かく見えたため 8 に上げた
     // growDither 0: 実物の段差は清潔で、境界にディザ的な孤立ピクセルが無い (MARPAT 系との識別点)。
     //   既定 1 を明示的に切る
     cell: 8, growDither: 0,

@@ -1,8 +1,8 @@
 // リファレンス画像からパレット既定値を実測する (規約: 既定色は感覚で決めず参照画像から抽出)。
 // UI の「画像から抽出」と同じ k-means (src/core/kmeans.js) を Node から呼ぶので結果が一致する。
 // usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--max-edge=N] [--flatten=SIGMA] [--blur=SIGMA]
-//   例: node tools/extract-palette.mjs refs/woodland.png 4
-//       node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core
+//   例: node tools/extract-palette.mjs refs/private/woodland.png 4
+//       node tools/extract-palette.mjs refs/private/jgsdf2.jpg 4 --core
 // 出力: 暗→明の hex 一覧と、PRESETS.colors にそのまま貼れるスニペット
 //
 // --core[=R] (既定 R=3): 各クラスタの「領域内部」だけで代表色 (中央値) を測り直す。

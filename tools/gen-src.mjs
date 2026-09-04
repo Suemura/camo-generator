@@ -4,7 +4,7 @@
 // 新しい系統の迷彩を追加するときは専用のソースマップをここから生成する。
 //
 // usage: node tools/gen-src.mjs <image> <out.js> <k> <PREFIX> [--resize=N] [--blur=SIGMA] [--flatten=SIGMA]
-//   例: node tools/gen-src.mjs refs/dcu.png src/core/dcusrc.js 3 DCU
+//   例: node tools/gen-src.mjs refs/private/dcu.png src/core/dcusrc.js 3 DCU
 //   --resize=N: 読み込み時に長辺 N px へ縮小してから量子化する（既定: 原寸）。
 //     参照が高解像度の写真だと RLE のラン数が増えてソースマップが肥大するため、
 //     図案の形状が保たれる範囲で縮小してサイズを抑える。生成コマンドごと docs に残せば再現できる。

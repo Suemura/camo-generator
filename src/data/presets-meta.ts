@@ -153,6 +153,16 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     era: "1990s",
     svg: false,
   },
+  tigerstripe: {
+    // 南ベトナム軍が起源で米軍特殊部隊が現地調達して広まった。country は現地製である南ベトナム側を採る
+    label: "タイガーストライプ風",
+    note: "1960 年代〜 4 色。横に流れる縞",
+    country: "vn",
+    group: "stroke",
+    env: ["jungle"],
+    era: "1960s",
+    svg: false,
+  },
   marpat: {
     // MARPAT の制式採用は 2002 年 (note の「4 色」は色数)
     label: "デジタル・ウッドランド風",

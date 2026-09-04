@@ -2980,5 +2980,85 @@
     },
     "note": "葉形シルエットの明色 (約 23%)。人型の輪郭を破断させる役割で、色で溶け込ませる意図がない",
     "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/berezka.jpg 2 --blur=2 --core=3。参照画像は Wikimedia Commons 「Камуфляж Берёзка.jpg」CC BY-SA 4.0)"
+  },
+  {
+    "id": "tigerstripe-lightkhaki",
+    "name": "タイガーストライプ ライトカーキ",
+    "std": "タイガーストライプ (実測)",
+    "code": "tiger-1",
+    "hex": "#9d977d",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-tigerstripe",
+        "uniform"
+      ],
+      "country": [
+        "us",
+        "vn"
+      ]
+    },
+    "note": "グリーン面の内部を櫛状に走る細線 (実測 6%)。4 色中最小だがこの線が図案の識別点",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/tigerstripe.webp 4 --max-edge=771 --core=2。既定の --max-edge=256 では細縞が潰れて 4 色とも暗側に寄るため原寸で測る)"
+  },
+  {
+    "id": "tigerstripe-khaki",
+    "name": "タイガーストライプ カーキ",
+    "std": "タイガーストライプ (実測)",
+    "code": "tiger-2",
+    "hex": "#6f6953",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-tigerstripe",
+        "uniform"
+      ],
+      "country": [
+        "us",
+        "vn"
+      ]
+    },
+    "note": "黒縞の間を埋める地色の一方 (実測 21%)",
+    "source": "同上"
+  },
+  {
+    "id": "tigerstripe-green",
+    "name": "タイガーストライプ グリーン",
+    "std": "タイガーストライプ (実測)",
+    "code": "tiger-3",
+    "hex": "#515d49",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-tigerstripe",
+        "uniform"
+      ],
+      "country": [
+        "us",
+        "vn"
+      ]
+    },
+    "note": "地色のもう一方 (実測 28%)。カーキと横方向の帯で入れ替わる",
+    "source": "同上"
+  },
+  {
+    "id": "tigerstripe-black",
+    "name": "タイガーストライプ ブラック",
+    "std": "タイガーストライプ (実測)",
+    "code": "tiger-4",
+    "hex": "#2e3131",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-tigerstripe",
+        "uniform"
+      ],
+      "country": [
+        "us",
+        "vn"
+      ]
+    },
+    "note": "主役の縞 (実測 46%)。横に流れ、先端が鋭く尖り爪状のフリンジが生える",
+    "source": "同上"
   }
 ]

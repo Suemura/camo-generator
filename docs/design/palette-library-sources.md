@@ -168,6 +168,20 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグ `camo-auscam`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「オーストラリア DPCU」、`COUNTRY_LABEL` に `au`「オーストラリア」を追加した
 - 近接する既存エントリ（RGB 距離で確認）: `auscam-midbrown` #765d3e は `aor1-brown` #776140 と距離 4.6 でほぼ同色、`auscam-sand` #a8a996 は `bs381c-210 Sky` #adaf97 と距離 7.9。いずれも由来（被服の染色色 / 航空機塗料）と用途タグが異なるため別エントリとして登録し、統合はしていない。他の 3 色は最近接でも距離 13 以上で独立している
 
+## 第9弾（迷彩プリセット追加に伴う実測色: タイガーストライプ）
+
+アプリにタイガーストライプ風（Issue #31）のプリセットを追加したのに合わせ、4 色を追記した。
+
+### 方法
+
+- `std` は「タイガーストライプ (実測)」、hex は `src/core/camo.js` の `PRESETS.tigerstripe.colors` と完全一致させている
+- 公的な色番号は見つからなかった。ベトナム戦争期の現地製・私物調達が主で統一仕様書が存在しないため、`code` には index 値の順に `tiger-1`〜`tiger-4` を振った
+- コマンドは `node tools/extract-palette.mjs refs/private/tigerstripe.webp 4 --max-edge=771 --core=2`。参照はフラットなスウォッチなので `--blur` / `--flatten` は不要
+- **`--max-edge` を既定の 256 のままにしてはならない**。この図案はグリーン面の内部を走るライトカーキの細線が 1〜2px しかなく、256px に縮小すると細線が周囲と混色して消え、4 色すべてが暗側へ寄る（`#303230 / #474b40 / #5a5f4c / #75725d`）。原寸 771px で測ると `#2e3131 / #515d49 / #6f6953 / #9d977d` になり、明度のレンジが実物どおりに開く
+- 用途タグ `camo-tigerstripe`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「タイガーストライプ」を追加した。国タグは `us` と `vn`（`COUNTRY_LABEL` に `vn: "ベトナム"` を新設）
+- 近接する既存エントリ: `tigerstripe-green` #515d49 は `frogskin-dgreen` #576b44 と黄味の差で区別でき、`tigerstripe-khaki` #6f6953 は `m81-brown` #5f5345 より明るく緑寄り。いずれも統合せず別エントリとした
+- 参照スウォッチは**再配布できないため `refs/private/` に置き、リポジトリには含めない**（`.gitignore` + 4 層の push 防止）
+
 ## 出典一覧
 
 | id | 規格・コード | hex | 出典 |
@@ -338,6 +352,10 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `frogskin-beach-brown` | フロッグスキン (実測) m1942b-4 | #a98c6a | 同上 |
 | `berezka-green` | ベリョースカ (実測) berezka-1 | #5b7457 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/berezka.jpg 2 --blur=2 --core=3`。参照画像は Wikimedia Commons [Камуфляж Берёзка.jpg](https://commons.wikimedia.org/wiki/File:%D0%9A%D0%B0%D0%BC%D1%83%D1%84%D0%BB%D1%8F%D0%B6_%D0%91%D0%B5%D1%80%D1%91%D0%B7%D0%BA%D0%B0.jpg) CC BY-SA 4.0 / GTRus。画像はリポジトリに含めない) |
 | `berezka-pale` | ベリョースカ (実測) berezka-2 | #b0b4b6 | 同上 |
+| `tigerstripe-lightkhaki` | タイガーストライプ (実測) tiger-1 | #9d977d | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/tigerstripe.webp 4 --max-edge=771 --core=2`。参照スウォッチは再配布不可のため `refs/private/` に置きリポジトリには含めない) |
+| `tigerstripe-khaki` | タイガーストライプ (実測) tiger-2 | #6f6953 | 同上 |
+| `tigerstripe-green` | タイガーストライプ (実測) tiger-3 | #515d49 | 同上 |
+| `tigerstripe-black` | タイガーストライプ (実測) tiger-4 | #2e3131 | 同上 |
 
 ## 注意事項
 

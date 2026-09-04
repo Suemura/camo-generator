@@ -27,7 +27,9 @@ node tools/gen-src.mjs refs/private/<key>.png src/core/<key>src.js <k> <PREFIX> 
 #   オプション: --resize=N / --blur=SIGMA（織り目を落とす）/ --flatten=SIGMA / --thin=N（形態学的オープニング、幅 2N px 未満の細帯・縁取りを除去）。布地写真をリファレンスにする場合に必要（既定オフ = 従来と同一出力）
 bash tools/check-private-refs.sh [rev-range]     # refs/private/ の混入検査（pre-push / PreToolUse / CI が自動で呼ぶ）
 pnpm deploy                           # 緊急用の手動デプロイ。通常は main マージで .github/workflows/deploy.yml が自動デプロイ（運用は docs/03-deploy.md）
-node prototype/build.mjs              # 検証プロトタイプ index.html の再ビルド (src/core を参照)。新迷彩追加・精度改善では必須（§検証プロトタイプ）
+node prototype/build.mjs              # 検証プロトタイプの再ビルド (src/core を参照)。新迷彩追加・精度改善では必須（§検証プロトタイプ）
+#   index.html（git 管理・参照画像なし）と index.local.html（gitignore・refs/private/ を data URI 埋め込み）を同時に出力する。
+#   実物と左右比較したいときは index.local.html を開く
 ```
 
 検証は「`render.mjs --compare` でレンダ → 実物リファレンスと目視比較」が基本ループ。リファレンス画像はアプリに同梱しない（UI の実物比較は廃止。`refs/README.md`）。Vitest は生成結果の**変化検知**のみ（品質は測れない）。
@@ -50,6 +52,7 @@ node prototype/build.mjs              # 検証プロトタイプ index.html の�
 - `refs/` — 実物リファレンス画像の置き場（開発時専用、アプリ非同梱）。**画像はライセンスによらずすべて `refs/private/` に置き、リポジトリでは管理しない**。gitignore 対象で **絶対にコミット・push しない**（`.githooks/pre-push` / PreToolUse / CI の 4 層で防ぐ）
 - `prototype/app-template.html` — 検証プロトタイプの UI。`//__INLINE_CAMO__` / `//__INLINE_REFS__` マーカーに build.mjs がインライン展開する。**index.html を直接編集しない**（ビルドで上書きされる）。UI 自体を変えるのはここ
 - `prototype/index.html` — ビルド成果物。単一ファイルで動く精度検証環境で、Artifact の実体（§検証プロトタイプ）。`prototype/refs.js` は参照画像の data URI 置き場だが、リポジトリでは常に空（画像を同梱しないため）
+- `prototype/index.local.html` — 同じビルドの手元用。`build.mjs` が `refs/private/` の画像を 420px JPEG に落として埋め込むので実物と左右比較できる。gitignore 対象で**コミット・Artifact 再デプロイの対象にしない**
 - `prototype/experimental/` — 手法探索の原本。本体に移植済みだが履歴として保持
 
 ## デザイン
@@ -79,7 +82,7 @@ node prototype/build.mjs              # 検証プロトタイプ index.html の�
 
 **新プリセットの追加または生成精度の変更を行ったら、必ず以下を完了させてからユーザーに報告する**（プロトタイプは `camo.js` のスナップショットなので、再ビルドしないと古い生成コアが焼き付いたまま残り、検証環境とアプリの出力がずれる）:
 
-1. `prototype/refs.js` は空のまま（参照画像は同梱しない）。手元で左右比較したいときだけ一時的に data URI を入れ、その状態ではコミット・再デプロイしない
+1. `prototype/refs.js` は空のまま（参照画像は同梱しない）。左右比較は `build.mjs` が同時に出力する `index.local.html` で行う
 2. `node prototype/build.mjs` で `prototype/index.html` を再ビルドする（**index.html を直接編集しない**）
 3. `Artifact` ツールで `file_path: prototype/index.html` と上記 `url` を渡して**同じ URL に再デプロイ**する（`url` を省くと別 Artifact ができてリンクが変わる）
 4. 報告に Artifact の URL を含める

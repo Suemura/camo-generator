@@ -48,7 +48,7 @@ refs/               実物リファレンス画像の置き場 (開発時専用�
 .githooks/pre-push  refs/private/ を含む push を拒否 (pnpm install の prepare が core.hooksPath を設定)
 tests/              Vitest (決定性・回帰スナップショット)
 prototype/          フェーズ1 プロトタイプ (参照のみ。build.mjs は src/core を読む)
-  app-template.html / build.mjs / refs.js / index.html / experimental/
+  app-template.html / build.mjs / refs.js / index.html / index.local.html (gitignore) / experimental/
 docs/
   01-tech-verification.md  フェーズ1 検証記録 (手法変遷・自己改善ループ全履歴)
   02-spec.md               フェーズ2 仕様設計 (機能仕分け・画面・技術選定・Cloudflare・デザインシステム)
@@ -90,7 +90,7 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 
 ### 検証プロトタイプ（`prototype/`）
 
-`prototype/index.html` は `app-template.html` に `src/core/*` をインライン展開した単一ファイルの精度検証環境で、生成結果と実物リファレンスを左右に並べて比較できる。生成ロジックは `src/core/camo.js` の 1 本が正本で、本アプリ（`src/lib/generate.ts` が ESM で import）とプロトタイプ（ビルド時にインライン展開）が同じ実装を共有する。二重実装はない。
+`prototype/index.html` は `app-template.html` に `src/core/*` をインライン展開した単一ファイルの精度検証環境。参照画像を含まないので実物比較ペインは空で、`node prototype/build.mjs` が同時に出力する `index.local.html`（gitignore、`refs/private/` の画像を data URI で埋め込む）を開くと左右に並べて比較できる。生成ロジックは `src/core/camo.js` の 1 本が正本で、本アプリ（`src/lib/generate.ts` が ESM で import）とプロトタイプ（ビルド時にインライン展開）が同じ実装を共有する。二重実装はない。
 
 ただしプロトタイプは `camo.js` の**スナップショット**なので、生成コアを変えたら `node prototype/build.mjs` で再ビルドする。忘れると古い実装が焼き付いたまま残るため、`tests/prototype-sync.test.ts` が `index.html` と `src/core/*` の現状を byte 比較して落とす。
 

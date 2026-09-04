@@ -134,7 +134,7 @@ node tools/render.mjs /tmp/camo-render/hi 1234 --size=2048x2048 --crop=512 --pre
 
 ユーザーが精度を確認する環境は Artifact "Camo Lab"（URL は CLAUDE.md「検証プロトタイプ」）。**PR 作成前に必ず更新する**。更新が無いと「これどこで確認すればいいの?」で止まる。
 
-1. 参照画像は**プロトタイプに入れない**（`prototype/refs.js` は空の `REFS` を保ち、`prototype/index.html` は git 管理）。手元で左右比較したいときだけ、`refs/private/<key>.<ext>` から自分で data URI（420px・JPEG quality 82 程度、キー名は `PRESETS[key].ref` と一致）を作って `refs.js` に入れ、再ビルドする。**その状態でコミットしない**
+1. 参照画像は**プロトタイプに入れない**（`prototype/refs.js` は空の `REFS` を保ち、`prototype/index.html` は git 管理）。左右比較は `node prototype/build.mjs` が同時に出力する `prototype/index.local.html`（gitignore、`refs/private/` の画像を 420px JPEG の data URI で埋め込む）で行う
 2. `node prototype/build.mjs` で `prototype/index.html` を再ビルドする（直接編集しない）
 3. `Artifact` ツールに `file_path: prototype/index.html` と既存 URL を `url` で渡し、同じ URL に再デプロイする
 4. 報告に Artifact の URL を書く

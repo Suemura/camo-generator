@@ -69,6 +69,7 @@ pnpm build        # dist/ 生成 (tokens → tsc → vite)
 pnpm test         # 決定性テスト
 pnpm check        # Biome
 pnpm typecheck    # tsc
+pnpm thumbs       # プリセットのサムネイル JPG を生成 (public/thumbs/<key>.jpg)。既定は新規のみ。--force で全体再生成
 pnpm deploy       # 手動デプロイ (wrangler login 済み前提)。通常は main マージで GitHub Actions が自動デプロイ
 
 node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG レンダ (目視検証用)

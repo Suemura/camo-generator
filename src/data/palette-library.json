@@ -2294,5 +2294,33 @@
     },
     "note": "EMR の最暗色 (約 6%)。4 色中最小で、微細な点として散る",
     "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/emr.png 4 --max-edge=2320 --core=2。参照画像は Wikimedia Commons 「Russian Armed Forces EMR patten.png」CC0)"
+  },
+  {
+    "id": "berezka-green",
+    "name": "ベリョースカ グリーン",
+    "std": "ベリョースカ (実測)",
+    "code": "berezka-1",
+    "hex": "#5b7457",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-berezka", "uniform"],
+      "country": ["ru"]
+    },
+    "note": "KLMK オーバーオールの地色 (約 77%)。2 色中の大面積側",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/berezka.jpg 2 --blur=2 --core=3。--blur は布地の織り目、--core は輪郭の混色を除くため。参照画像は Wikimedia Commons 「Камуфляж Берёзка.jpg」CC BY-SA 4.0)"
+  },
+  {
+    "id": "berezka-pale",
+    "name": "ベリョースカ ペールグレー",
+    "std": "ベリョースカ (実測)",
+    "code": "berezka-2",
+    "hex": "#b0b4b6",
+    "tags": {
+      "hue": "grey",
+      "use": ["camo-berezka", "uniform"],
+      "country": ["ru"]
+    },
+    "note": "葉形シルエットの明色 (約 23%)。人型の輪郭を破断させる役割で、色で溶け込ませる意図がない",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/berezka.jpg 2 --blur=2 --core=3。参照画像は Wikimedia Commons 「Камуфляж Берёзка.jpg」CC BY-SA 4.0)"
   }
 ]

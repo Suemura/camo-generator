@@ -336,6 +336,8 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `frogskin-beach-khaki` | フロッグスキン (実測) m1942b-2 | #bfa96d | 同上 |
 | `frogskin-beach-green` | フロッグスキン (実測) m1942b-3 | #979467 | 同上 |
 | `frogskin-beach-brown` | フロッグスキン (実測) m1942b-4 | #a98c6a | 同上 |
+| `berezka-green` | ベリョースカ (実測) berezka-1 | #5b7457 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/berezka.jpg 2 --blur=2 --core=3`。参照画像は Wikimedia Commons [Камуфляж Берёзка.jpg](https://commons.wikimedia.org/wiki/File:%D0%9A%D0%B0%D0%BC%D1%83%D1%84%D0%BB%D1%8F%D0%B6_%D0%91%D0%B5%D1%80%D1%91%D0%B7%D0%BA%D0%B0.jpg) CC BY-SA 4.0 / GTRus。画像はリポジトリに含めない) |
+| `berezka-pale` | ベリョースカ (実測) berezka-2 | #b0b4b6 | 同上 |
 
 ## 注意事項
 
@@ -348,6 +350,7 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 日本陸海軍機の色は現存塗膜・文献の再解釈が続いている分野であり、FS 近似は模型用途の慣例値に過ぎない。特に海軍暗緑色 D1 は実物のほうが青緑味が強いとの指摘がある。
 - 陸自 OD 色はマンセル値 7.5Y 3/1 のみが規格化されており、sRGB 換算は参考値。
 - MARPAT / AOR の実測値は参照写真の露出・布地の退色に依存するため、規格値ではない。
+- ベリョースカ (KLMK) はソ連側の公的な色番号が確認できないため、参照写真からの実測値のみを収録している。参照が布地写真で織り目が乗るため、k-means の前に `--blur=2` で平坦化している (これをしないと版の色ではなく織りの明暗でクラスタが割れる)。
 
 ### 第2弾で追加した色の近似性
 

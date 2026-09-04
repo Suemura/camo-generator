@@ -48,6 +48,7 @@ export const USE_LABEL: Record<string, string> = {
   "camo-pla07": "07 式",
   "camo-emr": "EMR",
   "camo-frogskin": "フロッグスキン (M1942)",
+  "camo-nwu1": "NWU Type I",
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

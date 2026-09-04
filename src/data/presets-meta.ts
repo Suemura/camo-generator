@@ -226,6 +226,15 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     era: "2000s",
     svg: true,
   },
+  nwu1: {
+    label: "NWU Type I 風 (米海軍)",
+    note: "2008〜2019 4 色。青灰の粗いピクセル",
+    country: "us",
+    group: "digital",
+    env: ["urban", "transitional"],
+    era: "2000s",
+    svg: true,
+  },
 };
 
 export const PRESET_KEYS = Object.keys(PRESET_META) as PresetKey[];

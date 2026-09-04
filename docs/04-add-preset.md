@@ -41,7 +41,7 @@ Issue（#21 のサブ Issue）
 
 必要に応じて:
 
-- **ソース図案**（クイルト系で実物図案を使う場合）: `node tools/gen-src.mjs refs/<key>.<ext> src/core/<key>src.js <k> <PREFIX>`。サイズが大きければ `digsrc.js` と同じく動的 import + `registerSources()` にする。既存図案の流用（CCE は M81 を `srcAspect: 1.5` で横伸長、DBDU は DCU 図案を `src: 'dcu'` で共有）も選択肢
+- **ソース図案**（クイルト系で実物図案を使う場合）: `node tools/gen-src.mjs refs/<key>.<ext> src/core/<key>src.js <k> <PREFIX>`。`k` は値数（2..8）で、RLE ビット幅は自動選択（k≤4 なら 2bit、k>4 なら 3bit）。サイズが大きければ `digsrc.js` と同じく動的 import + `registerSources()` にする（目安: 数十 KB なら静的 import、100KB 超なら動的）。既存図案の流用（CCE は M81 を `srcAspect: 1.5` で横伸長、DBDU は DCU 図案を `src: 'dcu'` で共有）も選択肢
 - **専用テスト**: 新しい層や後処理を足したら、既存プリセットに波及しないことをテストで固定する（DBDU の `tests/chips.test.ts` は「`chips` を持つのは `dbdu` だけ」を検証している）
 - **README**: 冒頭の対応迷彩一覧、「生成手法」表の対象列、クレジット節
 

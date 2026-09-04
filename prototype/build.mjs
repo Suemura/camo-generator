@@ -7,7 +7,7 @@ const dir = new URL('.', import.meta.url).pathname;
 const core = new URL('../src/core/', import.meta.url).pathname;
 // ソースマップ類は camo.js より前にインライン展開する
 // dbdu / cce はブロブ層に dcusrc / m81src を共有するので専用ソースは要らない
-const srcFiles = ['m81src.js', 'dcusrc.js', 'jgsdf2src.js', 'dpmsrc.js', 'digsrc.js'];
+const srcFiles = ['m81src.js', 'dcusrc.js', 'jgsdf2src.js', 'dpmsrc.js', 'auscamsrc.js', 'digsrc.js'];
 
 export function buildIndexHtml(){
   const srcInline = srcFiles

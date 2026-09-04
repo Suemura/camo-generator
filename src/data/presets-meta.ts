@@ -56,6 +56,13 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "desert",
     svg: false,
   },
+  auscam: {
+    label: "オーストラリア DPCU 風 (Auscam)",
+    note: "1980 年代〜 5 色。丸い斑点",
+    country: "オーストラリア",
+    group: "woodland",
+    svg: false,
+  },
   jgsdf2: {
     label: "陸自迷彩 2 型風",
     note: "1991〜 4 色。有機形状 + 斑点",

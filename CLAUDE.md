@@ -23,8 +23,8 @@ node tools/render.mjs <outdir> <seed> [scale]   # 全プリセットを 512px PN
 node tools/extract-palette.mjs refs/<key>.png 4   # 参照画像からパレット既定値を実測（UI の抽出と同じ k-means）
 #   オプション: --core[=R]（領域内部の中央値）/ --flatten=SIGMA（周辺減光の平坦化）/ --blur=SIGMA（織り目の平坦化。布地写真で版の色が複数クラスタに割れるのを防ぐ）
 #   オプション: --core[=R]（領域内部の中央値。輪郭の混色を除く）/ --flatten=SIGMA（周辺減光の平坦化）
-node tools/gen-src.mjs refs/<key>.png src/core/<key>src.js <k> <PREFIX>   # 参照画像 → クイルト用インデックスマップ（新プリセットの図案化。面積比も出力）
-#   オプション: --resize=N / --blur=SIGMA（織り目を落とす）/ --flatten=SIGMA。布地写真をリファレンスにする場合に必要（既定オフ = 従来と同一出力）
+node tools/gen-src.mjs refs/<key>.png src/core/<key>src.js <k> <PREFIX>   # 参照画像 → クイルト用インデックスマップ（新プリセットの図案化。面積比も出力）。k は 2..8（値数）に応じて RLE ビット幅を自動選択（k≤4 で 2bit / k>4 で 3bit）
+#   オプション: --resize=N / --blur=SIGMA（織り目を落とす）/ --flatten=SIGMA / --thin=N（形態学的オープニング、幅 2N px 未満の細帯・縁取りを除去）。布地写真をリファレンスにする場合に必要（既定オフ = 従来と同一出力）
 bash tools/check-private-refs.sh [rev-range]     # refs/private/ の混入検査（pre-push / PreToolUse / CI が自動で呼ぶ）
 pnpm deploy                           # 緊急用の手動デプロイ。通常は main マージで .github/workflows/deploy.yml が自動デプロイ（運用は docs/03-deploy.md）
 node prototype/build.mjs              # 検証プロトタイプ index.html の再ビルド (src/core を参照)。新迷彩追加・精度改善では必須（§検証プロトタイプ）
@@ -43,7 +43,7 @@ node prototype/build.mjs              # 検証プロトタイプ index.html の�
   - `generate(key, w, h, seed, scale, opt)`。`opt.tileable`（既定 true）/ `opt.progress(0..1)` / `opt.baseMax`（長辺がこれを超えると縮小生成 → 拡大 → 実寸で後処理。v17）
   - クイルト系のソース異方サンプリングは**プリセット側**の `P.srcAspect`（既定 1.0 = 等方、`>1` で横に伸びる。CCE は M81 ソースを 1.5 倍伸長）。`opt` ではない（図案固有の性質なので URL 状態に持たせない）。ノイズ周波数倍率の `P.aspectX` / `aspectY` とは別物
 - `src/core/kmeans.js` — パレット抽出の k-means（依存ゼロ JS + `kmeans.d.ts`）。ブラウザの抽出ワーカーと `tools/extract-palette.mjs` で共用
-- `src/core/m81src.js` / `dcusrc.js` / `jgsdf2src.js` / `dpmsrc.js` / `digsrc.js` — 実物図案のインデックスマップ（RLE + base64）。M81 ウッドランド（`m81src.js`、4値・24KB）/ DCU（`dcusrc.js`、3値・18KB）/ 陸自迷彩 2 型（`jgsdf2src.js`、4値・24KB）/ DPM（`dpmsrc.js`、4値・22KB。DDPM は同ソースを `P.remap` で 2 値に統合）は `camo.js` から静的 import。AOR1 / AOR2（`digsrc.js`、4値・280KB）はサイズが大きいため動的 import し、利用側が `registerSources()` で渡す（ブラウザは `src/lib/generate.ts` の `ensureSources`、Node は `tools/render.mjs` / テストで先頭登録）。目安: 数十 KB オーダー（初期バンドルへの影響が小さい）なら静的 import、100KB を大きく超えるなら動的 import。`dcusrc.js` / `jgsdf2src.js` / `dpmsrc.js` の再生成は `tools/gen-src.mjs`、m81src / digsrc は docs 記載の Python 手順
+- `src/core/m81src.js` / `dcusrc.js` / `jgsdf2src.js` / `dpmsrc.js` / `auscamsrc.js` / `digsrc.js` — 実物図案のインデックスマップ（RLE + base64）。M81 ウッドランド（`m81src.js`、4値・24KB）/ DCU（`dcusrc.js`、3値・18KB）/ 陸自迷彩 2 型（`jgsdf2src.js`、4値・24KB）/ DPM（`dpmsrc.js`、4値・22KB。DDPM は同ソースを `P.remap` で 2 値に統合）/ Auscam DPCU（`auscamsrc.js`、5値・20KB。クイルト系で唯一の 5 値で RLE は値 3bit）は `camo.js` から静的 import。AOR1 / AOR2（`digsrc.js`、4値・280KB）はサイズが大きいため動的 import し、利用側が `registerSources()` で渡す（ブラウザは `src/lib/generate.ts` の `ensureSources`、Node は `tools/render.mjs` / テストで先頭登録）。目安: 数十 KB オーダー（初期バンドルへの影響が小さい）なら静的 import、100KB を大きく超えるなら動的 import。`dcusrc.js` / `jgsdf2src.js` / `dpmsrc.js` / `auscamsrc.js` の再生成は `tools/gen-src.mjs`、m81src / digsrc は docs 記載の Python 手順
 - `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means、3D プレビュー（`scene3d.ts` が three 依存を閉じ込め、`Preview3D` が動的 import）。`src/data/` — プリセット表示メタ（`PRESET_META`: `group` で選択 UI をグループ化、`country`）、100 色以上のカラーライブラリ（`palette-library.json`。出典は `docs/design/palette-library-sources.md`、新プリセット追加時の登録手順は `docs/04-add-preset.md` §3）
 - `src/styles/tokens/` がデザイントークン（§デザイン参照）、`src/styles/ui.scss` が共通クラス。コンポーネントの色・余白は `var(--…)` のみ、生値禁止。新しい余白値が要るときは `_semantic.scss` の `$static` に追加してから使う（未定義 var は無効値になり潰れる）
 - `tools/render.mjs` — Node レンダリングハーネス。`tools/image.mjs` — Node の画像読込（sharp を動的 import）と `refs/` 探索。`tools/extract-palette.mjs` — パレット実測。`tools/gen-src.mjs` — 参照画像からインデックスマップ生成（新プリセット追加時）。`tools/check-private-refs.sh` — `refs/private/` 混入検査。`tools/gen-tokens.mjs` — トークン生成

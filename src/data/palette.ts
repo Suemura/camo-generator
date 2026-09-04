@@ -25,20 +25,7 @@ export const HUE_LABEL: Record<Hue, string> = {
   other: "その他",
 };
 
-export const COUNTRY_LABEL: Record<string, string> = {
-  us: "米国",
-  ru: "ソ連 / ロシア",
-  ca: "カナダ",
-  cn: "中国",
-  uk: "英国",
-  de: "ドイツ",
-  jp: "日本",
-  au: "オーストラリア",
-  fr: "フランス",
-  it: "イタリア",
-  il: "イスラエル",
-  other: "その他",
-};
+export { COUNTRY_LABEL } from "./countries";
 
 export const USE_LABEL: Record<string, string> = {
   tank: "戦車 / 車両",

@@ -17,6 +17,7 @@ pnpm test                             # Vitest: 決定性テスト + index マ�
 pnpm check                            # Biome lint + format (--write で自動整形)
 pnpm typecheck                        # tsc -b (noEmit)
 pnpm tokens                           # docs/design/spacious-DESIGN.md → src/styles/tokens/_primitives.scss
+pnpm thumbs                           # 全プリセットのサムネイル JPG を生成 (public/thumbs/<key>.jpg)。既定は新規のみ。--force で全体再生成
 node tools/render.mjs <outdir> <seed> [scale]   # 全プリセットを 512px PNG で出力（目視検証用）
 #   オプション: --tile (2×2 タイル) / --size=WxH / --preset=key / --crop=512 (中央を等倍切出し、高解像度の階段確認)
 #             --compare (左=生成 / 右=refs/private/ の実物リファレンス。精度改善の基本ループ)
@@ -46,10 +47,11 @@ node prototype/build.mjs              # 検証プロトタイプの再ビルド 
   - クイルト系のソース異方サンプリングは**プリセット側**の `P.srcAspect`（既定 1.0 = 等方、`>1` で横に伸びる。CCE は M81 ソースを 1.5 倍伸長）。`opt` ではない（図案固有の性質なので URL 状態に持たせない）。ノイズ周波数倍率の `P.aspectX` / `aspectY` とは別物
 - `src/core/kmeans.js` — パレット抽出の k-means（依存ゼロ JS + `kmeans.d.ts`）。ブラウザの抽出ワーカーと `tools/extract-palette.mjs` で共用
 - `src/core/m81src.js` / `dcusrc.js` / `jgsdf2src.js` / `dpmsrc.js` / `auscamsrc.js` / `digsrc.js` — 実物図案のインデックスマップ（RLE + base64）。M81 ウッドランド（`m81src.js`、4値・24KB）/ DCU（`dcusrc.js`、3値・18KB）/ 陸自迷彩 2 型（`jgsdf2src.js`、4値・24KB）/ DPM（`dpmsrc.js`、4値・22KB。DDPM は同ソースを `P.remap` で 2 値に統合）/ Auscam DPCU（`auscamsrc.js`、5値・20KB。クイルト系で唯一の 5 値で RLE は値 3bit）は `camo.js` から静的 import。AOR1 / AOR2（`digsrc.js`、4値・280KB）はサイズが大きいため動的 import し、利用側が `registerSources()` で渡す（ブラウザは `src/lib/generate.ts` の `ensureSources`、Node は `tools/render.mjs` / テストで先頭登録）。目安: 数十 KB オーダー（初期バンドルへの影響が小さい）なら静的 import、100KB を大きく超えるなら動的 import。`dcusrc.js` / `jgsdf2src.js` / `dpmsrc.js` / `auscamsrc.js` の再生成は `tools/gen-src.mjs`、m81src / digsrc は docs 記載の Python 手順
-- `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means、3D プレビュー（`scene3d.ts` が three 依存を閉じ込め、`Preview3D` が動的 import）。`src/data/` — プリセット表示メタ（`PRESET_META`: `group` で選択 UI をグループ化、`country`）、100 色以上のカラーライブラリ（`palette-library.json`。出典は `docs/design/palette-library-sources.md`、新プリセット追加時の登録手順は `docs/04-add-preset.md` §3）
+- `src/app/` — App シェル（`/about` 分岐、URL 状態フック、テーマ）。`src/components/` — UI 部品（`PresetPickerDrawer.tsx` で 4 軸タブ + タグチップ + 検索）。`src/lib/` — 状態 ⇄ URL、単位換算、生成の非同期窓口、PNG pHYs、エクスポート、共有、k-means、3D プレビュー（`scene3d.ts` が three 依存を閉じ込め、`Preview3D` が動的 import）。`src/data/` — プリセット表示メタ（`PRESET_META`: `group` で見出し、`env`/`era` で絞り込み軸、`country` は国コード。計 4 軸）+ 国コードラベル（`countries.ts`）、100 色以上のカラーライブラリ（`palette-library.json`。出典は `docs/design/palette-library-sources.md`、新プリセット追加時の登録手順は `docs/04-add-preset.md` §3）
 - `src/styles/tokens/` がデザイントークン（§デザイン参照）、`src/styles/ui.scss` が共通クラス。コンポーネントの色・余白は `var(--…)` のみ、生値禁止。新しい余白値が要るときは `_semantic.scss` の `$static` に追加してから使う（未定義 var は無効値になり潰れる）
-- `tools/render.mjs` — Node レンダリングハーネス。`tools/image.mjs` — Node の画像読込（sharp を動的 import）と `refs/` 探索。`tools/extract-palette.mjs` — パレット実測。`tools/gen-src.mjs` — 参照画像からインデックスマップ生成（新プリセット追加時）。`tools/check-private-refs.sh` — `refs/private/` 混入検査。`tools/gen-tokens.mjs` — トークン生成
+- `tools/render.mjs` — Node レンダリングハーネス。`tools/image.mjs` — Node の画像読込（sharp を動的 import）と `refs/private/` 探索。`tools/extract-palette.mjs` — パレット実測。`tools/gen-src.mjs` — 参照画像からインデックスマップ生成（新プリセット追加時）。`tools/gen-thumbs.mjs` — 全プリセットのサムネイル JPG 生成（256px）。`tools/check-private-refs.sh` — `refs/private/` 混入検査。`tools/gen-tokens.mjs` — トークン生成
 - `refs/` — 実物リファレンス画像の置き場（開発時専用、アプリ非同梱）。**画像はライセンスによらずすべて `refs/private/` に置き、リポジトリでは管理しない**。gitignore 対象で **絶対にコミット・push しない**（`.githooks/pre-push` / PreToolUse / CI の 4 層で防ぐ）
+- `public/thumbs/` — プリセット選択ドロワーのサムネイル JPG（256px）。生成は `tools/gen-thumbs.mjs`（生成器自身の出力なので参照画像とは無関係）。実行時生成ではなく静的アセットとして git 管理し、新プリセット追加時・生成手法変更時にだけ再生成する（開きはじめの生成コストを避けるため）
 - `prototype/app-template.html` — 検証プロトタイプの UI。`//__INLINE_CAMO__` / `//__INLINE_REFS__` マーカーに build.mjs がインライン展開する。**index.html を直接編集しない**（ビルドで上書きされる）。UI 自体を変えるのはここ
 - `prototype/index.html` — ビルド成果物。単一ファイルで動く精度検証環境で、Artifact の実体（§検証プロトタイプ）。`prototype/refs.js` は参照画像の data URI 置き場だが、リポジトリでは常に空（画像を同梱しないため）
 - `prototype/index.local.html` — 同じビルドの手元用。`build.mjs` が `refs/private/` の画像を 420px JPEG に落として埋め込むので実物と左右比較できる。gitignore 対象で**コミット・Artifact 再デプロイの対象にしない**
@@ -108,7 +110,7 @@ Issue → PR の定型フローは commands / agents / hooks で自走する。�
 - ドキュメント・コミットメッセージは通常の日本語
 - 生成アルゴリズムのコメントは「実物のどの特徴を再現する意図か」を書く（パラメータの意味だけでなく）
 - リファレンス画像は全プリセットで必須（リファレンス無しの実装は不可）。ただし**リポジトリでは一切管理しない**。ライセンスによらず `refs/private/` に置き、精度改善時だけ手元で使う
-- **新プリセット追加の手順は `docs/04-add-preset.md` が正本**（Issue → PR → 精度改善ループ → マージまで。チェックリスト付き）。7 点セット: `PRESETS`（camo.js）/ `PRESET_META`（presets-meta.ts、`group` と `country`）/ `refs/private/<key>.<ext>` / パレット既定値の実測 / **カラーライブラリ登録**（`palette-library.json` ×2 + `USE_LABEL` + `palette-library-sources.md`。同じ PR に含める）/ 決定性スナップショット（`pnpm test -u`）/ `node prototype/build.mjs` 再ビルド + Artifact 再デプロイ（§検証プロトタイプ）。`node tools/render.mjs <out> <seed> --compare --preset=<key>` で実物と並べて確認し、検証画像は `verify-assets` ブランチに置いて PR 本文に貼る
+- **新プリセット追加の手順は `docs/04-add-preset.md` が正本**（Issue → PR → 精度改善ループ → マージまで。チェックリスト付き）。8 点セット: `PRESETS`（camo.js）/ `PRESET_META`（presets-meta.ts、`group`・`country`（国コード: us/fr/jp など）・`env`/`era`（4 軸タグ））/ `refs/private/<key>.<ext>` / パレット既定値の実測 / **カラーライブラリ登録**（`palette-library.json` ×2 + `USE_LABEL` + `palette-library-sources.md`。同じ PR に含める）/ **サムネイル生成**（`node tools/gen-thumbs.mjs --preset=<key>`）/ 決定性スナップショット（`pnpm test -u`）/ `node prototype/build.mjs` 再ビルド + Artifact 再デプロイ（§検証プロトタイプ）。`node tools/render.mjs <out> <seed> --compare --preset=<key>` で実物と並べて確認し、検証画像は `verify-assets` ブランチに置いて PR 本文に貼る
 - パレット既定値は参照画像からの実測抽出値。感覚で変えない。新プリセットの既定色はカラーライブラリにも「〜 (実測)」エントリとして登録する（公的規格の色番号が既にある色は既存エントリに `camo-<key>` タグを足す）
 
 ## 技術方針（`docs/02-spec.md` で確定）

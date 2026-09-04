@@ -27,17 +27,18 @@ Issue（#21 のサブ Issue）
 - **商標・意匠**。MultiCam / CADPAT / M05 などは図案の複製ではなく特徴の再現にとどめ、名称は「〜風」表記にする（`src/data/presets-meta.ts` の方針、Issue #21「知的財産の注意」）
 - **既存手法で作れるか**。`genQuilt`（ブロブ系）/ `genGrowth`（デジタル系）の流用で足りるなら A 群、新手法なら B 群。`docs/01-tech-verification.md` の該当手法の節を読み、解消済みアーティファクトを再発させない
 
-## 2. 追加の 7 点セット（コードと資産）
+## 2. 追加の 8 点セット（コードと資産）
 
 | # | 何を | どこに | 備考 |
 |---|------|--------|------|
 | 1 | 生成パラメータ | `src/core/camo.js` の `PRESETS[key]` | `kind` で生成関数にディスパッチ。`ref` は参照画像のキー（= `key`）。コメントには「実物のどの特徴を再現する意図か」を書く |
-| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country` / `group`（選択 UI の見出し）/ `svg` |
+| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（選択 UI の見出し）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`transitional` から選択）/ `era`（採用年代: `1940s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
 | 3 | 参照画像 | `refs/private/<key>.<ext>`（手元のみ・非コミット） | ファイル名は `PRESETS` のキーに一致させる |
 | 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `docs/design/palette-library.json` + `src/data/palette.ts` + `docs/design/palette-library-sources.md` | §3 参照。**PR に含める**（後追いにしない） |
-| 6 | 決定性スナップショット | `tests/__snapshots__/determinism.test.ts.snap` | `pnpm test -u`。差分が新プリセットの 1 行追加だけであることを確認する（既存プリセットの行が変わっていたら共通ロジックに触っている） |
-| 7 | 検証プロトタイプ | `node prototype/build.mjs` + Artifact 再デプロイ | §5 参照 |
+| 6 | **サムネイル生成** | `public/thumbs/<key>.jpg` | `node tools/gen-thumbs.mjs [--force] [--preset=key]`。既定は既存ファイルを skip。既存プリセットは再生成不要（JPEG エンコーダ差での無意味な diff を避けるため）。生成手法を変えて見た目が変わったときだけ `--force` で全体再生成 |
+| 7 | 決定性スナップショット | `tests/__snapshots__/determinism.test.ts.snap` | `pnpm test -u`。差分が新プリセットの 1 行追加だけであることを確認する（既存プリセットの行が変わっていたら共通ロジックに触っている） |
+| 8 | 検証プロトタイプ | `node prototype/build.mjs` + Artifact 再デプロイ | §5 参照 |
 
 必要に応じて:
 
@@ -209,9 +210,10 @@ PR を作ったら終わりではない。ユーザーが Artifact で確認し�
 
 ```
 - [ ] リファレンス画像を refs/private/ に用意し（コミットしない）、同梱する派生データのライセンスを判断した
-- [ ] PRESETS / PRESET_META を追加し、名称は「〜風」表記
+- [ ] PRESETS / PRESET_META を追加し、env / era / country（国コード）を付与、名称は「〜風」表記
 - [ ] colors は extract-palette.mjs の実測値
 - [ ] カラーライブラリに登録した（palette-library.json ×2 / USE_LABEL / palette-library-sources.md の出典表）
+- [ ] node tools/gen-thumbs.mjs でサムネイルを生成（public/thumbs/<key>.jpg）
 - [ ] render.mjs: 3 シード × 4 スケール / --compare / --tile / --size=2048 --crop=512 を目視、既知アーティファクトなし
 - [ ] 既存プリセットのスナップショットが不変（差分は新プリセットの 1 行のみ）。共通ロジックを変えた場合はその旨を明記
 - [ ] docs/01-tech-verification.md に vN 節を追記してから pnpm test -u

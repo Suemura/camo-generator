@@ -1,7 +1,9 @@
+import { useRef, useState } from "react";
 import type { PresetKey } from "@/core/camo.js";
-import { PRESET_GROUPS, PRESET_KEYS, PRESET_META } from "@/data/presets-meta";
+import { countryLabel, PRESET_META } from "@/data/presets-meta";
 import { type AppState, LIMITS } from "@/lib/state";
 import styles from "./PatternSection.module.scss";
+import { PresetPickerDrawer } from "./PresetPickerDrawer";
 
 interface Props {
   state: AppState;
@@ -11,41 +13,60 @@ interface Props {
 export function PatternSection({ state, onChange }: Props) {
   const setSeed = (n: number) =>
     onChange({ seed: Math.min(LIMITS.seed.max, Math.max(0, Math.round(n))) });
+  // プリセット一覧はドロワーに追い出し、ここには選択中の 1 枚だけを出す
+  // (プリセットが増えてもサイドバーが縦に伸び続けないようにするため)
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const meta = PRESET_META[state.preset];
+  const pick = (k: PresetKey) => {
+    onChange({ preset: k, palette: null });
+    setPickerOpen(false);
+    trigger.current?.focus();
+  };
   return (
     <div className="section">
       <h2 className="sectionTitle">パターン</h2>
-      <div>
-        {PRESET_GROUPS.map((g) => {
-          // 該当プリセットが無いグループは見出しも出さない (プリセット追加に応じて自然に現れる)
-          const keys = PRESET_KEYS.filter((k: PresetKey) => PRESET_META[k].group === g.key);
-          if (keys.length === 0) return null;
-          const headingId = `preset-group-${g.key}`;
-          return (
-            <div key={g.key} className={styles.group}>
-              <h3 id={headingId} className={styles.groupTitle}>
-                {g.label}
-              </h3>
-              <div role="radiogroup" aria-labelledby={headingId} className={styles.grid}>
-                {keys.map((k: PresetKey) => (
-                  <button
-                    key={k}
-                    type="button"
-                    role="radio"
-                    aria-checked={state.preset === k}
-                    className={`${styles.card} ${state.preset === k ? styles.active : ""}`}
-                    onClick={() => onChange({ preset: k, palette: null })}
-                  >
-                    <span className={styles.cardName}>{PRESET_META[k].label}</span>
-                    <span className={styles.cardNote}>
-                      {PRESET_META[k].country} · {PRESET_META[k].note}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      <div className="field">
+        <span className="label" id="preset-label">
+          迷彩
+        </span>
+        <button
+          ref={trigger}
+          type="button"
+          className={styles.current}
+          aria-haspopup="dialog"
+          aria-expanded={pickerOpen}
+          aria-labelledby="preset-label"
+          onClick={() => setPickerOpen(true)}
+        >
+          <img
+            className={styles.currentThumb}
+            src={`/thumbs/${state.preset}.jpg`}
+            alt=""
+            width={256}
+            height={256}
+            decoding="async"
+          />
+          <span className={styles.currentMeta}>
+            <span className={styles.cardName}>{meta.label}</span>
+            <span className={styles.cardNote}>
+              {countryLabel(meta.country)} · {meta.note}
+            </span>
+          </span>
+          <span className={styles.currentAction} aria-hidden="true">
+            変更
+          </span>
+        </button>
       </div>
+      <PresetPickerDrawer
+        open={pickerOpen}
+        current={state.preset}
+        onPick={pick}
+        onClose={() => {
+          setPickerOpen(false);
+          trigger.current?.focus();
+        }}
+      />
       <div className="field">
         <label className="label" htmlFor="seed">
           シード

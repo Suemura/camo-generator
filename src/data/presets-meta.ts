@@ -32,11 +32,12 @@ export const ENV_LABEL: Record<PresetEnv, string> = {
 export const ALL_ENVS = Object.keys(ENV_LABEL) as PresetEnv[];
 
 /** 制式採用年代 (10 年刻み)。note 冒頭の年代表記と一致させる */
-export type PresetEra = "1930s" | "1940s" | "1960s" | "1980s" | "1990s" | "2000s";
+export type PresetEra = "1930s" | "1940s" | "1950s" | "1960s" | "1980s" | "1990s" | "2000s";
 
 export const ERA_LABEL: Record<PresetEra, string> = {
   "1930s": "1930 年代",
   "1940s": "1940 年代",
+  "1950s": "1950 年代",
   "1960s": "1960 年代",
   "1980s": "1980 年代",
   "1990s": "1990 年代",
@@ -278,6 +279,17 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     env: ["snow"],
     era: "1990s",
     svg: false,
+  },
+  berezka: {
+    // 色で溶け込むのではなく明色の塊で人型シルエットを破断させる設計。
+    // デジタル系ではなく粗いステンシル版由来の階段なので group は other
+    label: "ベリョースカ風 (KLMK)",
+    note: "1957〜 2 色。階段状の葉形シルエット",
+    country: "ru",
+    group: "other",
+    env: ["forest"],
+    era: "1950s",
+    svg: true,
   },
 };
 

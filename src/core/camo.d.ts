@@ -19,6 +19,7 @@ export type PresetKey =
   | "ddpm"
   | "auscam"
   | "tigerstripe"
+  | "berezka"
   | "splinter"
   | "m90"
   | "m90desert"

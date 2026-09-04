@@ -49,6 +49,7 @@ export const USE_LABEL: Record<string, string> = {
   "camo-emr": "EMR",
   "camo-frogskin": "フロッグスキン (M1942)",
   "camo-tigerstripe": "タイガーストライプ",
+  "camo-berezka": "ベリョースカ (KLMK)",
   "camo-nwu1": "NWU Type I",
 };
 

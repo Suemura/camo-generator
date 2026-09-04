@@ -7,7 +7,7 @@
 
 ## 概要
 
-- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / DPM・デザート DPM（英国） / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP の迷彩に近い模様を計算で生成する
+- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / DPM・デザート DPM（英国） / タイガーストライプ（米国 / 南ベトナム） / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP の迷彩に近い模様を計算で生成する
 - シード値により、同じアルゴリズムから無数のバリエーションを決定的に再現できる
 - 各パターンのパレット（例: ウッドランドの緑・茶・サンド・黒）を自由な色にその場で差し替えられる
 - 生成結果を PNG / JPG / WebP / SVG（デジタル系のみ）で任意サイズ・実寸（mm / inch × DPI、PNG に DPI 埋込）でエクスポートできる
@@ -73,7 +73,7 @@ pnpm deploy       # 手動デプロイ (wrangler login 済み前提)。通常は
 node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG レンダ (目視検証用)
 node tools/render.mjs <出力dir> <seed> --compare  # 左=生成 / 右=実物リファレンス (refs/) を並べた PNG。精度改善の基本ループ
 node tools/extract-palette.mjs refs/<key>.png 4    # 参照画像からパレット既定値を実測 (PRESETS.colors 用スニペットを出力)
-#   オプション: --core[=R] (領域内部の中央値で測る。輪郭の混色を除く) / --flatten=SIGMA (周辺減光の平坦化)
+#   オプション: --core[=R] (領域内部の中央値で測る。輪郭の混色を除く) / --flatten=SIGMA (周辺減光の平坦化) / --blur=SIGMA (織り目を落とす)
 node tools/gen-src.mjs refs/<key>.png src/core/<key>src.js <k> <PREFIX>   # 参照画像 → クイルト用インデックスマップ (新プリセットの図案化)
 #   オプション: --resize=N (長辺を縮小) / --blur=SIGMA (織り目を落とす) / --flatten=SIGMA (周辺減光の平坦化)
 #             いずれも布地の写真をリファレンスにする場合に必要。既定オフで従来と同一出力

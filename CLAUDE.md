@@ -21,7 +21,7 @@ node tools/render.mjs <outdir> <seed> [scale]   # 全プリセットを 512px PN
 #   オプション: --tile (2×2 タイル) / --size=WxH / --preset=key / --crop=512 (中央を等倍切出し、高解像度の階段確認)
 #             --compare (左=生成 / 右=refs/ の実物リファレンス。精度改善の基本ループ。refs/private/<key>.* があれば優先)
 node tools/extract-palette.mjs refs/<key>.png 4   # 参照画像からパレット既定値を実測（UI の抽出と同じ k-means）
-#   オプション: --core[=R]（領域内部の中央値。輪郭の混色を除く）/ --flatten=SIGMA（周辺減光の平坦化）
+#   オプション: --core[=R]（領域内部の中央値。輪郭の混色を除く）/ --flatten=SIGMA（周辺減光の平坦化）/ --blur=SIGMA（織り目を落とす）
 node tools/gen-src.mjs refs/<key>.png src/core/<key>src.js <k> <PREFIX>   # 参照画像 → クイルト用インデックスマップ（新プリセットの図案化。面積比も出力）
 #   オプション: --resize=N / --blur=SIGMA（織り目を落とす）/ --flatten=SIGMA。布地写真をリファレンスにする場合に必要（既定オフ = 従来と同一出力）
 bash tools/check-private-refs.sh [rev-range]     # refs/private/ の混入検査（pre-push / PreToolUse / CI が自動で呼ぶ）

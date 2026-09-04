@@ -103,7 +103,7 @@ for (const [key, P] of Object.entries(PRESETS)) {
     continue;
   } else {
     if (compare)
-      console.warn(`${key}: リファレンス画像が refs/ に無いため単一出力 (refs/README.md)`);
+      console.warn(`${key}: リファレンス画像が refs/private/ に無いため単一出力 (refs/README.md)`);
     writePng(`${outDir}/${key}.png`, toRGBA(res, pal), W0, H0);
   }
   console.log(`${key}: ${Date.now() - t0}ms`);

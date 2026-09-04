@@ -22,8 +22,8 @@ Issue（#21 のサブ Issue）
 
 ## 1. 着手前に確認すること
 
-- **リファレンス画像が用意できるか**。リファレンス無しの実装は不可（Issue #21 共通ルール）。Wikimedia Commons で自由ライセンスの画像を探し、無ければ再配布不可の画像を `refs/private/<key>.<ext>` に置いて手元だけで使う（`refs/README.md`）
-- **ライセンスが派生物に及ぶか**。CC BY-SA の画像を量子化したソースマップをアプリに同梱すると share-alike の派生物になる。DBDU ではこの理由で参照画像を目視比較とパレット実測にのみ使い、ブロブ層はパブリックドメインの DCU 図案を共有した（`docs/01-tech-verification.md` v24）。同じ判断が要る迷彩は Issue の段階で方針を決める
+- **リファレンス画像が用意できるか**。リファレンス無しの実装は不可（Issue #21 共通ルール）。画像はライセンスによらず `refs/private/<key>.<ext>` に置いて手元だけで使う。リポジトリには入れない（`refs/README.md`）
+- **ライセンスが派生物に及ぶか**。参照画像そのものはリポジトリに入れないが、量子化したソースマップをアプリに同梱すると派生物になる（CC BY-SA なら share-alike、CC BY / OGL なら帰属表示）。DBDU ではこの理由で参照画像を目視比較とパレット実測にのみ使い、ブロブ層はパブリックドメインの DCU 図案を共有した（`docs/01-tech-verification.md` v24）。同梱する派生データが出る場合は README「クレジット・ライセンス注記」と `src/app/About.tsx` に帰属を書く。同じ判断が要る迷彩は Issue の段階で方針を決める
 - **商標・意匠**。MultiCam / CADPAT / M05 などは図案の複製ではなく特徴の再現にとどめ、名称は「〜風」表記にする（`src/data/presets-meta.ts` の方針、Issue #21「知的財産の注意」）
 - **既存手法で作れるか**。`genQuilt`（ブロブ系）/ `genGrowth`（デジタル系）の流用で足りるなら A 群、新手法なら B 群。`docs/01-tech-verification.md` の該当手法の節を読み、解消済みアーティファクトを再発させない
 
@@ -33,18 +33,18 @@ Issue（#21 のサブ Issue）
 |---|------|--------|------|
 | 1 | 生成パラメータ | `src/core/camo.js` の `PRESETS[key]` | `kind` で生成関数にディスパッチ。`ref` は参照画像のキー（= `key`）。コメントには「実物のどの特徴を再現する意図か」を書く |
 | 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（選択 UI の見出し）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`transitional` から選択）/ `era`（採用年代: `1940s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
-| 3 | 参照画像 | `refs/<key>.<ext>`（自由ライセンス）または `refs/private/<key>.<ext>` | ファイル名は `PRESETS` のキーに一致させる。`refs/` に置いたら README「クレジット・ライセンス注記」に Commons ページ・作者・ライセンスを追記 |
-| 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
+| 3 | 参照画像 | `refs/private/<key>.<ext>`（手元のみ・非コミット） | ファイル名は `PRESETS` のキーに一致させる |
+| 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `docs/design/palette-library.json` + `src/data/palette.ts` + `docs/design/palette-library-sources.md` | §3 参照。**PR に含める**（後追いにしない） |
 | 6 | **サムネイル生成** | `public/thumbs/<key>.jpg` | `node tools/gen-thumbs.mjs [--force] [--preset=key]`。既定は既存ファイルを skip。既存プリセットは再生成不要（JPEG エンコーダ差での無意味な diff を避けるため）。生成手法を変えて見た目が変わったときだけ `--force` で全体再生成 |
 | 7 | 決定性スナップショット | `tests/__snapshots__/determinism.test.ts.snap` | `pnpm test -u`。差分が新プリセットの 1 行追加だけであることを確認する（既存プリセットの行が変わっていたら共通ロジックに触っている） |
-| 8 | 検証プロトタイプ | `prototype/refs.js` の data URI + `node prototype/build.mjs` + Artifact 再デプロイ | §5 参照 |
+| 8 | 検証プロトタイプ | `node prototype/build.mjs` + Artifact 再デプロイ | §5 参照 |
 
 必要に応じて:
 
-- **ソース図案**（クイルト系で実物図案を使う場合）: `node tools/gen-src.mjs refs/<key>.<ext> src/core/<key>src.js <k> <PREFIX>`。`k` は値数（2..8）で、RLE ビット幅は自動選択（k≤4 なら 2bit、k>4 なら 3bit）。サイズが大きければ `digsrc.js` と同じく動的 import + `registerSources()` にする（目安: 数十 KB なら静的 import、100KB 超なら動的）。既存図案の流用（CCE は M81 を `srcAspect: 1.5` で横伸長、DBDU は DCU 図案を `src: 'dcu'` で共有）も選択肢
+- **ソース図案**（クイルト系で実物図案を使う場合）: `node tools/gen-src.mjs refs/private/<key>.<ext> src/core/<key>src.js <k> <PREFIX>`。`k` は値数（2..8）で、RLE ビット幅は自動選択（k≤4 なら 2bit、k>4 なら 3bit）。サイズが大きければ `digsrc.js` と同じく動的 import + `registerSources()` にする（目安: 数十 KB なら静的 import、100KB 超なら動的）。既存図案の流用（CCE は M81 を `srcAspect: 1.5` で横伸長、DBDU は DCU 図案を `src: 'dcu'` で共有）も選択肢
 - **専用テスト**: 新しい層や後処理を足したら、既存プリセットに波及しないことをテストで固定する（DBDU の `tests/chips.test.ts` は「`chips` を持つのは `dbdu` だけ」を検証している）
-- **README**: 冒頭の対応迷彩一覧、「生成手法」表の対象列、クレジット節
+- **README**: 冒頭の対応迷彩一覧、「生成手法」表の対象列（同梱する派生データが出る場合はクレジット節も）
 
 ## 3. カラーライブラリへの登録（忘れやすい）
 
@@ -135,7 +135,7 @@ node tools/render.mjs /tmp/camo-render/hi 1234 --size=2048x2048 --crop=512 --pre
 
 ユーザーが精度を確認する環境は Artifact "Camo Lab"（URL は CLAUDE.md「検証プロトタイプ」）。**PR 作成前に必ず更新する**。更新が無いと「これどこで確認すればいいの?」で止まる。
 
-1. `prototype/refs.js` に参照画像の data URI を追加する。既存と同じ 420px・JPEG quality 82 程度。`refs/<key>.<ext>` から sharp で生成し、キー名は `PRESETS[key].ref` と一致させる。`refs/private/` の画像は**プロトタイプにも入れない**（`prototype/index.html` は git 管理）
+1. 参照画像は**プロトタイプに入れない**（`prototype/refs.js` は空の `REFS` を保ち、`prototype/index.html` は git 管理）。左右比較は `node prototype/build.mjs` が同時に出力する `prototype/index.local.html`（gitignore、`refs/private/` の画像を 420px JPEG の data URI で埋め込む）で行う
 2. `node prototype/build.mjs` で `prototype/index.html` を再ビルドする（直接編集しない）
 3. `Artifact` ツールに `file_path: prototype/index.html` と既存 URL を `url` で渡し、同じ URL に再デプロイする
 4. 報告に Artifact の URL を書く
@@ -209,7 +209,7 @@ PR を作ったら終わりではない。ユーザーが Artifact で確認し�
 ## 9. チェックリスト（PR 作成前に自己チェック）
 
 ```
-- [ ] リファレンス画像を用意し、ライセンスと派生物の扱いを判断した（refs/ なら README クレジット節を更新）
+- [ ] リファレンス画像を refs/private/ に用意し（コミットしない）、同梱する派生データのライセンスを判断した
 - [ ] PRESETS / PRESET_META を追加し、env / era / country（国コード）を付与、名称は「〜風」表記
 - [ ] colors は extract-palette.mjs の実測値
 - [ ] カラーライブラリに登録した（palette-library.json ×2 / USE_LABEL / palette-library-sources.md の出典表）
@@ -217,8 +217,8 @@ PR を作ったら終わりではない。ユーザーが Artifact で確認し�
 - [ ] render.mjs: 3 シード × 4 スケール / --compare / --tile / --size=2048 --crop=512 を目視、既知アーティファクトなし
 - [ ] 既存プリセットのスナップショットが不変（差分は新プリセットの 1 行のみ）。共通ロジックを変えた場合はその旨を明記
 - [ ] docs/01-tech-verification.md に vN 節を追記してから pnpm test -u
-- [ ] prototype/refs.js に data URI 追加 → node prototype/build.mjs → Artifact を同じ URL に再デプロイ
-- [ ] README の対応迷彩一覧・生成手法表・クレジット節を更新
+- [ ] node prototype/build.mjs → Artifact を同じ URL に再デプロイ（refs.js は空のまま）
+- [ ] README の対応迷彩一覧・生成手法表を更新（派生データを同梱するならクレジット節と About.tsx も）
 - [ ] PR 本文: 生成結果への影響 / ライセンス判断 / カラーライブラリ登録 / 検証画像（verify-assets）/ Artifact URL
 - [ ] pnpm check / typecheck / test 成功
 ```

@@ -7,32 +7,35 @@ import type { PresetKey } from "@/core/camo.js";
 import { COUNTRY_LABEL } from "@/data/countries";
 
 /** 図案の系統 (生成手法・見た目の大分類)。表示順は PRESET_GROUPS */
-export type PresetGroup = "woodland" | "desert" | "digital" | "stroke" | "other";
+export type PresetGroup = "woodland" | "desert" | "digital" | "stroke" | "geometric" | "other";
 
 export const PRESET_GROUPS: { key: PresetGroup; label: string }[] = [
   { key: "woodland", label: "ウッドランド系" },
   { key: "desert", label: "デザート系" },
   { key: "digital", label: "デジタル系" },
   { key: "stroke", label: "ストローク系" },
+  { key: "geometric", label: "幾何 / 直線系" },
   { key: "other", label: "その他" },
 ];
 
 /** 想定する使用環境。実物が配備された地域・地形から付ける (色味の印象ではなく運用実態) */
-export type PresetEnv = "forest" | "jungle" | "arid" | "urban" | "transitional";
+export type PresetEnv = "forest" | "jungle" | "arid" | "urban" | "snow" | "transitional";
 
 export const ENV_LABEL: Record<PresetEnv, string> = {
   forest: "森林 / 温帯林",
   jungle: "ジャングル",
   arid: "砂漠 / 乾燥地",
   urban: "市街地",
+  snow: "雪原 / 冬季",
   transitional: "汎用 / 移行帯",
 };
 export const ALL_ENVS = Object.keys(ENV_LABEL) as PresetEnv[];
 
 /** 制式採用年代 (10 年刻み)。note 冒頭の年代表記と一致させる */
-export type PresetEra = "1940s" | "1960s" | "1980s" | "1990s" | "2000s";
+export type PresetEra = "1930s" | "1940s" | "1960s" | "1980s" | "1990s" | "2000s";
 
 export const ERA_LABEL: Record<PresetEra, string> = {
+  "1930s": "1930 年代",
   "1940s": "1940 年代",
   "1960s": "1960 年代",
   "1980s": "1980 年代",
@@ -235,6 +238,44 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     env: ["forest"],
     era: "2000s",
     svg: true,
+  },
+  splinter: {
+    // スプリンター系の始祖。制定は 1931 年 (Splittermuster 31)、雨線は 1938 年以降の版
+    label: "スプリンター風 (Splittertarn)",
+    note: "1931〜 3 色。直線多角形 + 雨線",
+    country: "de",
+    group: "geometric",
+    env: ["forest", "transitional"],
+    era: "1930s",
+    svg: false,
+  },
+  m90: {
+    label: "M90 風 (スウェーデン)",
+    note: "1990〜 4 色。大きな直線多角形",
+    country: "se",
+    group: "geometric",
+    env: ["forest"],
+    era: "1990s",
+    svg: false,
+  },
+  m90desert: {
+    // 図案は m90 と同一で版の色だけが変わる (実物の ökenkamouflage も同じ関係)
+    label: "M90 デザート風 (スウェーデン)",
+    note: "1990 年代〜 4 色。M90 の砂漠配色",
+    country: "se",
+    group: "desert",
+    env: ["arid"],
+    era: "1990s",
+    svg: false,
+  },
+  m90winter: {
+    label: "M90 ウィンター風 (スウェーデン)",
+    note: "1990 年代〜 4 色。M90 の冬季配色",
+    country: "se",
+    group: "geometric",
+    env: ["snow"],
+    era: "1990s",
+    svg: false,
   },
 };
 

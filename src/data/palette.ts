@@ -49,6 +49,8 @@ export const USE_LABEL: Record<string, string> = {
   "camo-emr": "EMR",
   "camo-frogskin": "フロッグスキン (M1942)",
   "camo-tigerstripe": "タイガーストライプ",
+  "camo-splinter": "スプリンター (Splittertarn)",
+  "camo-m90": "スウェーデン M90",
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

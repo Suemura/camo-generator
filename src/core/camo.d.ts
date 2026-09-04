@@ -18,11 +18,15 @@ export type PresetKey =
   | "dpm"
   | "ddpm"
   | "auscam"
-  | "tigerstripe";
+  | "tigerstripe"
+  | "splinter"
+  | "m90"
+  | "m90desert"
+  | "m90winter";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth" | "spots";
+  kind: "quilt" | "growth" | "spots" | "splinter";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;

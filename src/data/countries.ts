@@ -13,5 +13,6 @@ export const COUNTRY_LABEL: Record<string, string> = {
   fr: "フランス",
   it: "イタリア",
   il: "イスラエル",
+  vn: "ベトナム",
   other: "その他",
 };

@@ -91,6 +91,13 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "desert",
     svg: false,
   },
+  tigerstripe: {
+    label: "タイガーストライプ風",
+    note: "1960 年代〜 4 色。横に流れる縞",
+    country: "米国 / 南ベトナム",
+    group: "stroke",
+    svg: false,
+  },
   marpat: {
     label: "デジタル・ウッドランド風",
     note: "MARPAT 系 4 色。ピクセル",

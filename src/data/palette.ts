@@ -36,6 +36,7 @@ export const COUNTRY_LABEL: Record<string, string> = {
   fr: "フランス",
   it: "イタリア",
   il: "イスラエル",
+  vn: "ベトナム",
   other: "その他",
 };
 
@@ -59,6 +60,7 @@ export const USE_LABEL: Record<string, string> = {
   "camo-pla07": "07 式",
   "camo-emr": "EMR",
   "camo-frogskin": "フロッグスキン (M1942)",
+  "camo-tigerstripe": "タイガーストライプ",
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

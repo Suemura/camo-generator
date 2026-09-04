@@ -7,7 +7,7 @@
 
 ## 概要
 
-- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / DPM・デザート DPM（英国） / フロッグスキン (M1942 ジャングル面・ビーチ面) / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP / CADPAT TW（カナダ） / 07 式 通用迷彩（中国） / EMR（ロシア） の迷彩に近い模様を計算で生成する
+- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / DPM・デザート DPM（英国） / フロッグスキン (M1942 ジャングル面・ビーチ面) / タイガーストライプ（米国 / 南ベトナム） / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP / CADPAT TW（カナダ） / 07 式 通用迷彩（中国） / EMR（ロシア） の迷彩に近い模様を計算で生成する
 - シード値により、同じアルゴリズムから無数のバリエーションを決定的に再現できる
 - 各パターンのパレット（例: ウッドランドの緑・茶・サンド・黒）を自由な色にその場で差し替えられる
 - 生成結果を PNG / JPG / WebP / SVG（デジタル系のみ）で任意サイズ・実寸（mm / inch × DPI、PNG に DPI 埋込）でエクスポートできる
@@ -20,7 +20,7 @@
 
 | 手法 | 対象 | 概要 |
 |------|------|------|
-| **ブロブパッチ合成（クイルト）** | M81 ウッドランド / CCE / DCU 3 カラーデザート / DBDU 6 カラーデザート / 陸自迷彩 2 型 / DPM / DDPM / AOR1 / AOR2 | 実物図案のインデックスマップから、有機輪郭のパッチを領域成長型シームで貼り合わせる。局所形状・色・面積比は実物の設計言語そのもの。多数決ミップマップ・フラグメント除去・シェイプ完走成長などの後処理を含む。**主力手法**（ユーザー評価 88+） |
+| **ブロブパッチ合成（クイルト）** | M81 ウッドランド / CCE / DCU 3 カラーデザート / DBDU 6 カラーデザート / 陸自迷彩 2 型 / DPM / DDPM / タイガーストライプ / AOR1 / AOR2 | 実物図案のインデックスマップから、有機輪郭のパッチを領域成長型シームで貼り合わせる。局所形状・色・面積比は実物の設計言語そのもの。多数決ミップマップ・フラグメント除去・シェイプ完走成長などの後処理を含む。**主力手法**（ユーザー評価 88+）。縞図案では `slopeLock` でソース参照の反転を連動させ、縞の傾きの向きを揃える |
 | **クラスタ成長** | MARPAT (ウッドランド/デザート) / UCP / CADPAT TW / 07 式 通用迷彩 / EMR | セルグリッド上で色ごとに面積予算つきシード成長。蛇行ドリフト・seedNear 連鎖・境界ディザ・スペックルで実物のクラスタ構造を再現。クラスタの異方性は `elongX` / `elongY`（UCP は横長、EMR は縦長） |
 | **斑点配置** | フロッグスキン (M1942 ジャングル面 / ビーチ面) | 地色の上に、版（色）ごとに独立した丸い斑点を刷り重ねる手続き生成。輪郭は極座標の低次高調波で作る解析形状で、Mitchell のベストキャンディデート法で間隔を均す。実物図案を使わないため、参照画像のライセンスが派生物に及ぶ迷彩でも実装できる。層に `halo` を指定すると、斑を刷る直前に同じ輪郭をひと回り大きく別の版で刷り、重ね刷りで下の版が縁として残る構造を再現する |
 | **ノイズ閾値（従来手法）** | （選択肢からは退役） | シード付き値ノイズ + fBm + ドメインワープ + 分位点閾値。到達上限 ~75点。コードは保持し、フェーズ2 のカスタム迷彩生成の基盤候補 |
@@ -147,5 +147,6 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
   - `jgsdf2.jpg` — [File:迷彩服2型の迷彩パターン.jpg](https://commons.wikimedia.org/wiki/File:%E8%BF%B7%E5%BD%A9%E6%9C%8D2%E5%9E%8B%E3%81%AE%E8%BF%B7%E5%BD%A9%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3.jpg)（Crescent moon 撮影、**CC BY 3.0**。無改変で収録）
   - `dpm.jpg` — [File:DPM Combat 95 Camouflage Material MOD 45149982.jpg](https://commons.wikimedia.org/wiki/File:DPM_Combat_95_Camouflage_Material_MOD_45149982.jpg)（Cpl Adrian Harlen RLC 撮影、UK MOD、**OGL v1.0**。長辺 1600px に縮小して収録。Contains public sector information licensed under the Open Government Licence v1.0）
   - `ddpm.jpg` — [File:Desert pattern camouflage material MOD 45148363.jpg](https://commons.wikimedia.org/wiki/File:Desert_pattern_camouflage_material_MOD_45148363.jpg)（Graeme Main 撮影、UK MOD、**OGL v1.0**。長辺 1600px に縮小して収録。目視比較とパレット実測にのみ使用）
+  - `tigerstripe.jpg` — [File:OPFOR shows Soldiers the enemy for Combined Resolve XIII 200121-Z-KY097-5213.jpg](https://commons.wikimedia.org/wiki/File:OPFOR_shows_Soldiers_the_enemy_for_Combined_Resolve_XIII_200121-Z-KY097-5213.jpg)（Sgt. Megan Zander 撮影、U.S. Army National Guard、パブリックドメイン）。原寸 5950px の写真から布地部分（曇天のフラット光で写った袖、280×430px）を切り出して収録。目視比較にのみ使用（図案化とパレット実測は `refs/private/` のスウォッチを使う）
   - `frogskin.jpg` — [File:Frog Skin camouflage pattern.jpg](https://commons.wikimedia.org/wiki/File:Frog_Skin_camouflage_pattern.jpg)（Commons 利用者 IQ125 撮影、**CC BY-SA 3.0**。無改変で収録）。**目視比較とパレット実測にのみ使う開発時専用の画像で、この画像から派生したデータはアプリに同梱していない**（フロッグスキンの斑点は手続き生成）
 - `experimental/` の一部は [camogen](https://github.com/glederrey/camogen) (MIT) のアルゴリズムを参考にした

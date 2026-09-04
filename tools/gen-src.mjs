@@ -12,6 +12,9 @@
 //     スウォッチではなく布地の写真を参照にすると、織り目（ツイルの斜め筋）が色の分散として
 //     効いて k-means が「設計色」ではなく明度で切ってしまう（陸自 2 型では茶が緑に吸収された）。
 //     織り目の周期より少し大きい sigma でぼかすと設計色に収束し、RLE のラン数も減る。
+//   --thin=N: 量子化の後、N 回の形態学的収縮で消える連結成分（幅 2N px 未満の細帯）を
+//     近傍の多数色へ吸収する（既定: なし）。布地写真の皺の稜線・影が図案の色として
+//     残るのを消すためで、面積ではなく幅で判定するのでブロブは残る。
 //   --flatten=SIGMA: 量子化の前にフラットフィールド補正をかける（既定: なし）。
 //     写真の周辺減光・照明ムラは色そのものより大きな分散になり、そのまま量子化すると
 //     画面の隅が丸ごと最も暗い値に落ちて面積比が狂う。sigma は図案の特徴長より十分大きく取る。
@@ -26,8 +29,15 @@
 import { kmeans, lum, rgbToHex } from "../src/core/kmeans.js";
 import { loadRgba } from "./image.mjs";
 
-const RUN_MAX = 63; // RLE 1 バイトあたりの最大ラン長 (byte = (値 << 6) | ラン長)
-const VALUE_MAX = 3; // 値は 2 bit なので 0..3 まで
+// RLE 1 バイトの内訳は値ビット数 bits で決まる (byte = (値 << (8 - bits)) | ラン長)。
+// 4 値までは 2bit 値 + 6bit ラン (ラン長 63) で、これが既存ソース (m81 / dcu / jgsdf2 / digsrc) の形式。
+// 5 値以上を要求する図案 (Auscam の 5 色) では 3bit 値 + 5bit ラン (ラン長 31) に切り替える。
+// ラン長上限が下がるぶんバイト数は増えるが、値ビットを 1 つ増やすだけで済むので
+// 既存ソースを再生成せずに済む (camo.js の decodeSrc は bits 既定 2 で後方互換)。
+const VALUE_MAX = 7; // 値ビットは最大 3 bit
+function bitsFor(nValues) {
+  return nValues <= 4 ? 2 : 3;
+}
 const MIN_FRAG = 16; // 量子化ノイズとみなす連結成分の面積 (JPEG 由来のソースで効く)
 
 const argv = process.argv.slice(2);
@@ -38,6 +48,12 @@ const resizeArg = flags.find((a) => a.startsWith("--resize="));
 const maxEdge = resizeArg ? Number(resizeArg.slice(9)) : undefined;
 if (resizeArg && !(maxEdge > 0)) {
   console.error("--resize=N の N は正の数");
+  process.exit(1);
+}
+const thinArg = flags.find((a) => a.startsWith("--thin="));
+const thin = thinArg ? Number(thinArg.slice(7)) : 0;
+if (thinArg && !(Number.isInteger(thin) && thin > 0)) {
+  console.error("--thin=N の N は正の整数");
   process.exit(1);
 }
 const flattenArg = flags.find((a) => a.startsWith("--flatten="));
@@ -57,7 +73,7 @@ if (!file || !out || !prefix) {
   process.exit(1);
 }
 if (!(k >= 2 && k <= VALUE_MAX + 1)) {
-  console.error(`k must be 2..${VALUE_MAX + 1} (値は 2 bit で保持する)`);
+  console.error(`k must be 2..${VALUE_MAX + 1} (値は最大 3 bit で保持する)`);
   process.exit(1);
 }
 
@@ -137,18 +153,89 @@ for (let i = 0; i < w * h; i++) {
   }
 }
 
+// 細帯・縁取りの除去 (--thin=N): 各値に形態学的オープニング（N 回収縮 → N 回膨張）をかけ、
+// 復元されなかった画素を最も近い残存画素の値で埋める。
+// 布地写真のリファレンスでは、たたみ皺の稜線と影が「図案の色ではない細長い帯」や
+// 「ブロブの縁取り」として量子化に残る。面積は MIN_FRAG より大きく、しかもブロブと地続きなので
+// 連結成分単位の除去では落ちない。クイルトのパッチがその帯を拾うと出力に直線状の筋が並ぶ
+// （Auscam の 5 値化で確認。docs/01-tech-verification.md v26）。
+// オープニングは「幅 2N px 未満の部分だけ」を削るので、ブロブ本体の形と面積は保たれる。
+if (thin) {
+  const idx = (x, y) => y * w + x;
+  const removed = new Uint8Array(w * h);
+  const cur = new Uint8Array(w * h);
+  const next = new Uint8Array(w * h);
+  for (let c = 0; c < k; c++) {
+    for (let i = 0; i < w * h; i++) cur[i] = map[i] === c ? 1 : 0;
+    // 収縮 N 回（画像の外周は領域外として扱う = 端に張り付いた帯も削れる）
+    for (let t = 0; t < thin; t++) {
+      next.fill(0);
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const i = idx(x, y);
+          if (cur[i] && cur[i - 1] && cur[i + 1] && cur[i - w] && cur[i + w]) next[i] = 1;
+        }
+      }
+      cur.set(next);
+    }
+    // 膨張 N 回（元の値の領域内に限る = 他色を侵食しない）
+    for (let t = 0; t < thin; t++) {
+      next.set(cur);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = idx(x, y);
+          if (cur[i] || map[i] !== c) continue;
+          if (
+            (x > 0 && cur[i - 1]) ||
+            (x < w - 1 && cur[i + 1]) ||
+            (y > 0 && cur[i - w]) ||
+            (y < h - 1 && cur[i + w])
+          )
+            next[i] = 1;
+        }
+      }
+      cur.set(next);
+    }
+    for (let i = 0; i < w * h; i++) if (map[i] === c && !cur[i]) removed[i] = 1;
+  }
+  // 削った画素を「最も近い残存画素の値」で埋める（残存側からの多源 BFS）
+  const queue = new Int32Array(w * h);
+  let qh = 0;
+  let qt = 0;
+  for (let i = 0; i < w * h; i++) if (!removed[i]) queue[qt++] = i;
+  while (qh < qt) {
+    const i = queue[qh++];
+    const x = i % w;
+    const y = (i / w) | 0;
+    const nb = [];
+    if (x > 0) nb.push(i - 1);
+    if (x < w - 1) nb.push(i + 1);
+    if (y > 0) nb.push(i - w);
+    if (y < h - 1) nb.push(i + w);
+    for (const j of nb) {
+      if (!removed[j]) continue;
+      removed[j] = 0;
+      map[j] = map[i];
+      queue[qt++] = j;
+    }
+  }
+}
+
 for (let i = 0; i < w * h; i++) counts[map[i]]++;
 const maxValue = map.reduce((m, v) => (v > m ? v : m), 0);
-if (maxValue > VALUE_MAX) throw new Error(`index value ${maxValue} exceeds ${VALUE_MAX}`);
+if (maxValue >= 1 << bitsFor(k))
+  throw new Error(`index value ${maxValue} exceeds ${bitsFor(k)} bit`);
 if (counts.some((c) => c === 0)) throw new Error(`未使用の値がある: ${counts.join(", ")}`);
 
-// RLE: 1 バイト = (値 << 6) | ラン長。ラン長 0 は出さない（decodeSrc が進まなくなる）
+// RLE: 1 バイト = (値 << (8 - bits)) | ラン長。ラン長 0 は出さない（decodeSrc が進まなくなる）
+const bits = bitsFor(k);
+const runMax = (1 << (8 - bits)) - 1;
 const bytes = [];
 for (let i = 0; i < map.length; ) {
   const v = map[i];
   let n = 1;
-  while (i + n < map.length && map[i + n] === v && n < RUN_MAX) n++;
-  bytes.push((v << 6) | n);
+  while (i + n < map.length && map[i + n] === v && n < runMax) n++;
+  bytes.push((v << (8 - bits)) | n);
   i += n;
 }
 const rle = Buffer.from(bytes).toString("base64");
@@ -159,11 +246,15 @@ await writeFile(
   `// ${prefix} 実物図案の ${k} 値インデックスマップ (RLE + base64)。\n` +
     `// 生成: node tools/gen-src.mjs ${file} ${out} ${k} ${prefix}${flags.length ? ` ${flags.join(" ")}` : ""}\n` +
     `// 値は明度降順 (0 = 最も明るい色) で PRESETS.${prefix.toLowerCase()}.colors の並びと一致する。\n` +
+    `// RLE 1 バイト = (値 << ${8 - bits}) | ラン長 (値 ${bits} bit / ラン最大 ${runMax})。\n` +
     `export const ${prefix}_SRC_W = ${w};\n` +
     `export const ${prefix}_SRC_H = ${h};\n` +
+    `export const ${prefix}_SRC_BITS = ${bits};\n` +
     `export const ${prefix}_SRC_RLE = '${rle}';\n`,
 );
 
-console.error(`${file} → ${out}  ${w}×${h}  runs=${bytes.length}  base64=${rle.length}B`);
+console.error(
+  `${file} → ${out}  ${w}×${h}  bits=${bits}  runs=${bytes.length}  base64=${rle.length}B`,
+);
 console.error(`量子化パレット (明度降順): ${palette.map(rgbToHex).join(" ")}`);
 console.error(`frac: [${counts.map((c) => (c / (w * h)).toFixed(3)).join(", ")}]`);

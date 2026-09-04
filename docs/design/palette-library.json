@@ -2160,6 +2160,101 @@
     "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/jgsdf2.jpg 4 --core --flatten=80。参照画像は Wikimedia Commons 「迷彩服2型の迷彩パターン.jpg」CC BY 3.0)"
   },
   {
+    "id": "auscam-sand",
+    "name": "Auscam サンド",
+    "std": "オーストラリア DPCU (実測)",
+    "code": "auscam-1",
+    "hex": "#a8a996",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-auscam",
+        "uniform"
+      ],
+      "country": [
+        "au"
+      ]
+    },
+    "note": "DPCU (Auscam / 1980 年代〜) の地色。斑が互いに離れて置かれるため実物では最も広い面積を占める",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60。参照画像は Wikimedia Commons 「DPCU closeup, 2005.jpg」パブリックドメイン)"
+  },
+  {
+    "id": "auscam-midgreen",
+    "name": "Auscam ミッドグリーン",
+    "std": "オーストラリア DPCU (実測)",
+    "code": "auscam-2",
+    "hex": "#769b65",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-auscam",
+        "uniform"
+      ],
+      "country": [
+        "au"
+      ]
+    },
+    "note": "DPCU の明るい緑。地色の上に丸い斑として乗る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60。参照画像は Wikimedia Commons 「DPCU closeup, 2005.jpg」パブリックドメイン)"
+  },
+  {
+    "id": "auscam-orangebrown",
+    "name": "Auscam オレンジブラウン",
+    "std": "オーストラリア DPCU (実測)",
+    "code": "auscam-3",
+    "hex": "#a87c4f",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-auscam",
+        "uniform"
+      ],
+      "country": [
+        "au"
+      ]
+    },
+    "note": "DPCU の識別色。橙寄りの茶で、通称 jelly bean camo の由来になった小斑を作る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60。参照画像は Wikimedia Commons 「DPCU closeup, 2005.jpg」パブリックドメイン)"
+  },
+  {
+    "id": "auscam-midbrown",
+    "name": "Auscam ミッドブラウン",
+    "std": "オーストラリア DPCU (実測)",
+    "code": "auscam-4",
+    "hex": "#765d3e",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-auscam",
+        "uniform"
+      ],
+      "country": [
+        "au"
+      ]
+    },
+    "note": "DPCU の暗い茶。5 色のうち最も面積が小さい",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60。参照画像は Wikimedia Commons 「DPCU closeup, 2005.jpg」パブリックドメイン)"
+  },
+  {
+    "id": "auscam-darkgreen",
+    "name": "Auscam ダークグリーン",
+    "std": "オーストラリア DPCU (実測)",
+    "code": "auscam-5",
+    "hex": "#2d4d57",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-auscam",
+        "uniform"
+      ],
+      "country": [
+        "au"
+      ]
+    },
+    "note": "DPCU の最暗色。参照写真が青寄りに転んでいるため青緑として実測される (感覚での補正はしていない)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60。参照画像は Wikimedia Commons 「DPCU closeup, 2005.jpg」パブリックドメイン)"
+  },
+  {
     "id": "jmsdf-grey-2704",
     "name": "灰色 (2) (海上自衛隊 艦艇色)",
     "std": "NDS Z 8201E",

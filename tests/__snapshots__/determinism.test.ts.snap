@@ -4,6 +4,7 @@ exports[`generate() は決定的 > index マップのハッシュ (回帰スナ�
 {
   "aor1": "ef4a3ae4460b68fc8faeac01bc1a50e4e33382bb",
   "aor2": "c209ab238458ed3d3116db601b2666131206fd5b",
+  "auscam": "4a58def8be74b07f76830909433f3fe8c1c4d35d",
   "cce": "66358c8dfdbc832b44a3cc2a6fc61279f4f3bcd4",
   "dbdu": "5c178c5f88f3a6b3ebaed0d1a61146d21dd13a23",
   "dcu": "db0c26668d49cd8c579d7384c8727c24878a414d",

@@ -108,6 +108,19 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグ `camo-jgsdf2`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「陸自迷彩 2 型」を追加した
 - 近接する既存エントリ: `jgsdf2-green` #5e775c は車両色 `jsdf-dgreen-3414` #434941 と 20 以上離れており別色。`jgsdf2-brown` #74524e ↔ `jsdf-brown-3606` #5c5243 も同様（生地の染色色と塗料色の違い）
 
+## 第5弾（迷彩プリセット追加に伴う実測色: オーストラリア DPCU / Auscam）
+
+アプリに Auscam（Issue #27）のプリセットを追加したのに合わせ、既定色 5 色を追記した。
+
+### 方法
+
+- `std` は「オーストラリア DPCU (実測)」、hex は `src/core/camo.js` の `PRESETS.auscam.colors` と完全一致させている
+- **公的な色指定は見つからなかった**。オーストラリア国防省の被服仕様（DEF(AUST) 系）は公開されておらず、DPCU の 5 色に対応する規格番号・測色値の一次資料は存在しない。したがって `code` は index 値の順に `auscam-1`〜`auscam-5` を振った（陸自迷彩 2 型と同じ扱い）
+- 参照画像が着用中の布地写真なので、パレット実測には `--core`（領域内部の中央値）と `--flatten`（照明ムラの平坦化）を使った。コマンドは `node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60`
+- **参照写真は全体が青寄りに転んでおり、ダークグリーンが青緑 #2d4d57 として実測される**。実物の DPCU のダークグリーンはより緑寄りだが、規約どおり感覚での補正はせず実測値のまま登録した。より中立な光源のリファレンスが入手できたら再実測する（`docs/01-tech-verification.md` v26 の残課題）
+- 用途タグ `camo-auscam`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「オーストラリア DPCU」、`COUNTRY_LABEL` に `au`「オーストラリア」を追加した
+- 近接する既存エントリ（RGB 距離で確認）: `auscam-midbrown` #765d3e は `aor1-brown` #776140 と距離 4.6 でほぼ同色、`auscam-sand` #a8a996 は `bs381c-210 Sky` #adaf97 と距離 7.9。いずれも由来（被服の染色色 / 航空機塗料）と用途タグが異なるため別エントリとして登録し、統合はしていない。他の 3 色は最近接でも距離 13 以上で独立している
+
 ## 出典一覧
 
 | id | 規格・コード | hex | 出典 |
@@ -230,6 +243,11 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `jgsdf2-green` | 陸自迷彩 2 型 (実測) type2-2 | #5e775c | 同上 |
 | `jgsdf2-brown` | 陸自迷彩 2 型 (実測) type2-3 | #74524e | 同上 |
 | `jgsdf2-black` | 陸自迷彩 2 型 (実測) type2-4 | #46444b | 同上 |
+| `auscam-sand` | オーストラリア DPCU (実測) auscam-1 | #a8a996 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/auscam.jpg 5 --core --flatten=60`。参照画像は Wikimedia Commons [File:DPCU closeup, 2005.jpg](https://commons.wikimedia.org/wiki/File:DPCU_closeup,_2005.jpg) パブリックドメイン) |
+| `auscam-midgreen` | オーストラリア DPCU (実測) auscam-2 | #769b65 | 同上 |
+| `auscam-orangebrown` | オーストラリア DPCU (実測) auscam-3 | #a87c4f | 同上 |
+| `auscam-midbrown` | オーストラリア DPCU (実測) auscam-4 | #765d3e | 同上 |
+| `auscam-darkgreen` | オーストラリア DPCU (実測) auscam-5 | #2d4d57 | 同上 |
 | `jmsdf-grey-2704` | NDS Z 8201E 2704 | #797979 | approx.: NDS Z 8201E 標準色 (マンセル N 5, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
 | `jmsdf-dgrey-2705` | NDS Z 8201E 2705 | #606060 | approx.: NDS Z 8201E 標準色 (マンセル N 4, https://www.mod.go.jp/atla/nds/Z/Z8201E.pdf) を Munsell 再表色 (光源C→D65 Bradford 適応) 経由で sRGB 換算 |
 | `su-amt4` | FS 595 AMT-4 (FS 34102 近似) | #595b45 | approx.: FS 24102/34102 近似 (https://massimotessitori.altervista.org/sovietwarplanes/pages/colors/color-table.html) に基づき GSA FED-STD-595C 測色データ (D65 CIELab, https://people.csail.mit.edu/jaffer/Color/FED-STD-595C1.txt) を sRGB 変換 |

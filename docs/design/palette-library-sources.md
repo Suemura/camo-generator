@@ -121,7 +121,20 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグは既存の `camo-dpm`（ラベル「DPM」。従来は descriptive の `khaki` のみが持っていた）と新規の `camo-ddpm`（`src/data/palette.ts` の `USE_LABEL` に「デザート DPM (DDPM)」を追加）
 - 近接する既存エントリ: `dpm-sand` #d8a858 は `bs381c-362` Middle Stone #ac7c42 と 40 以上離れており別色。`khaki` #c3b091 も同様（参照写真の照明が暖色寄りである影響を含む。残課題は v26 節）
 
-## 第6弾（迷彩プリセット追加に伴う実測色: フロッグスキン 両面）
+## 第6弾（迷彩プリセット追加に伴う実測色: CADPAT / 07 式 / EMR）
+
+アプリにデジタル系派生 3 種（Issue #30）のプリセットを追加したのに合わせ、既定色 12 色を追記した。
+
+### 方法
+
+- これまでと同じく `std` は「CADPAT (実測)」「07 式 (実測)」「EMR (実測)」とし、hex は `src/core/camo.js` の `PRESETS[key].colors` と完全一致させている
+- **3 種とも公的な色番号が見つからなかった**ため、`code` には index 値の順に `cadpat-1`〜`cadpat-4` / `type07-1`〜`type07-4` / `emr-1`〜`emr-4` を振った。CADPAT の色指定はカナダ国防省の非公開仕様、07 式は中国人民解放軍の内部規格、EMR はロシア国防省の調達仕様で、いずれも公表資料がない
+- 参照画像がいずれも合成スウォッチ（布地写真ではない）なので `--flatten` は使わず、`--core=2`（領域内部の中央値）と `--max-edge` を原寸に上げた実測のみを行った。コマンドは各エントリの `source` に記載
+- 例外は `pla07-brown`。参照画像が JPEG で、細い茶の筆致がリンギングにより暗く濁って k-means の重心が灰側へ流れる。筆致内部（近傍 5×5 がすべて暖色）の中央値 #605645 を採った。詳細は `docs/01-tech-verification.md` v27
+- 用途タグ `camo-cadpat` / `camo-pla07` / `camo-emr`（いずれも新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベルを追加した。国タグ `ca` / `cn` も新規なので `COUNTRY_LABEL` に追加した
+- 近接する既存エントリ: `cadpat-mgreen` #525d3c は `fs34079` #555548 と近いが、CADPAT は緑側に寄っており別色として登録した
+
+## 第7弾（迷彩プリセット追加に伴う実測色: フロッグスキン 両面）
 
 アプリにフロッグスキン風（M1942、Issue #29）のプリセットを追加したのに合わせ、ジャングル面 5 色 + ビーチ面 4 色を追記した。
 
@@ -284,6 +297,18 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `dbdu-lbrown381` | DBDU (実測) Light Brown 381 | #9a766b | 同上 |
 | `dbdu-dbrown382` | DBDU (実測) Dark Brown 382 | #704c44 | 同上 |
 | `dbdu-black383` | DBDU (実測) Black 383 | #1d1f23 | 同上 |
+| `cadpat-lgreen` | CADPAT (実測) cadpat-1 | #81925c | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/cadpat.png 4 --max-edge=1024 --core=2`。参照画像は Wikimedia Commons [File:Temperate CADPAT camouflage pattern swatch.png](https://commons.wikimedia.org/wiki/File:Temperate_CADPAT_camouflage_pattern_swatch.png) パブリックドメイン) |
+| `cadpat-mgreen` | CADPAT (実測) cadpat-2 | #525d3c | 同上 |
+| `cadpat-dgreen` | CADPAT (実測) cadpat-3 | #35392d | 同上 |
+| `cadpat-tan` | CADPAT (実測) cadpat-4 | #847b5d | 同上 |
+| `pla07-lgray` | 07 式 (実測) type07-1 | #d8d7dc | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/pla07.jpg 4 --max-edge=873 --core=2`。参照画像は Wikimedia Commons [File:Type 07 universal.jpg](https://commons.wikimedia.org/wiki/File:Type_07_universal.jpg) CC BY-SA 4.0) |
+| `pla07-green` | 07 式 (実測) type07-2 | #48594f | 同上 |
+| `pla07-brown` | 07 式 (実測) type07-3 | #605645 | 同上。ただし JPEG のリンギングで k-means の重心が灰側へ流れるため、筆致内部 (近傍 5×5 がすべて暖色) の中央値で実測 |
+| `pla07-black` | 07 式 (実測) type07-4 | #292d30 | 同上 |
+| `emr-khaki` | EMR (実測) emr-1 | #7d7d50 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/emr.png 4 --max-edge=2320 --core=2`。参照画像は Wikimedia Commons [File:Russian Armed Forces EMR patten.png](https://commons.wikimedia.org/wiki/File:Russian_Armed_Forces_EMR_patten.png) CC0) |
+| `emr-dgreen` | EMR (実測) emr-2 | #434e38 | 同上 |
+| `emr-brown` | EMR (実測) emr-3 | #513d32 | 同上 |
+| `emr-black` | EMR (実測) emr-4 | #302d31 | 同上 |
 | `frogskin-lgreen` | フロッグスキン (実測) m1942-1 | #93a587 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/frogskin.jpg 12 --core=2 --max-edge=610 --blur=2`。参照画像は Wikimedia Commons [File:Frog Skin camouflage pattern.jpg](https://commons.wikimedia.org/wiki/File:Frog_Skin_camouflage_pattern.jpg) CC BY-SA 3.0) |
 | `frogskin-lime` | フロッグスキン (実測) m1942-2 | #85926c | 同上 |
 | `frogskin-tan` | フロッグスキン (実測) m1942-3 | #978d70 | 同上 |

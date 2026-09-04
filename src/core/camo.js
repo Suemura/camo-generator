@@ -1709,6 +1709,86 @@ export const PRESETS = {
       {name:'フォリッジグリーン', hex:'#798d72'},
     ],
   },
+  cadpat: {
+    // CADPAT TW (温帯林、カナダ)。MARPAT の原型なのでピクセル粒度は同等 (cell 4)。
+    // 実物の特徴 (refs/cadpat.png の 4 色実測。面積比 17 / 44 / 29 / 10%):
+    //   - 緑 3 段 + タンの構成で、MARPAT のような明るいタン地を持たない。
+    //     ミッドグリーンが最大面積 (44%) を占め、全体が緑に寄る
+    //   - ダークグリーンは MARPAT のブラウンブラック (17%) より広い 29% で、
+    //     枝状に細く散るのではなく大きめの塊として連なる → min/max を MARPAT より大きく、
+    //     compact を上げて塊寄りにする
+    //   - タンは最小面積 (10%)。緑の塊の縁に沿って点在するので seedNear でダークグリーンに寄せる
+    name: 'CADPAT TW (カナダ)', kind: 'growth', ref: 'cadpat',
+    cell: 4, growDither: 1,
+    layers: [
+      {color: 1, ratio: 0.74, eat: [0], min: 0.0015, max: 0.006, compact: 1.3, drift: 2.2, jitter: 1.3, wander: 0.4, stratify: 5},
+      {color: 2, ratio: 0.36, eat: [0,1], seedNear: 1, min: 0.0012, max: 0.005, compact: 1.4, drift: 2.0, jitter: 1.1, wander: 0.35},
+      {color: 3, ratio: 0.11, eat: [0,1,2], seedNear: 2, min: 0.0005, max: 0.0025, compact: 1.5, drift: 1.4, jitter: 1.0, wander: 0.30},
+    ],
+    growSpeckle: [
+      {on: 1, dot: 0, density: 0.06}, {on: 0, dot: 1, density: 0.05},
+      {on: 2, dot: 1, density: 0.05}, {on: 3, dot: 2, density: 0.04},
+    ],
+    colors: [
+      {name:'ライトグリーン', hex:'#81925c'},
+      {name:'ミッドグリーン', hex:'#525d3c'},
+      {name:'ダークグリーン', hex:'#35392d'},
+      {name:'タン',        hex:'#847b5d'},
+    ],
+  },
+  pla07: {
+    // 07 式 通用迷彩 (中国)。実物の特徴 (refs/pla07.jpg 実測。面積比 42 / 36 / 10 / 10%):
+    //   - ライトグレーの地が最大面積で、明暗コントラストが MARPAT より強い
+    //   - グリーンの塊は輪郭が整い、MARPAT のような細い蛇行が少ない
+    //     → wander / drift を下げて compact を上げ、丸みのある塊にする
+    //   - ブラックは緑塊の内側に落ちる (eat: [1] で緑だけを食う)。
+    //     ブラウンは緑と地の境界を縫う細い帯 (eat: [0,1])
+    //   - ピクセルが MARPAT より粗い (Issue #30) → cell 5。粗いセルでスペックルを強くすると
+    //     微小点アーティファクトが目立つので density は MARPAT より低くする
+    name: '07 式 通用迷彩 (中国)', kind: 'growth', ref: 'pla07',
+    cell: 5, growDither: 1,
+    layers: [
+      {color: 1, ratio: 0.545, eat: [0], min: 0.0025, max: 0.009, compact: 1.7, drift: 1.6, jitter: 1.1, wander: 0.25, stratify: 5},
+      {color: 3, ratio: 0.11, eat: [1], seedNear: 1, min: 0.001, max: 0.004, compact: 1.6, drift: 1.4, jitter: 1.0, wander: 0.25},
+      {color: 2, ratio: 0.11, eat: [0,1], seedNear: 1, min: 0.0008, max: 0.0035, compact: 1.4, drift: 2.6, jitter: 1.0, wander: 0.30},
+    ],
+    growSpeckle: [
+      {on: 1, dot: 0, density: 0.05}, {on: 0, dot: 1, density: 0.04},
+      {on: 3, dot: 1, density: 0.04}, {on: 2, dot: 0, density: 0.03},
+    ],
+    colors: [
+      {name:'ライトグレー', hex:'#d8d7dc'},
+      {name:'グリーン',   hex:'#48594f'},
+      {name:'ブラウン',    hex:'#605645'},
+      {name:'ブラック',    hex:'#292d30'},
+    ],
+  },
+  emr: {
+    // EMR (デジタルフローラ、ロシア)。実物の特徴 (refs/emr.png 実測。面積比 43 / 42 / 10 / 6%):
+    //   - カーキとダークグリーンがほぼ同面積で噛み合い、地色がどちらとも言えない
+    //   - ピクセルが極小 (参照スウォッチで幅の約 1/290) → cell 3
+    //   - クラスタが縦方向へ細長く伸びる。UCP の横長 (elongX) と対称に elongY を使う。
+    //     縦異方性を蛇行で崩さないよう drift を MARPAT より下げ、
+    //     縦縞の反復に退化しないよう elongY は 1.8 に留めて min/max の分散で崩す
+    //   - ブラウンとブラックは緑の縁に沿う細片なので seedNear で連鎖させる
+    name: 'EMR (ロシア)', kind: 'growth', ref: 'emr',
+    cell: 2, growDither: 1,
+    layers: [
+      {color: 1, ratio: 0.52, eat: [0], min: 0.0003, max: 0.0015, compact: 1.3, drift: 1.2, jitter: 1.2, wander: 0.25, elongY: 1.8, stratify: 6},
+      {color: 2, ratio: 0.15, eat: [0,1], seedNear: 1, min: 0.0002, max: 0.0009, compact: 1.4, drift: 1.0, jitter: 1.0, wander: 0.22, elongY: 1.8},
+      {color: 3, ratio: 0.06, eat: [1,2], seedNear: 2, min: 0.00012, max: 0.0005, compact: 1.5, drift: 1.0, jitter: 1.0, wander: 0.22, elongY: 1.8},
+    ],
+    growSpeckle: [
+      {on: 1, dot: 0, density: 0.10}, {on: 0, dot: 1, density: 0.10},
+      {on: 2, dot: 1, density: 0.07}, {on: 3, dot: 1, density: 0.06},
+    ],
+    colors: [
+      {name:'カーキ',      hex:'#7d7d50'},
+      {name:'ダークグリーン', hex:'#434e38'},
+      {name:'ブラウン',     hex:'#513d32'},
+      {name:'ブラック',     hex:'#302d31'},
+    ],
+  },
   dcu: {
     // 3 カラーデザート (DCU / コーヒーステイン)。実物の特徴:
     //   - ブロブが M81 より大きく丸みが強く、輪郭の入り組みが少ない → 専用ソース図案 (dcusrc) が担う

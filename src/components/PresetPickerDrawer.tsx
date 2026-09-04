@@ -41,7 +41,7 @@ const TAGS: Record<Exclude<Axis, "all">, { key: string; label: string }[]> = {
 };
 
 function hasTag(m: PresetMeta, axis: Exclude<Axis, "all">, key: string) {
-  if (axis === "env") return (m.env as string[]).includes(key);
+  if (axis === "env") return m.env.includes(key as PresetMeta["env"][number]);
   if (axis === "country") return m.country === key;
   if (axis === "group") return m.group === key;
   return m.era === key;

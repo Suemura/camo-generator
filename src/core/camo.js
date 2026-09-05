@@ -302,7 +302,53 @@ function drawBranch(index, w, h, rng, x, y, heading, color, o, depth=0){
 // 多数決フィルタ: 輪郭の融合・平滑化 (円形カーネル)
 // 実装は行スライディング: x を 1 進めるごとに各行 dy で左端 1 px を減らし右端 1 px を足す → O(r)/px。
 // 素朴な O(r²)/px と結果は同一 (4096px で半径 7 なら 200 倍速い)
-function modeFilter(index, w, h, radius, passes, nColors, wrap=false){
+/* ================= 細部保護マスク (v34) =================
+   実物のストローク系図案 (タイガーストライプ / ブラッシュストローク / リザード) の識別点は
+   「刷毛の毛先が割れた櫛状の細線」「面の縁の掠れ割れ」「面から離れた飛沫」で、いずれも
+   幅 1〜2px・長さ数十 px の構造である (実物マップの面積の 3〜6% がこのサイズ帯にある)。
+   後処理 3 段 (平滑化 modeFilter / 欠片除去 cleanupFragments / 1px 筋除去 cleanupSlivers) は
+   「幅」と「面積」だけで判定していたため、この細部を nearest サンプリング起因の微小点と
+   区別できず、95〜98% を削除していた (計測は docs/01-tech-verification.md v34)。
+   → 「細い」だけでなく「ある向きに長く伸びている」ことを条件に加えれば両者は分離できる。
+      微小点は長さを持たないので従来どおり消え、線は残る。
+   4 方位 (横 / 縦 / 斜め 2 方向) で判定するのは、ブラッシュストロークの筆跡が斜めに走るため
+   (横縦だけの判定では斜めの細線が「幅も長さも小さい」に見えて保護されない)。 */
+function thinLineMask(index, w, h, u, wrap){
+  // u: 「512px・scale 1.0」を 1 とした線幅の倍率 (minFrag と同じ正規化)
+  const tMax = Math.max(2, Math.round(2.5*u));   // 幅がこれ以下なら「細い」
+  // 長さがこれ以上なら「線」(= 点ではない)。4 は掃引で決めた: 3 だと丸い微小点まで拾って
+  // 実物に無いちらつきが出はじめ、5 以上だと毛先の短いダッシュ (実物の 110px² 未満の成分の
+  // 主要部分) が保護から外れて brushstroke の再現度が 86 → 74 に落ちる
+  const lMin = Math.max(3, Math.round(4*u));
+  const mask = new Uint8Array(w*h);
+  const at = (x, y) => {
+    if(wrap) return index[wrapI(y, h)*w + wrapI(x, w)];
+    if(x<0||x>=w||y<0||y>=h) return -1;
+    return index[y*w + x];
+  };
+  // 方位と、その直交方位 (幅を測る向き)
+  const DIRS = [[1,0,0,1], [0,1,1,0], [1,1,1,-1], [1,-1,1,1]];
+  // (x,y) から (dx,dy) 方向へ同色が続く歩数 (最大 lim)
+  const walk = (x, y, dx, dy, v, lim) => {
+    let n = 0;
+    for(let s=1;s<=lim;s++){ if(at(x+dx*s, y+dy*s) !== v) break; n++; }
+    return n;
+  };
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const v = index[y*w + x];
+      for(let d=0;d<4;d++){
+        const [dx, dy, px, py] = DIRS[d];
+        // 幅を先に見る: 直交方向の広がりが tMax を超えるなら「面」なので他方位へ
+        const width = 1 + walk(x, y, px, py, v, tMax) + walk(x, y, -px, -py, v, tMax);
+        if(width > tMax) continue;
+        if(1 + walk(x, y, dx, dy, v, lMin) + walk(x, y, -dx, -dy, v, lMin) >= lMin){ mask[y*w + x] = 1; break; }
+      }
+    }
+  }
+  return mask;
+}
+function modeFilter(index, w, h, radius, passes, nColors, wrap=false, protect=null){
   let cur = index;
   // 各 dy の半幅 (円内判定 dx²+dy² <= r² と同じ)
   const hw = new Int32Array(2*radius+1);
@@ -344,7 +390,8 @@ function modeFilter(index, w, h, radius, passes, nColors, wrap=false){
         }
         let best = 0;
         for(let c=1;c<nColors;c++) if(counts[c]>counts[best]) best = c;
-        next[y*w+x] = best;
+        // 細部保護 (v34): 細く長い構造は多数決に潰させない (protect=null なら従来どおり)
+        next[y*w+x] = (protect && protect[y*w+x]) ? cur[y*w+x] : best;
       }
     }
     cur = next;
@@ -1277,15 +1324,25 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   }
   if(progress) progress(0.8);
   let sm = out;
+  // 細部保護マスク (v34) は「実寸への拡大より前」に作る。拡大は nearest なので、
+  // 拡大後に作ると輪郭に生じた階段 (幅数 px・長さ十数 px の凸部) まで「細長い構造」と
+  // 誤認して保護してしまい、後段の階段除去が効かなくなる (2048px で輪郭が総ギザになった)。
+  // ベースキャンバスには階段が存在しないので、ここで作れば実物由来の細部だけが残る
+  let protect = P.organic !== false ? thinLineMask(out, w, h, (w/512)/scale, wrap) : null;
   // 実寸への拡大 (nearest)。拡大後の階段幅は 1/kFull px
   let kFull = k;
   if(f > 1){
     const big = new Uint8Array(fullW * fullH);
+    const bigP = protect ? new Uint8Array(fullW * fullH) : null;
     for(let y=0;y<fullH;y++){
       const sy = Math.min(h-1, (y * h / fullH) | 0) * w;
-      for(let x=0;x<fullW;x++) big[y*fullW + x] = out[sy + Math.min(w-1, (x * w / fullW) | 0)];
+      for(let x=0;x<fullW;x++){
+        const si = sy + Math.min(w-1, (x * w / fullW) | 0);
+        big[y*fullW + x] = out[si];
+        if(bigP) bigP[y*fullW + x] = protect[si];   // マスクも index と同じ nearest で拡大する
+      }
     }
-    sm = big; w = fullW; h = fullH; kFull = k / f;
+    sm = big; protect = bigP; w = fullW; h = fullH; kFull = k / f;
   }
   if(P.organic !== false){
     // 有機系: nearest サンプリング起因のギザ除去 (必要最小限)
@@ -1298,13 +1355,21 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     // 拡大: 階段除去。階段幅は 1/k px なので半径は 1/k に比例させる
     // (v16 以前は ×(w/512) が掛かり二重スケールで 4096px で半径 54 → 数分かかった)
     else if(kFullMin < 0.95) smoothR = Math.max(1, Math.round(1.2/kFullMin));
-    if(smoothR) sm = modeFilter(sm, w, h, smoothR, 1, NC, wrap);
+    // 平滑化での細部保護は「縮小サンプリング (kFull > 1.05)」のときだけ効かせる。
+    //   縮小域: 実物の細部は canvas 上で 1px 前後まで痩せており、多数決に潰される → 保護が要る
+    //   拡大域 (kFull < 0.95): ソース 1px が canvas 1/k px に広がるため、階段の畝も
+    //     「細くて長い構造」と同じ形になり、マスクでは細部と区別できない。この域では細部の幅も
+    //     1/k px あって多数決では消えない (半径 1.2/k の窓に対し帯幅 2/k) ので、保護しないほうが
+    //     正しい。保護すると階段除去が止まり、2048px 出力の輪郭が総ギザになる
+    // 欠片除去と 1px 筋除去は両域でマスクを尊重する (どちらもサイズだけで判定する段なので、
+    // 階段の畝は大きな成分の一部として扱われ、誤保護の害が出ない)
+    if(smoothR) sm = modeFilter(sm, w, h, smoothR, 1, NC, wrap, kFull > 1.05 ? protect : null);
     if(progress) progress(0.92);
     // 微小フラグメント除去 (画面上で点に見えるサイズの絶対下限つき)
     const minFrag = Math.round(Math.max(70 * (w/512)*(w/512),
                                         110 * (w/512)*(w/512) / (scale*scale)));
-    cleanupFragments(sm, w, h, minFrag, wrap, NC);
-    cleanupSlivers(sm, w, h, wrap);   // 幅 1px の筋 (輪郭交差の残り) を除去
+    cleanupFragments(sm, w, h, minFrag, wrap, NC, protect);
+    cleanupSlivers(sm, w, h, wrap, protect);   // 幅 1px の筋 (輪郭交差の残り) を除去
   }else{
     // デジタル系: ピクセル輪郭を保持。サブセルの欠片だけ除去
     cleanupFragments(sm, w, h, Math.round((P.fragFloor ?? 14) * (w/512)*(w/512)), wrap, NC);
@@ -1431,7 +1496,7 @@ function applyChips(index, w, h, seed, upx, C, wrap){
 // 最上層の版で消した黒枝の跡や、パッチ輪郭の交差でできた 1px の筋だけはそこに残る
 // (連結成分としては本体に繋がっているので cleanupFragments では落ちない)。
 // デジタル系は 1px セルが図案なので対象外
-function cleanupSlivers(index, w, h, wrap=false){
+function cleanupSlivers(index, w, h, wrap=false, protect=null){
   for(let pass=0; pass<2; pass++){
     const src = index.slice();
     const sat = (x, y) => {
@@ -1441,6 +1506,8 @@ function cleanupSlivers(index, w, h, wrap=false){
     };
     for(let y=0;y<h;y++){
       for(let x=0;x<w;x++){
+        // 細部保護 (v34): 幅 1px でも「線」として伸びているものは実物の刷毛目なので残す
+        if(protect && protect[y*w + x]) continue;
         const v = src[y*w + x];
         const l = sat(x-1, y), r = sat(x+1, y);
         if(l >= 0 && l === r && l !== v){ index[y*w + x] = l; continue; }
@@ -1453,7 +1520,7 @@ function cleanupSlivers(index, w, h, wrap=false){
 // 面積 < minArea の連結成分を近傍多数色へ併合。nColors は index に現れる色数 (既定 4 = クイルト系)。
 // 既定のままだと 5 値図案で cnt[4] が数えられず、5 色目が併合先として選ばれない
 // 戻り値: 1 px 以上を書き換えたら true (呼び出し側が不動点ループを打ち切る判定に使う)
-function cleanupFragments(index, w, h, minArea, wrap=false, nColors=4){
+function cleanupFragments(index, w, h, minArea, wrap=false, nColors=4, protect=null){
   let changed = false;
   const seen = new Uint8Array(w*h);
   // 4近傍インデックス (wrap 時は境界をまたいで連結 → 継ぎ目で欠片が二重に数えられない)
@@ -1479,6 +1546,13 @@ function cleanupFragments(index, w, h, minArea, wrap=false, nColors=4){
       for(const j of nb(i)) if(!seen[j] && index[j]===col){ seen[j]=1; stack.push(j); }
     }
     if(cells.length >= minArea) continue;
+    // 細部保護 (v34): 面積は小さいが「細く長い」画素が過半を占める成分は、実物の毛先・
+    // 刷毛目・飛沫なので残す。丸い微小点は protect が立たないので従来どおり併合される
+    if(protect){
+      let pc = 0;
+      for(const i of cells) if(protect[i]) pc++;
+      if(pc*2 >= cells.length) continue;
+    }
     const cnt = new Int32Array(nColors);
     for(const i of cells){
       for(const j of nb(i)) if(index[j]!==col) cnt[index[j]]++;
@@ -2000,12 +2074,13 @@ export const PRESETS = {
     //    パッチ窓をタイル境界にまたがせても図案が連続する)
     // slopeLock: 筆跡が斜めに走るため、mx·my = -1 のパッチで傾きが反転すると隣接パッチで
     //   「く」の字に折れて長距離の流れが消える (tigerstripe と同じ理由)
-    // kBase 1.2 / patchR 155: kBase は「ソースもパッチ半径 (R = patchR/k) も同じ比で縮める」
-    //   ズーム操作なので、図案とパッチの大小関係は patchR 側で決まる。kBase 1.4 では実物より
-    //   一回り細かい図案になり、筆跡の大ぶりさが失われたため 1.2 を採る。
-    //   R = 155/1.2 ≈ 129 で 512px あたり 11 枚。色比フィードバック (divw) が働くには
-    //   10 枚以上が要る (v30) ので、これが patchR の上限側の制約になる
-    kBase: 1.2, patchR: 155, organic: true, slopeLock: true,
+    // kBase 1.0 / patchR 130: kBase は「ソースもパッチ半径 (R = patchR/k) も同じ比で縮める」
+    //   ズーム操作なので、図案とパッチの大小関係は patchR 側で決まる。1.0 = ソースを等倍参照
+    //   する値で、これより上げると間引きで毛先のかすれ (ソース上 1〜2px) が落ちる。1 未満は
+    //   最近傍の拡大階段が出る。R = 130 で 512px あたり 11 枚。色比フィードバック (divw) が
+    //   働くには 10 枚以上が要る (v30) ので、これが patchR の上限側の制約になる
+    //   (v34 の再現度スコアで kBase 1.2/patchR 155 = 86.0 → 1.0/130 = 91.5)
+    kBase: 1.0, patchR: 130, organic: true, slopeLock: true,
     // frac はソース図案の実測面積比 (tools/gen-src.mjs の出力)
     frac: [0.311, 0.257, 0.298, 0.135], divw: [1, 1, 1, 1],
     // 実測: node tools/extract-palette.mjs refs/private/brushstroke.jpg 4 --max-edge=960 --core=2

@@ -23,6 +23,18 @@ export function hash2(ix, iy, seed){
   return (h >>> 0) / 4294967296;
 }
 function fade(t){ return t*t*t*(t*(t*6-15)+10); }
+// 周期 value noise。格子を nx×ny に固定し、格子 index を mod で畳んでトーラス上で連続にする。
+// vnoise / fbm は非周期なので、tileable 生成で使うと継ぎ目に低周波の段差が出る
+function pvnoise(gx, gy, nx, ny, seed){
+  const ix = Math.floor(gx), iy = Math.floor(gy);
+  const fx = gx - ix, fy = gy - iy;
+  const i0 = wrapI(ix, nx), i1 = wrapI(ix+1, nx);
+  const j0 = wrapI(iy, ny), j1 = wrapI(iy+1, ny);
+  const a = hash2(i0, j0, seed),   b = hash2(i1, j0, seed);
+  const c = hash2(i0, j1, seed),   d = hash2(i1, j1, seed);
+  const u = fade(fx), v = fade(fy);
+  return a + (b-a)*u + (c-a)*v + (a-b-c+d)*u*v;
+}
 export function vnoise(x, y, seed){
   const ix = Math.floor(x), iy = Math.floor(y);
   const fx = x - ix, fy = y - iy;
@@ -1634,6 +1646,40 @@ function stampSpot(out, w, h, s, color, wrap, grow=0){
   }
   return n;
 }
+/* 版ごとの「低周波な偏在」(L.clump)。
+   フロッグスキンの斑は全面に一様に散るが、フレックターン系はそうではない:
+   実物 (refs/private/flecktarn.jpg) では黒とダークグリーンの版が数十 cm スケールで固まって現れ、
+   その塊の外では地色が広く残る。砂漠版 (ヴュステンターン) はさらに極端で、グリーンの版が
+   大きな塊としてだけ現れ、それ以外の領域には 1 つも出ない。
+   一様配置のままではこの偏在が作れず、遠目に「粒が均一に散ったディザ」にしか見えない。
+   → 斑の中心をトーラス周期の低周波ノイズ (密度場) で間引く。境界に掛かった斑は丸ごと刷られるので、
+     輪郭は円弧の連なりのままで、密度だけが場所によって変わる。 */
+// C.cell は塊の差し渡し (512px・scale 1.0 基準の px)。斑の半径 L.r と同じ単位で持ち、
+// 格子分割数はそこから求める。「キャンバスを何分割するか」で持つと、斑だけが u = (w/512)/scale で
+// 縮んで塊が縮まず、スケールを上げるほど塊が図案に対して不釣り合いに巨大化する
+// (scale 0.7 → 2.0 で斑の等価半径が 1/3 になっても塊りの強さがほぼ変わらないことを実測で確認)
+function clumpField(x, y, w, h, u, C, seed){
+  const cellPx = Math.max(1, (C.cell ?? 170) * u);
+  // 分割数は整数でなければトーラス周期にならないので丸める。スケールを連続に動かすと
+  // 塊の寸法は階段状に変わるが、周期性を保つ以上これは避けられない
+  const nx = Math.max(1, Math.round(w / cellPx));
+  const ny = Math.max(1, Math.round(h / cellPx));
+  // 2 オクターブ。1 段目が塊の位置、2 段目が塊の縁の崩れ (実物の塊は輪郭が滑らかではない)
+  return 0.72 * pvnoise(x/w*nx, y/h*ny, nx, ny, seed)
+       + 0.28 * pvnoise(x/w*nx*2, y/h*ny*2, nx*2, ny*2, seed + 977);
+}
+// 候補点を採るか。soft > 0 なら閾値付近を確率的にぼかす。
+// 判定に rng() を使わず hash2 を使うのは、clump を持たない既存プリセット (フロッグスキン系) の
+// 乱数消費順を 1 回も変えないため (タイガーストライプの slopeLock で踏んだ轍を避ける)
+function clumpAccept(cx, cy, w, h, u, C, seed){
+  const f = clumpField(cx, cy, w, h, u, C, seed);
+  const thr = C.thr ?? 0.5, soft = C.soft ?? 0.15;
+  if(soft <= 0) return f >= thr;
+  const p = (f - thr) / soft;
+  if(p >= 1) return true;
+  if(p <= 0) return false;
+  return hash2(cx|0, cy|0, seed ^ 0x51ed) < p;
+}
 // P.layers を版の順に処理する。各層: color (index 値) / frac (塗る面積比。後の版に覆われる分を含む) /
 // r [min,max] (平均半径、512px・scale 1 基準 px) / elong / lobe (高調波振幅の範囲) /
 // gap (同層の中心間距離の下限 = (R1+R2)·(1+gap)。負なら重なって融合する) /
@@ -1641,7 +1687,10 @@ function stampSpot(out, w, h, s, color, wrap, grow=0){
 // patch: true なら「地の色むら」扱いで、他層の間隔制約に参加しない /
 // halo {color, grow} なら、その斑を刷る直前に同じ形を (1+grow) 倍で halo.color として刷る。
 //   実物の重ね刷りで暗色の斑の周りに一段明るい版が縁として残る構造 (フロッグスキンの
-//   ブラウン斑をグリーンが縁取る、など)。層間の相関を独立配置のまま表現する最小の手段
+//   ブラウン斑をグリーンが縁取る、など)。層間の相関を独立配置のまま表現する最小の手段 /
+// clump {cells, thr, soft, field} なら斑の中心を低周波の密度場で間引く (上記 clumpField 参照)。
+//   field を同じ値にした層は同一の密度場を共有する (フレックターンの黒とダークグリーンが
+//   同じ暗色域に固まる構造)。省略時は層 index ごとに独立した場になる
 export function genSpots(w, h, seed, scale, P, opt={}){
   const wrap = opt.tileable !== false;
   const progress = typeof opt.progress === 'function' ? opt.progress : null;
@@ -1660,16 +1709,21 @@ export function genSpots(w, h, seed, scale, P, opt={}){
     const target = L.frac * w * h;
     const rLo = L.r[0]*u, rHi = L.r[1]*u;
     const gap = L.gap ?? 0.1, over = L.over ?? 0.4;
+    // clump 層は候補の大半が密度場に弾かれるため、面積目標に届く前に安全弁が働かないよう上限を上げる
+    const failLimit = L.clump ? 2000 : 400;
+    // 密度場のシード。L.clump.field が同じ層は同一の場を共有する
+    const clumpSeed = L.clump ? (seed ^ 0x9e37 ^ Math.imul((L.clump.field ?? li) + 1, 0x2545)) : 0;
     let painted = 0, fails = 0;
     // 候補 8 点から「既存斑点との最短距離が最大」のものを採る (Mitchell's best-candidate)。
     // 一様なダーツ投げより間隔が均され、捺染図案の「斑点が散在するが偏らない」配置になる
     // fails は成功時にリセットしない「累積失敗」カウンタ (連続失敗ではない)。gap/over が厳しく
     // 面積目標に届く前に置き場所が尽きる異常系の安全弁で、通常は面積目標到達が先に来て消費されない
-    while(painted < target && fails < 400){
+    while(painted < target && fails < failLimit){
       const R = randRange(rng, rLo, rHi);
       let best = null, bestD = -1;
       for(let c=0;c<8;c++){
         const cx = rng()*w, cy = rng()*h;
+        if(L.clump && !clumpAccept(cx, cy, w, h, u, L.clump, clumpSeed)) continue;
         let ok = true, minD = Infinity;
         for(const q of placed){
           const d2 = dist2(cx, cy, q.cx, q.cy), lim = R + q.R;
@@ -2554,6 +2608,94 @@ export const PRESETS = {
     colors: [
       {name:'グリーン',   hex:'#5b7457'},
       {name:'ペールグレー', hex:'#b0b4b6'},
+    ],
+  },
+  flecktarn: {
+    // ドイツ連邦軍 フレックターン (1990〜現用)。実物の特徴:
+    //   - 5 色。ライトグリーンの地布に、グリーン / レッドブラウン / ダークグリーン / ブラックの
+    //     4 版を刷り重ねる。可視面積比の実測は 0.228 / 0.218 / 0.308 / 0.175 / 0.072
+    //   - 斑が小さく、**同じ版の斑どうしが接触して融合する**。融合してできた塊の輪郭は円弧の連なりで、
+    //     M81 のような枝分かれ・切り合いは無い → gap を負にして斑を重ねるのがフロッグスキン系との違い
+    //   - **暗色 (ダークグリーン・ブラック) が低周波で偏在する**。参照スウォッチの左上は暗色でほぼ埋まり、
+    //     右下は地色が広く残る。一様配置のままだと遠目に「均一なディザ」になり実物に見えない
+    //     → L.clump で 2 つの暗色版に同じ密度場 (field: 0) を共有させ、同じ塊に集める
+    //   - **ブラックが 5 版でもっとも強く偏在し、連結成分も最大**。tools/analyze-spots.mjs の
+    //     塊り比 (窓 128px) は 地色 38.7 / グリーン 34.6 / レッドブラウン 33.0 / ダークグリーン 42.2 に対し
+    //     ブラック 77.7 と突出する。等価半径 p50 も 24.6 で最大。黒を「小さい斑を散らす版」に
+    //     すると実物に見えない (この取り違えで一度作り直した。docs/01-tech-verification.md v36)
+    // → kind: 'spots' を選ぶ理由: 輪郭が丸い独立斑の重なりで、クイルト (ソース図案の継ぎ合わせ) の
+    //   ように色領域が互いを切り合う構造ではない。genGrowth の直交階段も持たない
+    // → ソース図案 (flecktarnsrc.js) を作らない理由: 参照画像が CC BY-SA で、量子化したインデックス
+    //   マップを同梱すると share-alike の派生物になる (フロッグスキン / ベリョースカと同じ判断)。
+    //   参照画像は目視比較とパレット実測にのみ使う
+    name: 'フレックターン風', kind: 'spots', ref: 'flecktarn',
+    // r は「512px・scale 1.0」基準の平均半径 px。塊は「大きな斑 1 個」ではなく gap 負の融合で作る
+    // (1 個で作ると輪郭が単純な楕円になり、実物の「円弧が連なった凹凸」が出ない)。
+    // 下限を 6〜8 まで落としているのは、実物が大きな塊と小さな独立斑を混ぜているため
+    // frac は「その版が塗る面積比」(後の版に覆われる分を含む)。参照実測の可視面積比
+    // 0.228 / 0.218 / 0.308 / 0.175 / 0.072 に対し、生成結果 (512px・scale 1.0・3 シード平均) は
+    // 0.216 / 0.238 / 0.299 / 0.182 / 0.064
+    layers: [
+      // グリーンとレッドブラウンは全面に散り、偏在しない (参照の塊り比 34.6 / 33.0 で 5 版中最小)
+      {color: 1, frac: 0.47, r: [6, 34], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.40, over: 0.8},
+      {color: 2, frac: 0.42, r: [6, 32], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.38, over: 0.8},
+      // 暗色 2 版は同じ密度場 (field: 0) を共有して同じ塊に集まるが、強さが違う。
+      // ダークグリーンは塊の外縁まで散り (thr 低め・soft 広め)、ブラックはその内側の芯にだけ乗る
+      // (thr 0.62・soft 0.06 のほぼハード閾値。参照左上の黒い大領域を作るのはこの設定)。
+      // cell を 170 → 210 と大きく取るのは、黒の塊を他の版より一段大きい単位にするため
+      {color: 3, frac: 0.22, r: [6, 30], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.38, over: 0.8,
+       clump: {cell: 170, thr: 0.36, soft: 0.26, field: 0}},
+      {color: 4, frac: 0.068, r: [8, 34], elong: [0.16, 0.44], lobe: [0.12, 0.28], wobble: 0.12, gap: -0.44, over: 0.8,
+       clump: {cell: 210, thr: 0.62, soft: 0.06, field: 0}},
+    ],
+    minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/flecktarn.jpg 5 --core=2
+    // (平坦なデジタルスウォッチなので --blur / --flatten は不要。k=6/7 に上げても内部画素を持つ
+    //  クラスタは 5 つのままで、版が 5 色であることの確認になる)
+    colors: [
+      {name:'ライトグリーン',  hex:'#716744'},
+      {name:'グリーン',      hex:'#4e4832'},
+      {name:'レッドブラウン',  hex:'#5a3f2e'},
+      {name:'ダークグリーン',  hex:'#312c28'},
+      {name:'ブラック',      hex:'#211d1c'},
+    ],
+  },
+  wuestentarn: {
+    // ドイツ連邦軍 ヴュステンターン / 3-Farben-Tarndruck (1993〜)。実物の特徴:
+    //   - 3 色。タンの地布に、ダークグリーンとレッドブラウンの 2 版のみ。フレックターンと同じ
+    //     「丸い斑の融合」の設計言語だが、版が 2 つに減り地色の残存が 0.50 と倍近い
+    //   - **どちらの版も全面に散り、フレックターンの黒のような排他的な塊を作らない**。
+    //     tools/analyze-spots.mjs の塊り比 (窓 128px) は タン 24.6 / グリーン 16.4 / ブラウン 23.4 で、
+    //     グリーンがむしろ 3 版中もっとも一様。実物布地の写真 (refs/private/wuestentarn.jpg) には
+    //     緑が固まって写る一場面があるが、それは大きなリピートの一部で、全体が見える平坦スウォッチで
+    //     測ると逆だった。当初この写真だけを見て「緑は塊としてだけ現れる」と読み、緑が中央に 1 個の
+    //     島として出る別物を作ってしまった (docs/01-tech-verification.md v36)
+    //   - 最大の塊を作るのはブラウン。緑ではない
+    // → Wikipedia は「Wüstentarn はしばしば誤って Tropentarn と呼ばれる」と注記しており、
+    //   参照に使った Commons のスウォッチも "Tropentarn" 名で 3 版しか持たない。本プリセットは
+    //   実測した版数 (3) に従って 3-Farben-Tarndruck = ヴュステンターンとして扱う。
+    //   5 色の本来のトロペンターンは信頼できる参照が得られていないため別プリセットにしない
+    // → ソース図案を作らない理由は flecktarn と同じ (CC BY-SA の派生物を同梱しない)
+    name: 'ヴュステンターン風 (3 色デザート)', kind: 'spots', ref: 'wuestentarn',
+    // r / frac の根拠は flecktarn と同じ測り方。参照実測の可視面積比 0.529 / 0.209 / 0.262 に対し、
+    // 生成結果 (512px・scale 1.0・3 シード平均) は 0.519 / 0.219 / 0.261
+    layers: [
+      // グリーンは clump なし。3 版でもっとも一様に散る版なので、密度場を掛けると実物から遠ざかる
+      {color: 1, frac: 0.26, r: [6, 30], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.35, over: 0.8},
+      // 最大の塊を作るのはブラウン。thr を低く soft を広く取り、間引きではなく緩い濃淡として効かせる
+      // (排他ゲートにすると、緑でやったのと同じ「一色だけが島になる」失敗をブラウンで繰り返す)
+      {color: 2, frac: 0.27, r: [6, 28], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.32, over: 0.8,
+       clump: {cell: 170, thr: 0.26, soft: 0.40, field: 1}},
+    ],
+    minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/wuestentarn_swatch.png 5 --core=2
+    // (平坦なベクタースウォッチ。k=3 だと中間の輪郭混色クラスタに 1 枠取られてグリーンが落ちるため
+    //  k=5 まで上げ、内部画素を持つ 3 クラスタを採る。布地写真 refs/private/wuestentarn.jpg は
+    //  照明が青寄りで彩度が失われており、パレット実測には使えない。形状の比較にのみ使う)
+    colors: [
+      {name:'タン',         hex:'#baaf9d'},
+      {name:'ダークグリーン', hex:'#405a35'},
+      {name:'レッドブラウン', hex:'#68391e'},
     ],
   },
 };

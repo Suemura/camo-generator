@@ -23,7 +23,9 @@ export type PresetKey =
   | "brushstroke"
   | "lizard"
   | "berezka"
-  | "splinter";
+  | "splinter"
+  | "flecktarn"
+  | "wuestentarn";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;

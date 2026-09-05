@@ -1,6 +1,9 @@
 // 斑点配置 (genSpots、フロッグスキン系) の構造不変条件。
 // 決定性スナップショットは「変わったか」しか見ないので、新エンジンが守るべき性質をここで固定する:
-//   - 全ての版 (色) が出現し、地色 (index 0) が最大面積を占める (地色に斑を置く構成)
+//   - 全ての版 (色) が出現し、地色 (index 0) が斑で埋め尽くされずに残る (地色に斑を置く構成)
+//     ※ 当初は「地色が最大面積」を条件にしていたが、フレックターンは実物の可視面積比が
+//       地色 0.228 に対しレッドブラウンの版が 0.308 で、地色は最大ではない (docs/01-tech-verification.md v36)。
+//       「地に刷る構成である」ことは地色の残存量で担保し、どの版も図案を支配しないことを別条件にする
 //   - 重ね刷りで挟まれた薄片・微小片が残らない (P.minFrag による欠片除去の回帰ガード)
 //   - tileable:false でも完走する (トーラス前提のコードが非タイル時に落ちない)
 import { describe, expect, it } from "vitest";
@@ -59,12 +62,16 @@ describe("genSpots", () => {
         expect(colors).toEqual(P.colors.map((_, i) => i).slice(1));
       });
       for (const seed of SEEDS) {
-        it(`seed ${seed}: 全色が出現し、地色 (0) が最大面積`, () => {
+        it(`seed ${seed}: 全色が出現し、地色 (0) が残り、どの版も支配的にならない`, () => {
           const r = generate(key, 512, 512, seed, 1.0);
+          const n = r.index.length;
           const cnt = new Array(P.colors.length).fill(0);
           for (const v of r.index) cnt[v]++;
           for (const c of cnt) expect(c).toBeGreaterThan(0);
-          expect(Math.max(...cnt)).toBe(cnt[0]);
+          // 地色が 15% 以上残る = 斑を刷り重ねても地が見えている
+          expect(cnt[0] / n).toBeGreaterThanOrEqual(0.15);
+          // どの色も 60% を超えない = 1 版が図案を塗り潰していない
+          expect(Math.max(...cnt) / n).toBeLessThan(0.6);
         });
         it(`seed ${seed}: minFrag 未満の欠片が残らない`, () => {
           const r = generate(key, 512, 512, seed, 1.0);

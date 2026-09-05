@@ -290,6 +290,26 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     era: "2000s",
     svg: true,
   },
+  flecktarn: {
+    label: "フレックターン風",
+    note: "1990〜 5 色。融合した丸い小斑と暗色の偏在",
+    country: "de",
+    group: "woodland",
+    env: ["forest", "transitional"],
+    era: "1990s",
+    svg: false,
+  },
+  wuestentarn: {
+    // Wikipedia が「しばしば誤ってトロペンターンと呼ばれる」と注記する 3 色版。
+    // 参照スウォッチの版数 (3) に従い 3-Farben-Tarndruck として扱う
+    label: "ヴュステンターン風 (3 色デザート)",
+    note: "1993〜 3 色。タン地にグリーンの塊とブラウンの斑",
+    country: "de",
+    group: "desert",
+    env: ["arid"],
+    era: "1990s",
+    svg: false,
+  },
 };
 
 export const PRESET_KEYS = Object.keys(PRESET_META) as PresetKey[];

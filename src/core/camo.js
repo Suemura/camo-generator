@@ -1648,9 +1648,9 @@ function splinterCells(w, h, seed, S){
   const { u, cellR, aniso, tilt, wrap } = S;
   // jitter / wtVar の上限クランプ: 下の探索は ±2 リング (5×5 近傍) 固定で、サイトが自セルを
   // 大きくはみ出す (jitter 過大) か遠方サイトが重みで逆転する (wtVar 過大) と 5×5 の外に
-  // 最近傍が出て取りこぼす。現行プリセット (splinter / m90 系、jitter 1.5・wtVar 0.9) は
-  // 2 プリセット × scale 0.7/1.0/2.0 × wrap true/false × 65536px の全サイト走査比較で
-  // 不一致 0 件を確認済みなので、その値をクランプの上限にしても出力は変わらない
+  // 最近傍が出て取りこぼす。スプリンター (jitter 1.5・wtVar 0.9) は
+  // scale 0.7/1.0/2.0 × wrap true/false × 65536px の全サイト走査比較で不一致 0 件を確認済みで、
+  // その値をクランプの上限にしても出力は変わらない
   const jitter = Math.min(S.jitter, 2.0);
   const wtVar = Math.min(S.wtVar, 1.0);
   const nx = Math.max(2, Math.round(w / (cellR * u)));
@@ -1700,6 +1700,112 @@ function splinterCells(w, h, seed, S){
     }
   }
   return { cell, area, n };
+}
+
+// 直線群の配置 (line arrangement) で平面をセルに分割する。M90 系のバックエンド。
+// 参照画像を拡大すると、M90 の破片は「点のまわりの領域」ではなく「何本かの直線で切った破片」だと分かる:
+//   - 1 本の辺が非常に長く、複数の破片をまたいで一直線に続く
+//   - 辺の向きが少数の方向に揃っている (平行な辺が多い)
+//   - 面は凸の破片で、それが同色でつながって非凸のフック・矢羽根になる
+// パワー図 (splinterCells) はサイトごとに向きが変わるので、この「少数方向の長い直線」が出ない。
+// ここでは向きの違う直線族を数本重ね、その交差でできる凸多角形をセルにする。
+//   - 直線族 j の方向は整数ペア (p, q) から選ぶ。射影 t = p·x/w + q·y/h は x→x+w / y→y+h で
+//     1 周期ぶん増えるので、直線はトーラス上で必ず閉じる (タイル境界に継ぎ目が出ない)
+//   - 族内の間隔は不均一にする (等間隔だと格子模様に見える)。狭い帯がそのまま鋭い楔になる
+// 戻り値は splinterCells と同じ形。ただしセル ID は連結成分ごとに振り直す
+// (トーラス上では同じ帯の組み合わせが離れた 2 か所に現れることがあり、まとめると色割当が遠距離で相関する)
+const LINE_DIRS = [[1,0],[0,1],[1,1],[1,-1],[2,1],[1,2],[2,-1],[1,-2],[3,1],[1,3],[3,-1],[1,-3]];
+function splinterLineCells(w, h, seed, S){
+  const { u, cellR, wrap } = S;
+  const rng = mulberry32(seed ^ 0x27ab);
+  const m = Math.max(2, Math.min(LINE_DIRS.length, S.lineDirs));
+  // 方向は「角度が十分に離れているもの」を選ぶ。単に重複なくランダムに採ると、
+  // シードによっては近い向きの族が 2 つ選ばれ、その方向の帯が二重になって
+  // 画面全体が縞に見える (seed 777 / scale 0.7 で確認)。最小角度差を確保して散らす
+  const pool = LINE_DIRS.slice();
+  for(let i=pool.length-1;i>0;i--){ const j = Math.floor(rng()*(i+1)); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+  const angOf = ([p, q]) => { let a = Math.atan2(q/h, p/w); a %= Math.PI; return a < 0 ? a + Math.PI : a; };
+  const picked = [], angs = [];
+  // 目標の最小角度差から始め、足りなければ緩める (方向プールが尽きても必ず m 本そろえる)
+  for(let sep = Math.PI/m * 0.8; picked.length < m && sep >= 0; sep -= Math.PI/m * 0.2){
+    for(const d of pool){
+      if(picked.length >= m || picked.includes(d)) continue;
+      const a = angOf(d);
+      let ok = true;
+      for(const b of angs){
+        const diff = Math.abs(a - b);
+        if(Math.min(diff, Math.PI - diff) < sep){ ok = false; break; }
+      }
+      if(ok){ picked.push(d); angs.push(a); }
+    }
+  }
+  const fam = [];
+  let stride = 1;
+  for(let j=0;j<m;j++){
+    const [p, q] = picked[j];
+    // 帯の目標幅から族内の本数を決める。射影 t の勾配は (p/w, q/h) なので、
+    // Δt = 1/N に対応する実距離は 1/(N·|∇t|)。これが目標幅になる N を採る
+    const grad = Math.hypot(p/w, q/h);
+    const want = cellR * u * (S.lineGap ?? 1.6);
+    const N = Math.max(1, Math.round(1 / (want * grad)));
+    // 不均一な間隔: 幅 0.55〜1.45 の相対値を累積して正規化する。狭い帯が鋭い楔の素になる
+    const gaps = new Float64Array(N);
+    let sum = 0;
+    for(let k=0;k<N;k++){ gaps[k] = 0.55 + rng()*0.9; sum += gaps[k]; }
+    const off = new Float64Array(N + 1);
+    for(let k=0;k<N;k++) off[k+1] = off[k] + gaps[k]/sum;
+    // 位相 LUT: t の小数部 → 帯番号。二分探索を避けて画素あたり定数時間にする
+    const LUT_N = 1024;
+    const lut = new Int32Array(LUT_N);
+    for(let k=0, b=0;k<LUT_N;k++){
+      const v = (k + 0.5) / LUT_N;
+      while(b < N-1 && v >= off[b+1]) b++;
+      lut[k] = b;
+    }
+    fam.push({ p, q, N, lut, phase: rng(), stride });
+    stride *= N;
+  }
+  // 画素 → 帯番号の組 (stride エンコード) → 連結成分ラベリング
+  const tup = new Int32Array(w*h);
+  for(let y=0; y<h; y++){
+    for(let x=0; x<w; x++){
+      let id = 0;
+      for(let j=0;j<m;j++){
+        const f = fam[j];
+        let t = f.p*x/w + f.q*y/h + f.phase;
+        t -= Math.floor(t);
+        id += f.lut[(t * 1024) | 0] * f.stride;
+      }
+      tup[y*w + x] = id;
+    }
+  }
+  const cell = new Int32Array(w*h).fill(-1);
+  const areaA = [];
+  const stack = new Int32Array(w*h);
+  let n = 0;
+  for(let start=0; start<w*h; start++){
+    if(cell[start] >= 0) continue;
+    const id = tup[start];
+    let sp = 0, cnt = 0;
+    stack[sp++] = start;
+    cell[start] = n;
+    while(sp){
+      const i = stack[--sp];
+      const x = i % w, y = (i / w) | 0;
+      cnt++;
+      for(let d=0; d<4; d++){
+        let nx2 = x + (d === 0 ? -1 : d === 1 ? 1 : 0);
+        let ny2 = y + (d === 2 ? -1 : d === 3 ? 1 : 0);
+        if(wrap){ nx2 = wrapI(nx2, w); ny2 = wrapI(ny2, h); }
+        else if(nx2 < 0 || nx2 >= w || ny2 < 0 || ny2 >= h) continue;
+        const j = ny2*w + nx2;
+        if(cell[j] < 0 && tup[j] === id){ cell[j] = n; stack[sp++] = j; }
+      }
+    }
+    areaA.push(cnt);
+    n++;
+  }
+  return { cell, area: Int32Array.from(areaA), n };
 }
 
 // セルの隣接グラフ (トーラス)。色割当が「隣接セルを同色にまとめて破片を大きくする」ために使う
@@ -1807,7 +1913,12 @@ export function genSplinter(w, h, seed, scale, P, opt={}){
     jitter: P.jitter ?? 0.9, wtVar: P.wtVar ?? 0.5,
     aniso: P.aniso ?? 1, tilt: P.tilt ?? 0,
   };
-  const { cell, area, n } = splinterCells(w, h, seed, S);
+  // P.cells: 'lines' で直線配置のセル分割 (M90 系)。既定はパワー図 (スプリンター)
+  S.lineDirs = P.lineDirs ?? 5;
+  S.lineGap = P.lineGap;
+  const { cell, area, n } = P.cells === 'lines'
+    ? splinterLineCells(w, h, seed, S)
+    : splinterCells(w, h, seed, S);
   if(progress) progress(0.6);
   const adj = cellAdjacency(cell, w, h, n, wrap);
   if(progress) progress(0.75);
@@ -2344,13 +2455,17 @@ export const PRESETS = {
     //     使い、遠距離でも面が分離して見える「高コントラスト型」の配色
     // リファレンスは refs/private/m90.webp。ソース図案は持たず genSplinter で手続き生成する
     name: 'M90 風 (スウェーデン)', kind: 'splinter', ref: 'm90',
-    // cellR 26 / merge 0.55: 参照画像を 512px 換算した破片 40〜80px を、1〜3 セルの統合で作る。
-    // jitter 1.5 (サイトが自分の格子セルを出る) と wtVar 0.9 (重みを大きく散らす) で
-    // 六角形に寄りがちなセルを崩し、実物の「辺が長く角が鋭い」統計に寄せる
-    cellR: 26, jitter: 1.5, wtVar: 0.9, merge: 0.55,
+    // cells 'lines': 直線配置でセルを作る。パワー図 (スプリンター) では実物の鋭さが出ない。
+    // 参照画像を拡大すると M90 の辺は「少数の向きに揃った長い直線」で、1 本の辺が複数の破片を
+    // またいで続く = 点のまわりの領域分割ではなく直線で切った破片であることが分かる
+    // (jitter / wtVar はこのバックエンドでは使わない)。
+    // lineGap 1.6 (帯幅 = cellR·lineGap = 42px 相当) の細かい破片を merge 0.85 で大きくまとめ、
+    // 実物の「非凸で腕が伸び、先端が鋭く尖る破片」を作る。統合前の破片を細かくしないと
+    // 尖りが出ず、統合を強めないと紙吹雪状に散る (docs/01-tech-verification.md v33)
+    cells: 'lines', cellR: 26, lineDirs: 5, lineGap: 1.6, merge: 0.85,
     // 実測: node tools/gen-src.mjs refs/private/m90.webp /dev/null 4 M9 (量子化面積比)
     frac: [0.142, 0.400, 0.295, 0.163],
-    minFrag: 150,
+    minFrag: 400,
     // 実測: node tools/extract-palette.mjs refs/private/m90.webp 4 --core=2
     colors: [
       {name:'ライトグリーン', hex:'#afb68a'},
@@ -2365,9 +2480,9 @@ export const PRESETS = {
     // (参照画像 refs/private/m90desert.webp の輪郭は m90.webp と一致する)。
     // 形状パラメータを M90 と揃え、色だけを差し替える
     name: 'M90 デザート風 (スウェーデン)', kind: 'splinter', ref: 'm90desert',
-    cellR: 26, jitter: 1.5, wtVar: 0.9, merge: 0.55,
+    cells: 'lines', cellR: 26, lineDirs: 5, lineGap: 1.6, merge: 0.85,
     frac: [0.142, 0.400, 0.295, 0.163],
-    minFrag: 150,
+    minFrag: 400,
     // 実測: node tools/extract-palette.mjs refs/private/m90desert.webp 5 --core=2
     // (k=5 の 1 クラスタは輪郭の混色で内部画素 0。実インクは 4 色。M90 と同じ明度順で役割が対応する)
     colors: [
@@ -2381,9 +2496,9 @@ export const PRESETS = {
     // M90 の冬季配色 (snökamouflage)。図案は M90 と同一で、版の色が無彩色 4 段に置き換わる。
     // 白一色の雪上被服と違い、林縁・残雪のまだら地形向けに図案を残した配色
     name: 'M90 ウィンター風 (スウェーデン)', kind: 'splinter', ref: 'm90winter',
-    cellR: 26, jitter: 1.5, wtVar: 0.9, merge: 0.55,
+    cells: 'lines', cellR: 26, lineDirs: 5, lineGap: 1.6, merge: 0.85,
     frac: [0.142, 0.400, 0.295, 0.163],
-    minFrag: 150,
+    minFrag: 400,
     // 実測: node tools/extract-palette.mjs refs/private/m90winter.webp 5 --core=2
     colors: [
       {name:'ホワイト',      hex:'#f6f6f6'},

@@ -1328,7 +1328,12 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
   // 拡大後に作ると輪郭に生じた階段 (幅数 px・長さ十数 px の凸部) まで「細長い構造」と
   // 誤認して保護してしまい、後段の階段除去が効かなくなる (2048px で輪郭が総ギザになった)。
   // ベースキャンバスには階段が存在しないので、ここで作れば実物由来の細部だけが残る
-  let protect = P.organic !== false ? thinLineMask(out, w, h, (w/512)/scale, wrap) : null;
+  // P.fineDetail: 実物図案が幅 1〜2px の線を持つ図案 (ストローク系) でだけ有効にする。
+  // ブロブ図案 (M81 / DCU / DPM など) には守るべき細線が無く、代わりにパッチ継ぎ目の削れカス
+  // (幅 2〜3px・長さ 10〜30px の筋) が「細くて長い構造」に一致してしまうため、保護すると
+  // 実物に無い線状の点々が散る (2048px の M81 で 0 個 → 9 個。ユーザー報告で判明)
+  let protect = (P.organic !== false && P.fineDetail === true)
+    ? thinLineMask(out, w, h, (w/512)/scale, wrap) : null;
   // 実寸への拡大 (nearest)。拡大後の階段幅は 1/kFull px
   let kFull = k;
   if(f > 1){
@@ -2046,7 +2051,8 @@ export const PRESETS = {
     // topLayer は不採用: 黒は縞として参照画像の端まで貫くため、applyTopLayer が除外しない
     // (= 縁に接しない) 黒成分の合計面積は全黒面積の 1.9% しかない (M81 は 0.82、DPM は 0.15 で破綻)。
     // 逆にライトカーキは 0.95 と十分だが、topLayer: 0 で刷ると細線でなく淡い塊が浮いて見える
-    kBase: 0.95, patchR: 120, organic: true, slopeLock: true,
+    // fineDetail: グリーン面を走るライトカーキ細線 (幅 1〜2px、面積比 0.056) を後処理から守る (v34)
+    kBase: 0.95, patchR: 120, organic: true, slopeLock: true, fineDetail: true,
     // frac はソース図案の実測面積比 (tools/gen-src.mjs の出力)
     frac: [0.056, 0.210, 0.279, 0.455], divw: [1, 1, 1, 2],
     // 実測: node tools/extract-palette.mjs refs/private/tigerstripe.webp 4 --max-edge=771 --core=2
@@ -2080,7 +2086,8 @@ export const PRESETS = {
     //   最近傍の拡大階段が出る。R = 130 で 512px あたり 11 枚。色比フィードバック (divw) が
     //   働くには 10 枚以上が要る (v30) ので、これが patchR の上限側の制約になる
     //   (v34 の再現度スコアで kBase 1.2/patchR 155 = 86.0 → 1.0/130 = 91.5)
-    kBase: 1.0, patchR: 130, organic: true, slopeLock: true,
+    // fineDetail: ドライブラシの毛先・掠れ・飛沫を後処理から守る (v34)
+    kBase: 1.0, patchR: 130, organic: true, slopeLock: true, fineDetail: true,
     // frac はソース図案の実測面積比 (tools/gen-src.mjs の出力)
     frac: [0.311, 0.257, 0.298, 0.135], divw: [1, 1, 1, 1],
     // 実測: node tools/extract-palette.mjs refs/private/brushstroke.jpg 4 --max-edge=960 --core=2
@@ -2109,7 +2116,8 @@ export const PRESETS = {
     //   patchR 120 では 1 パッチに縞が 2〜3 本しか入らず、長い水平の流れがパッチ境界で途切れて
     //   短くちぎれた縞に見えた。R = 145/1.15 ≈ 126 (512px あたり 11 枚) で流れが繋がる。
     //   kBase をこれ以上上げると多数決ミップマップが飛沫 (1〜2px) を落とす。1 未満は最近傍で階段化する
-    kBase: 1.15, patchR: 145, organic: true, slopeLock: true,
+    // fineDetail: 刷毛目 (ストローク内部を櫛状に走る細線) と端の飛沫を後処理から守る (v34)
+    kBase: 1.15, patchR: 145, organic: true, slopeLock: true, fineDetail: true,
     frac: [0.283, 0.261, 0.229, 0.227], divw: [1, 1, 1, 1],
     // 実測: node tools/extract-palette.mjs refs/private/lizard.png 4 --max-edge=1200 --core=2
     colors: [

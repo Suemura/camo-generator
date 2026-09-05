@@ -3116,5 +3116,157 @@
     },
     "note": "NWU Type I の最暗色 (約 4%)。ライトブルーの脇に高コントラストの点として散る",
     "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core。参照画像は Wikimedia Commons 「NWU Type I camouflage pattern swatch.jpg」パブリックドメイン (U.S. Navy))"
+  },
+  {
+    "id": "flecktarn-lightgreen",
+    "name": "フレックターン ライトグリーン",
+    "std": "フレックターン (実測)",
+    "code": "flecktarn-1",
+    "hex": "#716744",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "地布の色 (可視面積 約 23%)。4 版はこの上に刷られる",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/flecktarn.jpg 5 --core=2。平坦なデジタルスウォッチのため --blur / --flatten は不要。参照画像は Wikimedia Commons 「Flecktarn pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "flecktarn-green",
+    "name": "フレックターン グリーン",
+    "std": "フレックターン (実測)",
+    "code": "flecktarn-2",
+    "hex": "#4e4832",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "1 版目 (約 22%)。地色との明度差が小さく、遠目には地の濃淡として働く",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/flecktarn.jpg 5 --core=2。平坦なデジタルスウォッチのため --blur / --flatten は不要。参照画像は Wikimedia Commons 「Flecktarn pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "flecktarn-redbrown",
+    "name": "フレックターン レッドブラウン",
+    "std": "フレックターン (実測)",
+    "code": "flecktarn-3",
+    "hex": "#5a3f2e",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "2 版目 (約 31%)。5 色中で最大面積を占め、地色より広い",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/flecktarn.jpg 5 --core=2。平坦なデジタルスウォッチのため --blur / --flatten は不要。参照画像は Wikimedia Commons 「Flecktarn pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "flecktarn-darkgreen",
+    "name": "フレックターン ダークグリーン",
+    "std": "フレックターン (実測)",
+    "code": "flecktarn-4",
+    "hex": "#312c28",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "3 版目 (約 18%)。ブラックと同じ低周波の塊に偏在する",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/flecktarn.jpg 5 --core=2。平坦なデジタルスウォッチのため --blur / --flatten は不要。参照画像は Wikimedia Commons 「Flecktarn pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "flecktarn-black",
+    "name": "フレックターン ブラック",
+    "std": "フレックターン (実測)",
+    "code": "flecktarn-5",
+    "hex": "#211d1c",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "4 版目 (約 7%)。最小面積で、ダークグリーンの塊の内側に重なる",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/flecktarn.jpg 5 --core=2。平坦なデジタルスウォッチのため --blur / --flatten は不要。参照画像は Wikimedia Commons 「Flecktarn pattern.jpg」CC BY-SA 3.0)"
+  },
+  {
+    "id": "wuestentarn-tan",
+    "name": "ヴュステンターン タン",
+    "std": "ヴュステンターン (実測)",
+    "code": "wuestentarn-1",
+    "hex": "#baaf9d",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-wuestentarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "地布の色 (可視面積 約 50%)。フレックターンの倍近く地が残る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/wuestentarn_swatch.png 5 --core=2。k=3 だと輪郭の混色クラスタに 1 枠取られてグリーンが落ちるため k=5 まで上げ、内部画素を持つ 3 クラスタを採る。参照画像は Wikimedia Commons 「Tropentarn.png」CC BY-SA 4.0)"
+  },
+  {
+    "id": "wuestentarn-darkgreen",
+    "name": "ヴュステンターン ダークグリーン",
+    "std": "ヴュステンターン (実測)",
+    "code": "wuestentarn-2",
+    "hex": "#405a35",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-wuestentarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "1 版目 (約 21%)。ひとつの大きな塊としてだけ現れ、他の領域には出ない",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/wuestentarn_swatch.png 5 --core=2。k=3 だと輪郭の混色クラスタに 1 枠取られてグリーンが落ちるため k=5 まで上げ、内部画素を持つ 3 クラスタを採る。参照画像は Wikimedia Commons 「Tropentarn.png」CC BY-SA 4.0)"
+  },
+  {
+    "id": "wuestentarn-redbrown",
+    "name": "ヴュステンターン レッドブラウン",
+    "std": "ヴュステンターン (実測)",
+    "code": "wuestentarn-3",
+    "hex": "#68391e",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-wuestentarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "2 版目 (約 26%)。全面に散り、疎密はあるが塊にはならない",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/wuestentarn_swatch.png 5 --core=2。k=3 だと輪郭の混色クラスタに 1 枠取られてグリーンが落ちるため k=5 まで上げ、内部画素を持つ 3 クラスタを採る。参照画像は Wikimedia Commons 「Tropentarn.png」CC BY-SA 4.0)"
   }
 ]

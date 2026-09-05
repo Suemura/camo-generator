@@ -195,6 +195,20 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグ `camo-nwu1`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「NWU Type I」を追加した。国タグ `us` は既存
 - 近接する既存エントリ（RGB 距離で確認）: `nwu1-grey` #7f919a は `bs381c-637 Medium Sea Grey` #899194 と距離 11.7、`nwu1-darknavy` #333f46 は `fs35042 Sea Blue` #3d454a と距離 12.3、`nwu1-navy` #4f5d77 は `fs36118 Gunship Gray` #5a6269 と距離 18.5、`nwu1-lightblue` #c2d6dd は `pla07-lgray` #d8d7dc と距離 22.0。近い相手はいずれも航空機・艦艇の塗料色で、由来（被服の染色色）と用途タグが異なるため Auscam と同じく別エントリとして登録し、統合はしていない
 
+## 第11弾（迷彩プリセット追加に伴う実測色: フレックターン / ヴュステンターン）
+
+アプリにフレックターン風（ドイツ、Issue #35）とヴュステンターン風（3 色デザート）のプリセットを追加したのに合わせ、既定色 5 色 + 3 色を追記した。
+
+### 方法
+
+- `std` は「フレックターン (実測)」「ヴュステンターン (実測)」、hex は `src/core/camo.js` の `PRESETS.flecktarn.colors` / `PRESETS.wuestentarn.colors` と完全一致させている
+- **公的な色番号は見つからなかった**。ドイツ連邦軍の被服色は TL 8305 系の調達仕様で規定されるが、5 色に対応する RAL 番号や測色値の一次資料は公開されていない。したがって `code` は index 値の順に `flecktarn-1`〜`flecktarn-5` / `wuestentarn-1`〜`wuestentarn-3` を振った（CADPAT / EMR / NWU と同じ扱い）
+- **既存の `camo-flecktarn` タグとは対象が違う**。従来このタグが付いていた `ral6031` / `ral8027` / `ral9021` は連邦軍の**車両用** 3 色迷彩（F9）の塗料色で、被服のフレックターンとは別物。今回追加した被服の実測色にも同じ `camo-flecktarn` タグを付けたのは、UI 上「ドイツ連邦軍の迷彩色」としてまとめて引ける方が使いやすいため。既存エントリの再タグ付けは行っていない
+- `USE_LABEL` のラベルを `"フレクター"` → `"フレックターン"` に直し、`camo-wuestentarn`（新規）に「ヴュステンターン (3 色デザート)」を追加した。国タグ `de` は既存
+- **参照画像の選び方**: フレックターンは平坦なデジタルスウォッチ（Commons「Flecktarn pattern.jpg」）が使えるため `--blur` / `--flatten` なしで実測した。ヴュステンターンは実物布地の写真（Commons「Tropentarn Fabric.jpg」）が手に入るが、**照明が青寄りで彩度が失われており実測に使えない**（タン地が #a8a299 という無彩色として出る）。そのため色は平坦なベクタースウォッチ（Commons「Tropentarn.png」）から採り、布地写真は形状・疎密の比較にのみ使っている
+- ヴュステンターンの `k` を 3 ではなく 5 にしているのは、k=3 だと輪郭のアンチエイリアス（版と版の混色）が 1 クラスタを占有してグリーンが落ちるため。内部画素を持つ 3 クラスタを採る
+- **名称について**: Wikipedia は「Wüstentarn はしばしば誤って Tropentarn と呼ばれる」と注記しており、参照に使った Commons のスウォッチも "Tropentarn" 名で 3 版しか持たない。実測した版数（3）に従い 3-Farben-Tarndruck = ヴュステンターンとして登録した。5 色の本来のトロペンターンは信頼できる参照が得られていないため未登録
+
 ## 出典一覧
 
 | id | 規格・コード | hex | 出典 |
@@ -373,6 +387,14 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `nwu1-grey` | NWU Type I (実測) nwu1-2 | #7f919a | 同上 |
 | `nwu1-lightblue` | NWU Type I (実測) nwu1-3 | #c2d6dd | 同上 |
 | `nwu1-darknavy` | NWU Type I (実測) nwu1-4 | #333f46 | 同上 |
+| `flecktarn-lightgreen` | フレックターン (実測) flecktarn-1 | #716744 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/flecktarn.jpg 5 --core=2`。参照画像は Wikimedia Commons [File:Flecktarn pattern.jpg](https://commons.wikimedia.org/wiki/File:Flecktarn_pattern.jpg) CC BY-SA 3.0。画像はリポジトリに含めない) |
+| `flecktarn-green` | フレックターン (実測) flecktarn-2 | #4e4832 | 同上 |
+| `flecktarn-redbrown` | フレックターン (実測) flecktarn-3 | #5a3f2e | 同上 |
+| `flecktarn-darkgreen` | フレックターン (実測) flecktarn-4 | #312c28 | 同上 |
+| `flecktarn-black` | フレックターン (実測) flecktarn-5 | #211d1c | 同上 |
+| `wuestentarn-tan` | ヴュステンターン (実測) wuestentarn-1 | #baaf9d | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/wuestentarn_swatch.png 5 --core=2`。参照画像は Wikimedia Commons [File:Tropentarn.png](https://commons.wikimedia.org/wiki/File:Tropentarn.png) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
+| `wuestentarn-darkgreen` | ヴュステンターン (実測) wuestentarn-2 | #405a35 | 同上 |
+| `wuestentarn-redbrown` | ヴュステンターン (実測) wuestentarn-3 | #68391e | 同上 |
 
 ## 注意事項
 

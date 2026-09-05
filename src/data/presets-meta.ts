@@ -163,6 +163,27 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     era: "1960s",
     svg: false,
   },
+  brushstroke: {
+    // ローデシア軍が 1965〜1980 に使用。現ジンバブエ国軍にも引き継がれたが、
+    // country は制定した国 (ローデシア) の歴史的コードを採る
+    label: "ローデシアン・ブラッシュストローク風",
+    note: "1960 年代〜 4 色。太い斜めの筆跡",
+    country: "rh",
+    group: "stroke",
+    env: ["jungle", "transitional"],
+    era: "1960s",
+    svg: false,
+  },
+  lizard: {
+    // タイガーストライプの原型。TAP47 として 1950 年代から 1980 年代まで使われた
+    label: "リザード (TAP47) 風",
+    note: "1950 年代〜 4 色。水平寄りの筆跡",
+    country: "fr",
+    group: "stroke",
+    env: ["forest", "transitional"],
+    era: "1950s",
+    svg: false,
+  },
   marpat: {
     // MARPAT の制式採用は 2002 年 (note の「4 色」は色数)
     label: "デジタル・ウッドランド風",

@@ -20,6 +20,8 @@ export type PresetKey =
   | "ddpm"
   | "auscam"
   | "tigerstripe"
+  | "brushstroke"
+  | "lizard"
   | "berezka";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {

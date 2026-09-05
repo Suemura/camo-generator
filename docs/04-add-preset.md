@@ -107,6 +107,7 @@ node tools/render.mjs /tmp/camo-render/hi 1234 --size=2048x2048 --crop=512 --pre
 
 - 出力 PNG を Read で目視し、既知アーティファクト（ブロック感・境界急変・切断面・鏡映対称・市松ノイズ・微小点）の再発を確認する
 - 面積比を 3 シードで記録する（`gen-src.mjs` が出すソース図案の面積比と比べる）
+- **`kind: 'spots'` のプリセット限定**: `node tools/analyze-spots.mjs ref refs/private/<key>.jpg <k>` で参照の版ごとの塊り比・等価半径を測り、`node tools/analyze-spots.mjs gen <key> 0.7 1.0 2.0` で生成と比較する。目視では `L.clump` の効きすぎ・スケール追従漏れが検出できない（`docs/01-tech-verification.md` v33 参照）。**数値は絶対値ではなく地色比で判断する**（参照が JPEG だとアンチエイリアスで中央値が下がるため）
 - 性能: 512px の生成時間を既存プリセットと比較して記録する
 - `docs/01-tech-verification.md` に **vN 節を追記**（目的 / 手法の選択理由 / パラメータ / 検証 / 残課題）。節番号は main の最新 +1。並列 Issue が先にマージされて番号が衝突したら、自分の節を繰り下げる（DBDU は v20 → v24）
 - **`pnpm test -u` は追記の後**。先にスナップショットを更新しない

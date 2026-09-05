@@ -1702,153 +1702,6 @@ function splinterCells(w, h, seed, S){
   return { cell, area, n };
 }
 
-// セルを再帰的にランダムな直線で切り分ける (STIT 型の分割)。M90 系のバックエンド。
-// 参照画像を等倍で拡大して分かった実物の統計 (docs/01-tech-verification.md v35):
-//   - 重なりのない「分割」で、三重点が多い (重ね刷りではない)
-//   - セルの形が「太い多角形」と「細い楔」の混在で、大きさのばらつきが非常に大きい
-//   - 辺の向きはほぼ全方向に分布する (向きの均等度 88%)
-//   - 画面を貫くような長い直線は無い。1 本の辺は 1 つのセルの中で終わる
-// パワー図 (splinterCells) は正六角形寄りのセルしか作れず楔が出ない。直線族の配置は
-// 逆に「画面を貫く長い直線」と「少数の辺の向き」を作ってしまい、どちらも実物と別物だった。
-// ランダムな弦でセルを切る操作を繰り返すと、太いセルと細い楔が自然に混在し、
-// 切る向きが毎回独立なので辺の向きも全方向に散る。切断はセルの内部で閉じるので長い直線も出ない。
-//
-// トーラス対応: 初期分割にパワー図 (トーラス上で正しく閉じる) を使い、その各セルを切っていく。
-// セルは常に初期セル以下の大きさなので、アンカー画素からの wrapD 相対座標で半平面判定が一意に決まる。
-function splinterSplitCells(w, h, seed, S){
-  const { u, cellR, wrap } = S;
-  const rng = mulberry32(seed ^ 0x4c39);
-  const baseArea = (cellR*u) * (cellR*u);
-  // セルごとに「これ以上は切らない」目標面積を対数一様で振る。目標数まで切る作り方だと
-  // 大きいセルほど切られやすく大きさが揃ってしまい、実物の「大きい平坦な面と細い楔が同居する」
-  // ばらつきが出ない。sizeVar が大きいほど大小の差が開く
-  const sizeVar = S.sizeVar ?? 1.2;
-  const sv = S.sliver ?? 0;
-  const limitOf = () => baseArea * Math.exp(sizeVar * (rng()*2 - 1));
-  // 初期分割はパワー図 (トーラス上で正しく閉じる)。以降のセルは初期セル以下の大きさなので、
-  // アンカー画素からの wrapD 相対座標で半平面判定が一意に決まる
-  const init = { ...S, cellR: cellR * (S.splitInit ?? 4), jitter: 1.2, wtVar: 0.5, aniso: 1, tilt: 0 };
-  const { cell, area } = splinterCells(w, h, seed, init);
-  let n = area.length;
-  const pix = [];
-  for(let i=0;i<n;i++) pix.push(new Int32Array(area[i]));
-  const fill = new Int32Array(n);
-  for(let i=0;i<w*h;i++){ const c = cell[i]; pix[c][fill[c]++] = i; }
-  const areas = Array.from(area);
-  const minArea = Math.max(3, (S.splitMin ?? 0.05) * baseArea);
-  // 作業スタック: 目標面積を下回るまで再帰的に切る
-  const work = [];
-  for(let i=0;i<n;i++) work.push([i, limitOf(), 0, 0]);
-  // 切り方が却下されたとき (薄すぎる / 幅が足りない) は向きを変えて何度か試す。
-  // 一度で作業リストから落とすと、sliver で端寄りに偏らせるほど却下が増え、
-  // 大きいセルが切られないまま残って図案が粗くなる
-  const RETRY = 10;
-  let guard = 0;
-  while(work.length && guard++ < 400000){
-    const [c, lim, tries, shaved] = work.pop();
-    const P0 = pix[c];
-    if(P0.length <= lim || P0.length < minArea*2) continue;
-    const retry = () => { if(tries < RETRY) work.push([c, lim, tries + 1, shaved]); };
-    const ax = P0[0] % w, ay = (P0[0] / w) | 0;
-    // 削ぎのときだけ、切る向きをセルの長軸に沿わせる。向きがランダムだと端の「角」を
-    // 落とすだけで短い楔にしかならないが、長軸に沿って側面を削ぐとセルの全長にわたる
-    // 細長い先細りの楔ができる。これが実物の「面から長く突き出したトゲ」の形
-    const doShave = shaved < 1 && rng() < sv;
-    let th;
-    if(doShave){
-      let sx = 0, sy = 0;
-      for(let k=0;k<P0.length;k++){
-        const i = P0[k];
-        let dx = (i % w) - ax, dy = ((i / w) | 0) - ay;
-        if(wrap){ dx = wrapD(dx, w); dy = wrapD(dy, h); }
-        sx += dx; sy += dy;
-      }
-      const mx = sx / P0.length, my = sy / P0.length;
-      let xx = 0, yy = 0, xy = 0;
-      for(let k=0;k<P0.length;k++){
-        const i = P0[k];
-        let dx = (i % w) - ax, dy = ((i / w) | 0) - ay;
-        if(wrap){ dx = wrapD(dx, w); dy = wrapD(dy, h); }
-        dx -= mx; dy -= my;
-        xx += dx*dx; yy += dy*dy; xy += dx*dy;
-      }
-      // 長軸の向き。切断面の法線はこれと直交させる (= 長軸に平行な線で側面を削ぐ)
-      const major = 0.5 * Math.atan2(2*xy, xx - yy);
-      th = major + Math.PI/2 + (rng() - 0.5) * 0.5;
-    }else{
-      th = rng() * Math.PI;                           // 通常の切断は毎回独立 = 辺の向きが全方向に散る
-    }
-    const ct = Math.cos(th), st = Math.sin(th);
-    const proj = new Float64Array(P0.length);
-    let lo = Infinity, hi = -Infinity;
-    for(let k=0;k<P0.length;k++){
-      const i = P0[k];
-      let dx = (i % w) - ax, dy = ((i / w) | 0) - ay;
-      if(wrap){ dx = wrapD(dx, w); dy = wrapD(dy, h); }
-      const t = dx*ct + dy*st;
-      proj[k] = t;
-      if(t < lo) lo = t;
-      if(t > hi) hi = t;
-    }
-    if(hi - lo < 2){ retry(); continue; }
-    // 切る位置。確率 sliver で「端のすぐ内側」を切る = そのセルの尖った端を切り落とす。
-    // 切り落とされる側は先細りの三角形になり、実物の「大きな面から突き出す細い楔 = トゲ」に見える。
-    // 端から遠い位置で切ると幅の揃った短冊になり、実物のような先細りにならない。
-    // 削ぎは 1 セルにつき 1 回まで。同じセルを何度も削ぐと平行な短冊が並んで千切れて見える
-    const f = doShave
-      ? (rng() < 0.5 ? 0.02 + rng()*0.08 : 0.90 + rng()*0.08)
-      : 0.3 + rng()*0.4;
-    const cut = lo + f * (hi - lo);
-    let na = 0;
-    for(let k=0;k<P0.length;k++) if(proj[k] >= cut) na++;
-    if(na < minArea || P0.length - na < minArea){ retry(); continue; }
-    const A = new Int32Array(na), B = new Int32Array(P0.length - na);
-    let ia = 0, ib = 0;
-    for(let k=0;k<P0.length;k++){
-      const i = P0[k];
-      if(proj[k] >= cut){ A[ia++] = i; cell[i] = n; }
-      else B[ib++] = i;
-    }
-    pix[c] = B; areas[c] = B.length;
-    pix.push(A); areas.push(A.length);
-    // 残った側は目標面積を引き継ぐ (再抽選すると sliver で薄く削ぐたびに目標が変わり、
-    // セルの大きさが cellR から離れてしまう)。切り出した側だけ新しい目標を引く
-    work.push([c, lim, 0, shaved + (doShave ? 1 : 0)], [n, limitOf(), 0, 0]);
-    n++;
-  }
-  // セルの細長さ (二次モーメントの主軸比の平方根)。1 = 等方、大きいほど細い楔。
-  // 実物のトゲは「細い楔が周囲と違う色で残っている」形なので、色割当でこれを使って
-  // 細いセルほど統合されにくくする。統合してしまうと楔が周囲に溶けて尖りが消える
-  const elong = new Float64Array(n);
-  for(let c=0;c<n;c++){
-    const P0 = pix[c];
-    if(P0.length < 4){ elong[c] = 1; continue; }
-    const ax = P0[0] % w, ay = (P0[0] / w) | 0;
-    let sx = 0, sy = 0;
-    for(let k=0;k<P0.length;k++){
-      const i = P0[k];
-      let dx = (i % w) - ax, dy = ((i / w) | 0) - ay;
-      if(wrap){ dx = wrapD(dx, w); dy = wrapD(dy, h); }
-      sx += dx; sy += dy;
-    }
-    const mx = sx / P0.length, my = sy / P0.length;
-    let xx = 0, yy = 0, xy = 0;
-    for(let k=0;k<P0.length;k++){
-      const i = P0[k];
-      let dx = (i % w) - ax, dy = ((i / w) | 0) - ay;
-      if(wrap){ dx = wrapD(dx, w); dy = wrapD(dy, h); }
-      dx -= mx; dy -= my;
-      xx += dx*dx; yy += dy*dy; xy += dx*dy;
-    }
-    xx /= P0.length; yy /= P0.length; xy /= P0.length;
-    const tr = xx + yy, det = xx*yy - xy*xy;
-    const disc = Math.max(0, tr*tr/4 - det);
-    const l1 = tr/2 + Math.sqrt(disc), l2 = Math.max(1e-6, tr/2 - Math.sqrt(disc));
-    elong[c] = Math.sqrt(l1 / l2);
-  }
-  return { cell, area: Int32Array.from(areas), n, elong };
-}
-
 // セルの隣接グラフ (トーラス)。色割当が「隣接セルを同色にまとめて破片を大きくする」ために使う
 function cellAdjacency(cell, w, h, n, wrap){
   const adj = [];
@@ -1873,12 +1726,8 @@ function cellAdjacency(cell, w, h, n, wrap){
 // 統合は面積目標を超えていない色にだけ許す。超過色への統合まで許すと 1 色が画面の半分を覆う
 // (不足率の差は色が均衡した後は 0.01 未満しかなく、統合項を足し込む形にすると必ず統合が勝つ)。
 // 走査順は mulberry32 でシャッフルする (格子順のままだと同色の帯が左上から右下へ流れる)
-function assignCellColors(area, adj, n, seed, frac, merge, total, elong, spikeKeep, accentMerge){
+function assignCellColors(area, adj, n, seed, frac, merge, total){
   const nc = frac.length;
-  // 地色 = 面積比が最大の版。実物では色ごとに形の統計が違い、地色だけが大きな連結面を作り、
-  // 明色・暗色は 1 セルぶんの鋭い楔として現れる。統合を地色に偏らせてこれを再現する
-  let ground = 0;
-  for(let c=1;c<nc;c++) if(frac[c] > frac[ground]) ground = c;
   const col = new Int32Array(n).fill(-1);
   const target = new Float64Array(nc), got = new Float64Array(nc);
   for(let c=0;c<nc;c++) target[c] = Math.max(1, frac[c] * total);
@@ -1892,22 +1741,9 @@ function assignCellColors(area, adj, n, seed, frac, merge, total, elong, spikeKe
     cnt.fill(0);
     for(const j of adj[i]) if(col[j] >= 0) cnt[col[j]]++;
     let best = -1;
-    // 細いセル (楔) の扱い。spikeKeep > 0 で統合しにくく (楔が独立した色片として残る)、
-    // < 0 で統合しやすくする。実物のトゲは「細い楔が隣の面と同色になって、その面から
-    // 突き出した突起として見える」形なので負の値を使う。独立させると色片が散って
-    // 図案が粉々に見え、領域数も実物の 1.5 倍に増える。elong 1.6 未満は等方扱い
-    let mp = merge;
-    if(elong && spikeKeep){
-      const t = Math.min(1, Math.max(0, (elong[i] - 1.6) / 2));
-      mp = Math.min(1, Math.max(0, mp * (1 - spikeKeep * t)));
-    }
-    if(rng() < mp){
+    if(rng() < merge){
       let bc = -1;
       for(let c=0;c<nc;c++) if(cnt[c] > 0 && got[c] < target[c] && (bc < 0 || cnt[c] > cnt[bc])) bc = c;
-      // 地色以外への統合は accentMerge の確率でしか許さない (既定 1 = 色を区別しない)。
-      // 既定のときは rng を消費しない (消費すると accentMerge を持たないプリセットの出力が変わる)
-      const am = accentMerge ?? 1;
-      if(bc >= 0 && bc !== ground && am < 1 && rng() >= am) bc = -1;
       best = bc;
     }
     if(best < 0){
@@ -1971,18 +1807,11 @@ export function genSplinter(w, h, seed, scale, P, opt={}){
     jitter: P.jitter ?? 0.9, wtVar: P.wtVar ?? 0.5,
     aniso: P.aniso ?? 1, tilt: P.tilt ?? 0,
   };
-  // P.cells: 'split' で再帰分割のセル分割 (M90 系)。既定はパワー図 (スプリンター)
-  S.splitInit = P.splitInit;
-  S.splitMin = P.splitMin;
-  S.sizeVar = P.sizeVar;
-  S.sliver = P.sliver;
-  const { cell, area, n, elong } = P.cells === 'split'
-    ? splinterSplitCells(w, h, seed, S)
-    : splinterCells(w, h, seed, S);
+  const { cell, area, n } = splinterCells(w, h, seed, S);
   if(progress) progress(0.6);
   const adj = cellAdjacency(cell, w, h, n, wrap);
   if(progress) progress(0.75);
-  const col = assignCellColors(area, adj, n, seed, P.frac, P.merge ?? 0.5, w*h, elong, P.spikeKeep ?? 0, P.accentMerge);
+  const col = assignCellColors(area, adj, n, seed, P.frac, P.merge ?? 0.5, w*h);
   const out = new Uint8Array(w*h);
   for(let i=0;i<w*h;i++) out[i] = col[cell[i]];
   if(progress) progress(0.9);
@@ -2538,66 +2367,6 @@ export const PRESETS = {
       {name:'ライトタン', hex:'#dbb78c'},
       {name:'グリーン',   hex:'#9f9d70'},
       {name:'ブラウン',   hex:'#876246'},
-    ],
-  },
-  m90: {
-    // スウェーデン軍 M90 (1990 年〜現用)。実物の特徴:
-    //   - 4 色。スプリンターの設計言語を引き継ぐが破片が大きく、辺が長く角がより鋭い
-    //   - 雨線を持たない (スプリンターとの最大の識別点)
-    //   - 明度差の強い 4 色 (ライトグリーン / ミッドグリーン / ダークグリーン / ブラック) を
-    //     使い、遠距離でも面が分離して見える「高コントラスト型」の配色
-    // リファレンスは refs/private/m90.webp。ソース図案は持たず genSplinter で手続き生成する
-    name: 'M90 風 (スウェーデン)', kind: 'splinter', ref: 'm90',
-    // cells 'lines': 直線配置でセルを作る。パワー図 (スプリンター) では実物の鋭さが出ない。
-    // 参照画像を拡大すると M90 の辺は「少数の向きに揃った長い直線」で、1 本の辺が複数の破片を
-    // またいで続く = 点のまわりの領域分割ではなく直線で切った破片であることが分かる
-    // (jitter / wtVar はこのバックエンドでは使わない)。
-    // lineGap 1.6 (帯幅 = cellR·lineGap = 42px 相当) の細かい破片を merge 0.85 で大きくまとめ、
-    // 実物の「非凸で腕が伸び、先端が鋭く尖る破片」を作る。統合前の破片を細かくしないと
-    // 尖りが出ず、統合を強めないと紙吹雪状に散る (docs/01-tech-verification.md v34)
-    cells: 'split', cellR: 26, splitInit: 1.6, splitMin: 0.02,
-    sizeVar: 1.2, sliver: 1, merge: 0.6, accentMerge: 0.5, spikeKeep: -2,
-    // 実測: node tools/gen-src.mjs refs/private/m90.webp /dev/null 4 M9 (量子化面積比)
-    frac: [0.142, 0.400, 0.295, 0.163],
-    // 実測: node tools/extract-palette.mjs refs/private/m90.webp 4 --core=2
-    colors: [
-      {name:'ライトグリーン', hex:'#afb68a'},
-      {name:'ミッドグリーン', hex:'#71893f'},
-      {name:'ダークグリーン', hex:'#516137'},
-      {name:'ブラック',      hex:'#3f3333'},
-    ],
-  },
-  m90desert: {
-    // M90 の砂漠配色 (ökenkamouflage、コソボ・アフガニスタン派遣で使用)。
-    // 図案は M90 と同一で、版の色だけがサンド系 4 色に置き換わる
-    // (参照画像 refs/private/m90desert.webp の輪郭は m90.webp と一致する)。
-    // 形状パラメータを M90 と揃え、色だけを差し替える
-    name: 'M90 デザート風 (スウェーデン)', kind: 'splinter', ref: 'm90desert',
-    cells: 'split', cellR: 26, splitInit: 1.6, splitMin: 0.02,
-    sizeVar: 1.2, sliver: 1, merge: 0.6, accentMerge: 0.5, spikeKeep: -2,
-    frac: [0.142, 0.400, 0.295, 0.163],
-    // 実測: node tools/extract-palette.mjs refs/private/m90desert.webp 5 --core=2
-    // (k=5 の 1 クラスタは輪郭の混色で内部画素 0。実インクは 4 色。M90 と同じ明度順で役割が対応する)
-    colors: [
-      {name:'クリーム',      hex:'#e1dbc9'},
-      {name:'ライトサンド',  hex:'#c5bea0'},
-      {name:'グレージュ',    hex:'#9f947f'},
-      {name:'ブラウン',      hex:'#785541'},
-    ],
-  },
-  m90winter: {
-    // M90 の冬季配色 (snökamouflage)。図案は M90 と同一で、版の色が無彩色 4 段に置き換わる。
-    // 白一色の雪上被服と違い、林縁・残雪のまだら地形向けに図案を残した配色
-    name: 'M90 ウィンター風 (スウェーデン)', kind: 'splinter', ref: 'm90winter',
-    cells: 'split', cellR: 26, splitInit: 1.6, splitMin: 0.02,
-    sizeVar: 1.2, sliver: 1, merge: 0.6, accentMerge: 0.5, spikeKeep: -2,
-    frac: [0.142, 0.400, 0.295, 0.163],
-    // 実測: node tools/extract-palette.mjs refs/private/m90winter.webp 5 --core=2
-    colors: [
-      {name:'ホワイト',      hex:'#f6f6f6'},
-      {name:'ライトグレー',  hex:'#c6c6c6'},
-      {name:'ミッドグレー',  hex:'#848484'},
-      {name:'ブラック',      hex:'#232323'},
     ],
   },
   berezka: {

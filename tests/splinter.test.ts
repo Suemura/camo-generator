@@ -1,7 +1,7 @@
-// 幾何ハードエッジ (genSplinter、スプリンター / M90 系) の構造不変条件。
+// 幾何ハードエッジ (genSplinter、スプリンター系) の構造不変条件。
 // 決定性スナップショットは「変わったか」しか見ないので、この手法が守るべき性質をここで固定する:
 //   - 面積比が P.frac に追従する (色割当の面積目標フィードバックの回帰ガード)
-//   - 雨線は splinter だけが持ち、色数を増やさない (M90 に波及していない)
+//   - 雨線は splinter だけが持ち、色数を増やさない
 //   - 雨線は欠片除去より後に描かれ、1px 幅のまま残る (描画順の回帰ガード)
 //   - opt.baseMax を参照しない (常に実寸生成。ハードエッジが拡大で階段化しないことの前提)
 //   - tileable:false でも完走する (トーラス前提のコードが非タイル時に落ちない)
@@ -22,10 +22,10 @@ describe("genSplinter", () => {
     expect(KEYS.length).toBeGreaterThan(0);
   });
 
-  it("雨線を持つのは splinter だけ (M90 系は雨線なしが実物との識別点)", () => {
+  it("雨線を持つのは splinter だけ (他のプリセットへ波及していない)", () => {
     expect(PRESETS.splinter.rain).toBeDefined();
-    for (const key of ["m90", "m90desert", "m90winter"] as const) {
-      expect(PRESETS[key].rain).toBeUndefined();
+    for (const key of KEYS) {
+      if (key !== "splinter") expect(PRESETS[key].rain).toBeUndefined();
     }
   });
 

@@ -21,10 +21,7 @@ export type PresetKey =
   | "auscam"
   | "tigerstripe"
   | "berezka"
-  | "splinter"
-  | "m90"
-  | "m90desert"
-  | "m90winter";
+  | "splinter";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;

@@ -376,18 +376,6 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `splinter-tan` | スプリンター (実測) sp-1 | #dbb78c | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/splinter.webp 4 --core=2`。参照画像は再配布不可のため `refs/private/` に置きリポジトリには含めない) |
 | `splinter-green` | スプリンター (実測) sp-2 | #9f9d70 | 同上 |
 | `splinter-brown` | スプリンター (実測) sp-3 | #876246 | 同上 |
-| `m90-lightgreen` | M90 (実測) m90-1 | #afb68a | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m90.webp 4 --core=2`。参照画像は再配布不可のため `refs/private/` に置きリポジトリには含めない) |
-| `m90-midgreen` | M90 (実測) m90-2 | #71893f | 同上 |
-| `m90-darkgreen` | M90 (実測) m90-3 | #516137 | 同上 |
-| `m90-black` | M90 (実測) m90-4 | #3f3333 | 同上 |
-| `m90d-cream` | M90 デザート (実測) m90d-1 | #e1dbc9 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m90desert.webp 5 --core=2`。参照画像は再配布不可のため `refs/private/` に置きリポジトリには含めない) |
-| `m90d-lightsand` | M90 デザート (実測) m90d-2 | #c5bea0 | 同上 |
-| `m90d-greige` | M90 デザート (実測) m90d-3 | #9f947f | 同上 |
-| `m90d-brown` | M90 デザート (実測) m90d-4 | #785541 | 同上 |
-| `m90w-white` | M90 ウィンター (実測) m90w-1 | #f6f6f6 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m90winter.webp 5 --core=2`。参照画像は再配布不可のため `refs/private/` に置きリポジトリには含めない) |
-| `m90w-lightgray` | M90 ウィンター (実測) m90w-2 | #c6c6c6 | 同上 |
-| `m90w-midgray` | M90 ウィンター (実測) m90w-3 | #848484 | 同上 |
-| `m90w-black` | M90 ウィンター (実測) m90w-4 | #232323 | 同上 |
 
 ## 注意事項
 
@@ -401,7 +389,7 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 陸自 OD 色はマンセル値 7.5Y 3/1 のみが規格化されており、sRGB 換算は参考値。
 - MARPAT / AOR の実測値は参照写真の露出・布地の退色に依存するため、規格値ではない。
 - ベリョースカ (KLMK) はソ連側の公的な色番号が確認できないため、参照写真からの実測値のみを収録している。参照が布地写真で織り目が乗るため、k-means の前に `--blur=2` で平坦化している (これをしないと版の色ではなく織りの明暗でクラスタが割れる)。
-- スプリンター / M90 の実測値は、実物スウォッチではなく図案を再描画した参照画像からの抽出である。版の色は平坦なので k-means は安定するが、実物の染色個体差・退色は反映していない。M90 デザート / ウィンターは M90 と同一図案の配色違いで、明度の順に版の役割が対応する。
+- スプリンターの実測値は、実物スウォッチではなく図案を再描画した参照画像からの抽出である。版の色は平坦なので k-means は安定するが、実物の染色個体差・退色は反映していない。
 
 ### 第2弾で追加した色の近似性
 

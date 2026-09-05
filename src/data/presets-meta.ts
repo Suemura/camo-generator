@@ -19,14 +19,13 @@ export const PRESET_GROUPS: { key: PresetGroup; label: string }[] = [
 ];
 
 /** 想定する使用環境。実物が配備された地域・地形から付ける (色味の印象ではなく運用実態) */
-export type PresetEnv = "forest" | "jungle" | "arid" | "urban" | "snow" | "transitional";
+export type PresetEnv = "forest" | "jungle" | "arid" | "urban" | "transitional";
 
 export const ENV_LABEL: Record<PresetEnv, string> = {
   forest: "森林 / 温帯林",
   jungle: "ジャングル",
   arid: "砂漠 / 乾燥地",
   urban: "市街地",
-  snow: "雪原 / 冬季",
   transitional: "汎用 / 移行帯",
 };
 export const ALL_ENVS = Object.keys(ENV_LABEL) as PresetEnv[];
@@ -248,36 +247,6 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "geometric",
     env: ["forest", "transitional"],
     era: "1930s",
-    svg: false,
-  },
-  m90: {
-    label: "M90 風 (スウェーデン)",
-    note: "1990〜 4 色。大きな直線多角形",
-    country: "se",
-    group: "geometric",
-    env: ["forest"],
-    era: "1990s",
-    svg: false,
-  },
-  m90desert: {
-    // 図案は m90 と同一で版の色だけが変わる (実物の ökenkamouflage も同じ関係)。
-    // group は配色でなく図案の系統を表すので m90 / m90winter と同じ geometric。
-    // 砂漠環境での絞り込みは env: arid が担う
-    label: "M90 デザート風 (スウェーデン)",
-    note: "1990 年代〜 4 色。M90 の砂漠配色",
-    country: "se",
-    group: "geometric",
-    env: ["arid"],
-    era: "1990s",
-    svg: false,
-  },
-  m90winter: {
-    label: "M90 ウィンター風 (スウェーデン)",
-    note: "1990 年代〜 4 色。M90 の冬季配色",
-    country: "se",
-    group: "geometric",
-    env: ["snow"],
-    era: "1990s",
     svg: false,
   },
   berezka: {

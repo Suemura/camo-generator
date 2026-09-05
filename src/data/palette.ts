@@ -52,7 +52,6 @@ export const USE_LABEL: Record<string, string> = {
   "camo-berezka": "ベリョースカ (KLMK)",
   "camo-nwu1": "NWU Type I",
   "camo-splinter": "スプリンター (Splittertarn)",
-  "camo-m90": "スウェーデン M90",
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

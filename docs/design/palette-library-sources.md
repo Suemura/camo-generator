@@ -195,7 +195,22 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグ `camo-nwu1`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「NWU Type I」を追加した。国タグ `us` は既存
 - 近接する既存エントリ（RGB 距離で確認）: `nwu1-grey` #7f919a は `bs381c-637 Medium Sea Grey` #899194 と距離 11.7、`nwu1-darknavy` #333f46 は `fs35042 Sea Blue` #3d454a と距離 12.3、`nwu1-navy` #4f5d77 は `fs36118 Gunship Gray` #5a6269 と距離 18.5、`nwu1-lightblue` #c2d6dd は `pla07-lgray` #d8d7dc と距離 22.0。近い相手はいずれも航空機・艦艇の塗料色で、由来（被服の染色色）と用途タグが異なるため Auscam と同じく別エントリとして登録し、統合はしていない
 
-## 第11弾（迷彩プリセット追加に伴う実測色: フレックターン / ヴュステンターン）
+## 第11弾（迷彩プリセット追加に伴う実測色: ブラッシュストローク / リザード）
+
+アプリにローデシアン・ブラッシュストローク風とリザード (TAP47) 風（Issue #32）を追加したのに合わせ、
+それぞれの既定色 4 色ずつを追記した。
+
+### 方法
+
+- `std` は「ローデシアン・ブラッシュストローク (実測)」「リザード TAP47 (実測)」、hex は `src/core/camo.js` の `PRESETS.brushstroke.colors` / `PRESETS.lizard.colors` と完全一致させている
+- **どちらも公的な色番号は見つからなかった**。ローデシアン・ブラッシュストロークは David Whitehead Textiles による民間設計で、TAP47 もフランス軍の被服仕様が公開されていない。したがって `code` は index 値の順に `brush-1`〜`brush-4` / `lizard-1`〜`lizard-4` を振った（タイガーストライプと同じ扱い）
+- どちらの参照もフラットなスウォッチなので `--blur` / `--flatten` は不要。タイガーストライプと同じ理由で `--max-edge` を参照の原寸（960 / 1200）に明示している。既定の 256px では毛先のかすれ（1〜2px）が周囲と混色して消え、4 色とも中間色に寄る
+- **どちらも 4 色**として登録した。Issue 本文は「3 色」だが、実物は重ね刷りで 4 つ目の色が生じる（ブラッシュストロークはグリーンをブラウンに重ねたダークオリーブ、リザードはグリーンの上に刷ったダークブラウン）。k=3 で量子化するとリザードはグリーンが消えてブラウンが 2 クラスタに割れ、ブラッシュストロークは重ね刷り部分がブラウンに吸収されて茶色が広がりすぎる
+- 用途タグ `camo-brushstroke` / `camo-lizard`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベルを追加した。国タグはリザードが既存の `fr`、ブラッシュストロークは `COUNTRY_LABEL` に新設した `rh`（ローデシア。ISO 3166-1 から削除されたコードだが、迷彩を制定した当時の国名で示す）
+- 近接する既存エントリ: `brushstroke-darkolive` #5a5b3b は `fs34079` #555548 と近いが、由来（被服の重ね刷り色 / 塗料規格）が異なるため統合していない。`lizard-green` #6d7348 は `tigerstripe-khaki` #6f6953 より緑寄りで別エントリとした
+- ブラッシュストロークの参照スウォッチは出所が特定できていないため、出典欄に URL を書いていない。リザードの参照は Wikimedia Commons の CC0 1.0 で、帰属表示は不要だが出典として記載した。**どちらの画像も `refs/private/` に置き、リポジトリには含めない**
+
+## 第12弾（迷彩プリセット追加に伴う実測色: フレックターン / ヴュステンターン）
 
 アプリにフレックターン風（ドイツ、Issue #35）とヴュステンターン風（3 色デザート）のプリセットを追加したのに合わせ、既定色 5 色 + 3 色を追記した。
 
@@ -387,6 +402,17 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `nwu1-grey` | NWU Type I (実測) nwu1-2 | #7f919a | 同上 |
 | `nwu1-lightblue` | NWU Type I (実測) nwu1-3 | #c2d6dd | 同上 |
 | `nwu1-darknavy` | NWU Type I (実測) nwu1-4 | #333f46 | 同上 |
+| `brushstroke-sand` | ローデシアン・ブラッシュストローク (実測) brush-1 | #cab17b | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/brushstroke.jpg 4 --max-edge=960 --core=2`。参照スウォッチはリポジトリに含めない (`refs/private/`)) |
+| `brushstroke-green` | ローデシアン・ブラッシュストローク (実測) brush-2 | #686947 | 同上 |
+| `brushstroke-brown` | ローデシアン・ブラッシュストローク (実測) brush-3 | #775539 | 同上 |
+| `brushstroke-darkolive` | ローデシアン・ブラッシュストローク (実測) brush-4 | #5a5b3b | 同上 |
+| `lizard-lightkhaki` | リザード TAP47 (実測) lizard-1 | #b9b18c | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/lizard.png 4 --max-edge=1200 --core=2`。参照画像は Wikimedia Commons [File:French Lizard Pattern Swatch from the 1950s.png](https://commons.wikimedia.org/wiki/File:French_Lizard_Pattern_Swatch_from_the_1950s.png) CC0 1.0) |
+| `lizard-brown` | リザード TAP47 (実測) lizard-2 | #90664c | 同上 |
+| `lizard-green` | リザード TAP47 (実測) lizard-3 | #6d7348 | 同上 |
+| `lizard-darkbrown` | リザード TAP47 (実測) lizard-4 | #76523c | 同上 |
+| `splinter-tan` | スプリンター (実測) sp-1 | #dbb78c | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/splinter.webp 4 --core=2`。参照画像は再配布不可のため `refs/private/` に置きリポジトリには含めない) |
+| `splinter-green` | スプリンター (実測) sp-2 | #9f9d70 | 同上 |
+| `splinter-brown` | スプリンター (実測) sp-3 | #876246 | 同上 |
 | `flecktarn-lightgreen` | フレックターン (実測) flecktarn-1 | #716744 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/flecktarn.jpg 5 --core=2`。参照画像は Wikimedia Commons [File:Flecktarn pattern.jpg](https://commons.wikimedia.org/wiki/File:Flecktarn_pattern.jpg) CC BY-SA 3.0。画像はリポジトリに含めない) |
 | `flecktarn-green` | フレックターン (実測) flecktarn-2 | #4e4832 | 同上 |
 | `flecktarn-redbrown` | フレックターン (実測) flecktarn-3 | #5a3f2e | 同上 |
@@ -408,6 +434,7 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 陸自 OD 色はマンセル値 7.5Y 3/1 のみが規格化されており、sRGB 換算は参考値。
 - MARPAT / AOR の実測値は参照写真の露出・布地の退色に依存するため、規格値ではない。
 - ベリョースカ (KLMK) はソ連側の公的な色番号が確認できないため、参照写真からの実測値のみを収録している。参照が布地写真で織り目が乗るため、k-means の前に `--blur=2` で平坦化している (これをしないと版の色ではなく織りの明暗でクラスタが割れる)。
+- スプリンターの実測値は、実物スウォッチではなく図案を再描画した参照画像からの抽出である。版の色は平坦なので k-means は安定するが、実物の染色個体差・退色は反映していない。
 
 ### 第2弾で追加した色の近似性
 

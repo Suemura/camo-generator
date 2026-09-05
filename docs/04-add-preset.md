@@ -32,7 +32,7 @@ Issue（#21 のサブ Issue）
 | # | 何を | どこに | 備考 |
 |---|------|--------|------|
 | 1 | 生成パラメータ | `src/core/camo.js` の `PRESETS[key]` | `kind` で生成関数にディスパッチ。`ref` は参照画像のキー（= `key`）。コメントには「実物のどの特徴を再現する意図か」を書く |
-| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（選択 UI の見出し）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`transitional` から選択）/ `era`（採用年代: `1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
+| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（系統: `woodland`/`desert`/`digital`/`stroke`/`geometric`/`other`）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`snow`/`transitional` から選択）/ `era`（採用年代: `1930s`/`1940s`/`1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
 | 3 | 参照画像 | `refs/private/<key>.<ext>`（手元のみ・非コミット） | ファイル名は `PRESETS` のキーに一致させる |
 | 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `docs/design/palette-library.json` + `src/data/palette.ts` + `docs/design/palette-library-sources.md` | §3 参照。**PR に含める**（後追いにしない） |
@@ -107,7 +107,7 @@ node tools/render.mjs /tmp/camo-render/hi 1234 --size=2048x2048 --crop=512 --pre
 
 - 出力 PNG を Read で目視し、既知アーティファクト（ブロック感・境界急変・切断面・鏡映対称・市松ノイズ・微小点）の再発を確認する
 - 面積比を 3 シードで記録する（`gen-src.mjs` が出すソース図案の面積比と比べる）
-- **`kind: 'spots'` のプリセット限定**: `node tools/analyze-spots.mjs ref refs/private/<key>.jpg <k>` で参照の版ごとの塊り比・等価半径を測り、`node tools/analyze-spots.mjs gen <key> 0.7 1.0 2.0` で生成と比較する。目視では `L.clump` の効きすぎ・スケール追従漏れが検出できない（`docs/01-tech-verification.md` v33 参照）。**数値は絶対値ではなく地色比で判断する**（参照が JPEG だとアンチエイリアスで中央値が下がるため）
+- **`kind: 'spots'` のプリセット限定**: `node tools/analyze-spots.mjs ref refs/private/<key>.jpg <k>` で参照の版ごとの塊り比・等価半径を測り、`node tools/analyze-spots.mjs gen <key> 0.7 1.0 2.0` で生成と比較する。目視では `L.clump` の効きすぎ・スケール追従漏れが検出できない（`docs/01-tech-verification.md` v36 参照）。**数値は絶対値ではなく地色比で判断する**（参照が JPEG だとアンチエイリアスで中央値が下がるため）
 - 性能: 512px の生成時間を既存プリセットと比較して記録する
 - `docs/01-tech-verification.md` に **vN 節を追記**（目的 / 手法の選択理由 / パラメータ / 検証 / 残課題）。節番号は main の最新 +1。並列 Issue が先にマージされて番号が衝突したら、自分の節を繰り下げる（DBDU は v20 → v24）
 - **`pnpm test -u` は追記の後**。先にスナップショットを更新しない

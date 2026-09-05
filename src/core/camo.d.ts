@@ -20,13 +20,16 @@ export type PresetKey =
   | "ddpm"
   | "auscam"
   | "tigerstripe"
+  | "brushstroke"
+  | "lizard"
   | "berezka"
+  | "splinter"
   | "flecktarn"
   | "wuestentarn";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth" | "spots";
+  kind: "quilt" | "growth" | "spots" | "splinter";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;

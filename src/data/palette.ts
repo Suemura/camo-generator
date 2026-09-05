@@ -39,6 +39,8 @@ export const USE_LABEL: Record<string, string> = {
   "camo-multicam": "MultiCam 系",
   "camo-flecktarn": "フレックターン",
   "camo-wuestentarn": "ヴュステンターン (3 色デザート)",
+  "camo-tibetarn": "Tibetarn (中国 高原)",
+  "camo-m84": "M/84 系 (デンマーク・ロシア)",
   "camo-dpm": "DPM",
   "camo-ddpm": "デザート DPM (DDPM)",
   "camo-3color-desert": "3 色デザート",

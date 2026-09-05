@@ -14,6 +14,7 @@ export const COUNTRY_LABEL: Record<string, string> = {
   it: "イタリア",
   il: "イスラエル",
   vn: "ベトナム",
+  dk: "デンマーク",
   // ISO 3166-1 から削除されたコード。現ジンバブエだが、迷彩を制定した当時の国名で示す
   rh: "ローデシア",
   other: "その他",

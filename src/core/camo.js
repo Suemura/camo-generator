@@ -2042,7 +2042,10 @@ function placeStrokes(out, w, h, rng, u, S, wrap, placed){
   const dir = S.dir ?? Math.PI/2, dj = S.dirJitter ?? 0, sway = S.sway ?? 0;
   let painted = 0, k = 0;
   while(k < count && painted < target && k < 4000){
-    // 既存の線から最も離れた候補を採る (線同士が束にならない。実物の茎は 1 本ずつ立つ)
+    // 既存の線から最も離れた候補を採る (線同士が束にならない。実物の茎は 1 本ずつ立つ)。
+    // placed が空 (レイヤー内で最初の 1 本) のときは 8 候補とも minD=Infinity になり、
+    // Infinity > Infinity は false のため実質「8 候補中の最初」で確定する。genSpots の
+    // 同種ループと同じ挙動で、rng は 8 候補ぶん消費するため決定性・スナップショットへの影響はない
     let best = null, bestD = -1;
     for(let c=0;c<8;c++){
       const cx = rng()*w, cy = rng()*h;
@@ -2107,6 +2110,9 @@ export function genLayered(w, h, seed, scale, P, opt={}){
       if(!cleanupFragments(out, w, h, minArea, wrap, P.colors.length)) break;
     }
   }
+  // late な筆線層 (multicam の縦棒) は非 late の虫状斑層と placedStrokes を共有する。
+  // 版が違っても筆線同士の Mitchell 距離を通しで見ることで、縦棒が虫状斑の真上に立たず、
+  // 筆線どうし (虫状斑・縦棒を問わず) が束にならないようにする意図的な共有 (placeSpots とは独立)
   for(const S of late) placeStrokes(out, w, h, rng, u, S, wrap, placedStrokes);
   if(progress) progress(1);
   return {type:'layered', w, h, index: out};

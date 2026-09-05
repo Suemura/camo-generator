@@ -23,11 +23,12 @@ export type PresetKey =
   | "brushstroke"
   | "lizard"
   | "berezka"
-  | "splinter";
+  | "splinter"
+  | "multicam";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth" | "spots" | "splinter";
+  kind: "quilt" | "growth" | "spots" | "splinter" | "layered";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;
@@ -56,6 +57,8 @@ export function registerSources(mod: {
 }): void;
 export function hasSources(key: PresetKey): boolean;
 export function generate(key: PresetKey, w: number, h: number, seed: number, scale: number, opt?: GenerateOptions): GenResult;
+/** 多層グラデーション (マルチカム系)。P は PRESETS の layered エントリと同じ形 (層を外した派生を試すテスト用に公開) */
+export function genLayered(w: number, h: number, seed: number, scale: number, P: Preset, opt?: GenerateOptions): GenResult;
 export function toRGBA(res: GenResult, palette: string[]): Uint8ClampedArray<ArrayBuffer>;
 export function hexToRgb(hex: string): [number, number, number];
 export function hash2(ix: number, iy: number, seed: number): number;

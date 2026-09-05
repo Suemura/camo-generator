@@ -2588,5 +2588,103 @@
     },
     "note": "多角形のもう一方 (実測 42%)。面積が最大",
     "source": "参照画像 (refs/private/splinter.webp) を k-means (k=4, --core=2) で量子化した実測値。規格値ではない"
+  },
+  {
+    "id": "multicam-lighttan",
+    "name": "マルチカム ライトタン",
+    "std": "マルチカム (実測)",
+    "code": "mc-1",
+    "hex": "#a09d9b",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-multicam", "uniform"],
+      "country": ["us"]
+    },
+    "note": "背景帯の 1 つ。クリーム斑を包む一段大きい版でもある (可視面積 実測 14%)",
+    "source": "参照画像 (refs/private/multicam.jpg、Wikimedia Commons File:Multicam pattern (cropped).jpg、Public domain) を k-means (k=7, --blur=1.5 --core=2) で量子化した実測値。規格値ではない。写真がグレー〜ピンク寄りの色被りで実物より彩度が低い"
+  },
+  {
+    "id": "multicam-tan",
+    "name": "マルチカム タン",
+    "std": "マルチカム (実測)",
+    "code": "mc-2",
+    "hex": "#97918c",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-multicam", "uniform"],
+      "country": ["us"]
+    },
+    "note": "背景帯の 1 つ (実測 20%)",
+    "source": "参照画像 (refs/private/multicam.jpg、Wikimedia Commons File:Multicam pattern (cropped).jpg、Public domain) を k-means (k=7, --blur=1.5 --core=2) で量子化した実測値。規格値ではない。写真がグレー〜ピンク寄りの色被りで実物より彩度が低い"
+  },
+  {
+    "id": "multicam-palegreen",
+    "name": "マルチカム ペールグリーン",
+    "std": "マルチカム (実測)",
+    "code": "mc-3",
+    "hex": "#acadb1",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-multicam", "uniform"],
+      "country": ["us"]
+    },
+    "note": "背景帯の最も明るい緑 (実測 24%)。参照写真の色被りで灰色寄りに出ている",
+    "source": "参照画像 (refs/private/multicam.jpg、Wikimedia Commons File:Multicam pattern (cropped).jpg、Public domain) を k-means (k=7, --blur=1.5 --core=2) で量子化した実測値。規格値ではない。写真がグレー〜ピンク寄りの色被りで実物より彩度が低い"
+  },
+  {
+    "id": "multicam-brown",
+    "name": "マルチカム ブラウン",
+    "std": "マルチカム (実測)",
+    "code": "mc-4",
+    "hex": "#8c8581",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-multicam", "uniform"],
+      "country": ["us"]
+    },
+    "note": "背景帯の最暗色。ダークブラウン斑を包む版でもある (実測 9%)",
+    "source": "参照画像 (refs/private/multicam.jpg、Wikimedia Commons File:Multicam pattern (cropped).jpg、Public domain) を k-means (k=7, --blur=1.5 --core=2) で量子化した実測値。規格値ではない。写真がグレー〜ピンク寄りの色被りで実物より彩度が低い"
+  },
+  {
+    "id": "multicam-darkbrown",
+    "name": "マルチカム ダークブラウン",
+    "std": "マルチカム (実測)",
+    "code": "mc-5",
+    "hex": "#645259",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-multicam", "uniform"],
+      "country": ["us"]
+    },
+    "note": "前景の横長で虫状の斑と一部の縦棒 (実測 7%)",
+    "source": "参照画像 (refs/private/multicam.jpg、Wikimedia Commons File:Multicam pattern (cropped).jpg、Public domain) を k-means (k=7, --blur=1.5 --core=2) で量子化した実測値。規格値ではない。写真がグレー〜ピンク寄りの色被りで実物より彩度が低い"
+  },
+  {
+    "id": "multicam-cream",
+    "name": "マルチカム クリーム",
+    "std": "マルチカム (実測)",
+    "code": "mc-6",
+    "hex": "#c5c7d3",
+    "tags": {
+      "hue": "white",
+      "use": ["camo-multicam", "uniform"],
+      "country": ["us"]
+    },
+    "note": "前景の大きな斑と微小な丸点 (実測 8%)",
+    "source": "参照画像 (refs/private/multicam.jpg、Wikimedia Commons File:Multicam pattern (cropped).jpg、Public domain) を k-means (k=7, --blur=1.5 --core=2) で量子化した実測値。規格値ではない。写真がグレー〜ピンク寄りの色被りで実物より彩度が低い"
+  },
+  {
+    "id": "multicam-darkgreen",
+    "name": "マルチカム ダークグリーン",
+    "std": "マルチカム (実測)",
+    "code": "mc-7",
+    "hex": "#757870",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-multicam", "uniform"],
+      "country": ["us"]
+    },
+    "note": "前景の小斑と縦棒 (実測 19%。参照写真では帯の緑と分離しない)",
+    "source": "参照画像 (refs/private/multicam.jpg、Wikimedia Commons File:Multicam pattern (cropped).jpg、Public domain) を k-means (k=7, --blur=1.5 --core=2) で量子化した実測値。規格値ではない。写真がグレー〜ピンク寄りの色被りで実物より彩度が低い"
   }
 ]

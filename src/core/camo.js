@@ -1642,21 +1642,22 @@ function stampSpot(out, w, h, s, color, wrap, grow=0){
 // halo {color, grow} なら、その斑を刷る直前に同じ形を (1+grow) 倍で halo.color として刷る。
 //   実物の重ね刷りで暗色の斑の周りに一段明るい版が縁として残る構造 (フロッグスキンの
 //   ブラウン斑をグリーンが縁取る、など)。層間の相関を独立配置のまま表現する最小の手段
-export function genSpots(w, h, seed, scale, P, opt={}){
-  const wrap = opt.tileable !== false;
-  const progress = typeof opt.progress === 'function' ? opt.progress : null;
-  const rng = mulberry32(seed ^ 0x5b0d);
-  const out = new Uint8Array(w*h);            // 0 = 地色
-  const u = (w/512) / scale;                  // 特徴サイズの単位 (scale 大 = 模様細かい、他手法と同じ規約)
+// 斑点層の配置本体。genSpots と genLayered (背景帯の上に斑を乗せる) で共用する。
+// rng の消費順は genSpots 単体だった頃と 1 bit も変えていない (決定性スナップショットで固定)。
+//   progress(li, n): 層ごとの進捗通知 (呼び出し側が全体の区間に写す)
+//   halo.shift (0..1、既定 0): halo の中心を rng で shift·R だけずらす。等幅の縁取りは「輪郭線」に
+//   見えるが、実物の重ね刷りでは芯の版が縁の版の中で片寄る (マルチカムのクリーム芯が淡タン地の
+//   中で偏る)。未指定なら rng を消費しないので既存プリセットの出力は変わらない
+//   placed / li0: 呼び出し側が層を 1 つずつ渡すとき (genLayered) に配置リストと層番号を引き継ぐ
+function placeSpots(out, w, h, rng, u, layers, wrap, progress, placed=[], li0=0){
   const dist2 = (ax, ay, bx, by) => {
     const dx = wrap ? wrapD(ax-bx, w) : ax-bx, dy = wrap ? wrapD(ay-by, h) : ay-by;
     return dx*dx + dy*dy;
   };
-  const placed = [];                          // {cx, cy, R, li, patch}
-  const layers = P.layers;
-  for(let li=0; li<layers.length; li++){
-    const L = layers[li];
-    if(progress) progress(li / layers.length);
+  // placed: {cx, cy, R, li, patch}
+  for(let li=li0; li<li0+layers.length; li++){
+    const L = layers[li-li0];
+    if(progress) progress(li-li0, layers.length);
     const target = L.frac * w * h;
     const rLo = L.r[0]*u, rHi = L.r[1]*u;
     const gap = L.gap ?? 0.1, over = L.over ?? 0.4;
@@ -1685,12 +1686,30 @@ export function genSpots(w, h, seed, scale, P, opt={}){
       if(!best){ fails++; continue; }
       const s = makeSpot(rng, best.cx, best.cy, R, L);
       // halo は先に刷る (下の版)。halo の画素は自層の面積目標には数えない
-      if(L.halo) stampSpot(out, w, h, s, L.halo.color, wrap, L.halo.grow);
+      if(L.halo){
+        if(L.halo.shift){
+          // 芯を halo の中で片寄せる: halo は中心をずらした別の輪郭 (独立の高調波) を (1+grow) 倍の
+          // 半径で刷る。同形の相似拡大だと等幅の縁取りになり輪郭線に見える
+          const a = randRange(rng, 0, Math.PI*2), d = randRange(rng, 0, L.halo.shift) * R;
+          const hs = makeSpot(rng, s.cx + Math.cos(a)*d, s.cy + Math.sin(a)*d, R * (1 + L.halo.grow), L);
+          stampSpot(out, w, h, hs, L.halo.color, wrap);
+        }else{
+          stampSpot(out, w, h, s, L.halo.color, wrap, L.halo.grow);
+        }
+      }
       painted += stampSpot(out, w, h, s, L.color, wrap);
       // 間隔判定は halo を含んだ外形で行う (縁まで含めて他の斑と離す)
       placed.push({cx: s.cx, cy: s.cy, R: R * (1 + (L.halo?.grow ?? 0)), li, patch: !!L.patch});
     }
   }
+}
+export function genSpots(w, h, seed, scale, P, opt={}){
+  const wrap = opt.tileable !== false;
+  const progress = typeof opt.progress === 'function' ? opt.progress : null;
+  const rng = mulberry32(seed ^ 0x5b0d);
+  const out = new Uint8Array(w*h);            // 0 = 地色
+  const u = (w/512) / scale;                  // 特徴サイズの単位 (scale 大 = 模様細かい、他手法と同じ規約)
+  placeSpots(out, w, h, rng, u, P.layers, wrap, progress ? (li, n) => progress(li / n) : null);
   // 後の版の斑点 2 個が前の版の斑点を挟むと、前の色が細い三日月や微小片として残る
   // (捺染の実物では版ずれ以外にこの形は出ない)。P.minFrag (512px・scale 1 基準の px²) 未満の欠片は
   // 近傍多数色へ併合する。それ以外の後処理 (平滑化・多数決) は要らない: 輪郭は解析形状で最初から滑らか
@@ -1909,6 +1928,194 @@ export function genSplinter(w, h, seed, scale, P, opt={}){
   if(P.rain) applyRain(out, w, h, seed, u, P.rain, wrap);
   if(progress) progress(1);
   return {type:'splinter', w, h, index: out};
+}
+
+/* ================= 多層グラデーション (マルチカム系) =================
+   実物構造: Crye MultiCam (2000 年代〜) は、単層のハードエッジ図案ではなく
+     1. 横方向にゆるやかに色が移り変わる背景 (タン ↔ ペールグリーン ↔ ブラウンの帯。境界は
+        滲んだグラデーションで、帯の中に隣色の島が混じる)
+     2. その上に乗る輪郭のはっきりした前景ブロブ (クリームの大きな斑、ダークブラウンの虫状の斑)。
+        斑の芯はひと回り大きい別の版に包まれていて、ブロブの内側に 2 段階の階調がある
+     3. 草の茎のような細い縦棒 (ダークグリーン / ダークブラウン) が疎らに立つ。同じ祖先 (Scorpion) を持つ
+        米陸軍 OCP には無い、MultiCam 固有の識別点
+   の 3 層でできている。既存手法は全て単層 (クイルトは図案の継ぎ合わせ、斑点配置は地色 1 色の上に斑、
+   成長系はセル格子) なので、背景の帯と前景の斑を別々に作って重ねる手法を新設した。
+   index マップは離散色のままなので形状 / 色の分離 (パレット差し替え) は崩れない。
+   ソース図案を持たない手続き生成 (MultiCam は Crye Precision の商標・意匠。図案は複製しない)。
+   層は P.bg / P.layers[] で独立に on/off・調整できるので、派生 (OCP: 縦棒なし + 微小斑の群れ、
+   MTP: 配色と前景形状の差し替え) は同じエンジンにプリセットを足すだけで作れる。 */
+
+// 周期境界の値ノイズ。格子を nx × ny 周期に閉じるので、w × h のトーラス上で継ぎ目が出ない。
+// (vnoise は無限平面の格子なのでタイル境界で不連続になる。背景帯は低周波なので継ぎ目が目立つ)
+function pnoise(gx, gy, nx, ny, seed){
+  const ix = Math.floor(gx), iy = Math.floor(gy);
+  const fx = gx - ix, fy = gy - iy;
+  const x0 = wrapI(ix, nx), x1 = wrapI(ix+1, nx), y0 = wrapI(iy, ny), y1 = wrapI(iy+1, ny);
+  const a = hash2(x0, y0, seed), b = hash2(x1, y0, seed), c = hash2(x0, y1, seed), d = hash2(x1, y1, seed);
+  const u = fade(fx), v = fade(fy);
+  return a + (b-a)*u + (c-a)*v + (a-b-c+d)*u*v;
+}
+// 周期 fBm。オクターブごとに周期数を 2 倍にするので各段も閉じる
+function pfbm(gx, gy, nx, ny, seed, oct){
+  let amp = 0.5, f = 1, sum = 0, norm = 0;
+  for(let i=0;i<oct;i++){
+    sum += amp * pnoise(gx*f, gy*f, nx*f, ny*f, seed + i*101);
+    norm += amp; amp *= 0.5; f *= 2;
+  }
+  return sum / norm;
+}
+
+// 背景のグラデーション帯を量子化して index に敷く。
+//   B.bandX / bandY: 帯の周期 (512px・scale 1 基準 px)。bandX ≫ bandY で横に流れる帯になる
+//   B.mottle: 帯の境界を乱す等方ノイズの振幅。閾値の近くで隣色が島状に入り混じり、実物の
+//     「滲んだ境界」を離散色で近似する。画素単位のディザは使わない (市松ノイズ・微小点という
+//     既知アーティファクトを構造的に生む。docs/01-tech-verification.md)
+//   B.mottleR: 島の大きさ (px)。B.colors: 暗 → 明の順に並べた index。B.frac: その面積比
+// 閾値は quantile で決めるので面積比はシードに依らず frac に追従する
+function paintBands(out, w, h, seed, u, B){
+  const nx = Math.max(1, Math.round(w / (B.bandX * u)));
+  const ny = Math.max(1, Math.round(h / (B.bandY * u)));
+  const mR = B.mottleR ?? 45;
+  const mx = Math.max(1, Math.round(w / (mR * u))), my = Math.max(1, Math.round(h / (mR * u)));
+  const mottle = B.mottle ?? 0.25;
+  const field = new Float32Array(w*h);
+  for(let y=0;y<h;y++){
+    const gy = y / h * ny, hy = y / h * my;
+    for(let x=0;x<w;x++){
+      const gx = x / w * nx, hx = x / w * mx;
+      field[y*w + x] = pfbm(gx, gy, nx, ny, seed ^ 0x3a1d, 2)
+                     + mottle * (pfbm(hx, hy, mx, my, seed ^ 0x77c2, 2) - 0.5);
+    }
+  }
+  const th = [];
+  let acc = 0;
+  for(let i=0;i<B.colors.length-1;i++){ acc += B.frac[i]; th.push(quantile(field, acc)); }
+  for(let i=0;i<w*h;i++){
+    const v = field[i];
+    let c = 0;
+    while(c < th.length && v > th[c]) c++;
+    out[i] = B.colors[c];
+  }
+}
+
+// 筆線 (stroke) 層。中心を Mitchell 候補で散らし、方向 dir に len の緩い曲線を歩きながら半径 thick/2 の
+// 円を刻印する (両端が丸い太い線)。makeSpot の 5 次高調波は a2 を上げると腰がくびれた「ひょうたん形」に
+// なり 4:1 以上の細長比を作れないので、実物の
+//   - ダークブラウンの横長で虫状の斑 (dir 0、太さ 8〜14px、halo でブラウンの縁)
+//   - 草の茎のような細い縦棒 (dir π/2、太さ 3px。MultiCam 固有の識別点)
+// はどちらもこの primitive で描く。
+//   S.color: index / S.frac (塗る面積比) または S.count (512²・scale 1 基準の本数) のどちらかで量を決める
+//   S.len [lo,hi]: 長さ px / S.thick: 太さ px (数値 or [lo,hi]) / S.dir: 方向 rad (既定 π/2 = 縦) / S.dirJitter: 方向のばらつき rad
+//   S.sway: 曲がり (長さに対する横ずれの比) / S.halo {color, grow, shift}: 同じ経路を (1+grow) 倍の太さ・
+//     shift·thick だけずらした中心で先に描く (斑点層の halo と同じ「重ね刷りで下の版が縁として残る」構造)
+//   S.late: true なら欠片除去の後に描く (細い線は先に描くと欠片と判定されて消える。genSplinter の雨線と同じ順序論理)
+// placed: この層タイプ同士の Mitchell 判定に使う中心リスト (斑点層とは独立。実物でも版が別)
+function strokePath(out, w, h, path, r0, color, wrap){
+  let n = 0;
+  for(const [xx, yy, rm] of path){
+    const r = r0 * (rm ?? 1), r2 = Math.max(0.5, r*r);
+    const x0 = Math.floor(xx - r), x1 = Math.ceil(xx + r), y0 = Math.floor(yy - r), y1 = Math.ceil(yy + r);
+    for(let py=y0; py<=y1; py++){
+      const yw = wrap ? wrapI(py, h) : py;
+      if(yw < 0 || yw >= h) continue;
+      for(let px=x0; px<=x1; px++){
+        const xw = wrap ? wrapI(px, w) : px;
+        if(xw < 0 || xw >= w) continue;
+        const dx = px + 0.5 - xx, dy = py + 0.5 - yy;
+        if(dx*dx + dy*dy <= r2){
+          const i = yw*w + xw;
+          if(out[i] !== color){ out[i] = color; n++; }
+        }
+      }
+    }
+  }
+  return n;
+}
+function placeStrokes(out, w, h, rng, u, S, wrap, placed){
+  const dist2 = (ax, ay, bx, by) => {
+    const dx = wrap ? wrapD(ax-bx, w) : ax-bx, dy = wrap ? wrapD(ay-by, h) : ay-by;
+    return dx*dx + dy*dy;
+  };
+  const count = S.count !== undefined ? Math.max(1, Math.round(S.count * (w*h) / (512*512) / (u*u))) : Infinity;
+  const target = S.frac !== undefined ? S.frac * w * h : Infinity;
+  const thick = Array.isArray(S.thick) ? S.thick : [S.thick, S.thick];
+  const dir = S.dir ?? Math.PI/2, dj = S.dirJitter ?? 0, sway = S.sway ?? 0;
+  let painted = 0, k = 0;
+  while(k < count && painted < target && k < 4000){
+    // 既存の線から最も離れた候補を採る (線同士が束にならない。実物の茎は 1 本ずつ立つ)。
+    // placed が空 (レイヤー内で最初の 1 本) のときは 8 候補とも minD=Infinity になり、
+    // Infinity > Infinity は false のため実質「8 候補中の最初」で確定する。genSpots の
+    // 同種ループと同じ挙動で、rng は 8 候補ぶん消費するため決定性・スナップショットへの影響はない
+    let best = null, bestD = -1;
+    for(let c=0;c<8;c++){
+      const cx = rng()*w, cy = rng()*h;
+      let minD = Infinity;
+      for(const q of placed){ const d2 = dist2(cx, cy, q.cx, q.cy); if(d2 < minD) minD = d2; }
+      if(minD > bestD){ bestD = minD; best = {cx, cy}; }
+    }
+    placed.push(best);
+    const len = randRange(rng, S.len[0], S.len[1]) * u;
+    const th = Math.max(1, randRange(rng, thick[0], thick[1]) * u);
+    const a = dir + randRange(rng, -dj, dj);
+    // 曲がり: 1 本の低周波の弧。真っすぐな線は印刷物に見えて実物と違う
+    const bend = randRange(rng, -sway, sway), phase = randRange(rng, 0, Math.PI*2);
+    // 太さの揺らぎ (S.taper): 線に沿って太さを 1 ± taper で正弦変調する。等幅のソーセージ形は印刷物に
+    // 見え、実物の斑は途中で膨らんだり端が太かったりする
+    const taper = S.taper ?? 0, tk = randRange(rng, 1, 2.5), tph = randRange(rng, 0, Math.PI*2);
+    const ux = Math.cos(a), uy = Math.sin(a), nx = -uy, ny = ux;
+    const steps = Math.max(1, Math.ceil(len));
+    const path = [];
+    for(let i=0;i<=steps;i++){
+      const t = i / steps - 0.5, off = bend * len * (Math.sin(phase + (t+0.5)*Math.PI) - Math.sin(phase)) * 0.5;
+      path.push([best.cx + ux*t*len + nx*off, best.cy + uy*t*len + ny*off, 1 + taper * Math.sin(tph + t*Math.PI*tk)]);
+    }
+    if(S.halo){
+      const hs = S.halo.shift ?? 0;
+      const ha = randRange(rng, 0, Math.PI*2), hd = randRange(rng, 0, hs) * th;
+      const hk = randRange(rng, 1, 2.5), hph = randRange(rng, 0, Math.PI*2);
+      const hp = path.map(([x, y], i) => [x + Math.cos(ha)*hd, y + Math.sin(ha)*hd,
+                                          1 + taper * Math.sin(hph + (i/steps - 0.5)*Math.PI*hk)]);
+      strokePath(out, w, h, hp, th * (1 + S.halo.grow) / 2, S.halo.color, wrap);
+    }
+    painted += strokePath(out, w, h, path, th/2, S.color, wrap);
+    k++;
+  }
+}
+
+// P.bg (背景帯) → P.layers を配列順に (斑点層 type 無し / 'spot'、筆線層 type:'stroke') → 欠片除去 →
+// late: true の筆線層。各層は独立に外せる (bg を外すと index 0 の地色、layers を空にすると帯だけ)。
+// ソース図案を持たず計算量が画素数に線形なので opt.baseMax は参照せず常に実寸で生成する
+export function genLayered(w, h, seed, scale, P, opt={}){
+  const wrap = opt.tileable !== false;
+  const progress = typeof opt.progress === 'function' ? opt.progress : null;
+  const rng = mulberry32(seed ^ 0x1a7e);
+  const u = (w/512) / scale;
+  const out = new Uint8Array(w*h);
+  if(P.bg) paintBands(out, w, h, seed, u, P.bg);
+  if(progress) progress(0.4);
+  const layers = P.layers ?? [];
+  const placedSpots = [], placedStrokes = [], late = [];
+  for(let li=0; li<layers.length; li++){
+    const L = layers[li];
+    if(progress) progress(0.4 + 0.5 * li / layers.length);
+    if(L.type === 'stroke'){
+      if(L.late) late.push(L); else placeStrokes(out, w, h, rng, u, L, wrap, placedStrokes);
+    }else{
+      placeSpots(out, w, h, rng, u, [L], wrap, null, placedSpots, li);
+    }
+  }
+  if(P.minFrag){
+    const minArea = P.minFrag * u * u;
+    for(let p=0; p<8; p++){
+      if(!cleanupFragments(out, w, h, minArea, wrap, P.colors.length)) break;
+    }
+  }
+  // late な筆線層 (multicam の縦棒) は非 late の虫状斑層と placedStrokes を共有する。
+  // 版が違っても筆線同士の Mitchell 距離を通しで見ることで、縦棒が虫状斑の真上に立たず、
+  // 筆線どうし (虫状斑・縦棒を問わず) が束にならないようにする意図的な共有 (placeSpots とは独立)
+  for(const S of late) placeStrokes(out, w, h, rng, u, S, wrap, placedStrokes);
+  if(progress) progress(1);
+  return {type:'layered', w, h, index: out};
 }
 
 /* ================= プリセット ================= */
@@ -2556,6 +2763,57 @@ export const PRESETS = {
       {name:'ペールグレー', hex:'#b0b4b6'},
     ],
   },
+  multicam: {
+    // マルチカム風 (Crye Precision MultiCam、2002 年原型 Scorpion → 2004 年商用化。米 SOCOM、2010〜 米陸軍
+    // アフガン向け OEF-CP、英 MTP の母体)。実物の特徴 (refs/private/multicam.jpg = 生地写真、Public domain):
+    //   - 7 色。背景は横方向にゆるやかに移り変わる帯 (ブラウン → タン → ライトタン → ペールグリーン)。
+    //     境界は滲んでいて、帯の中に隣色の島が混じる
+    //   - 前景 1: クリームの大きな斑。ライトタンの一段大きい版に包まれ、芯は包みの中で片寄っている
+    //   - 前景 2: ダークブラウンの横長で虫状の斑。ブラウンの版が縁として残る (重ね刷りの構造は frogskin_beach の halo と同じ)
+    //   - 前景 3: ダークグリーンの小斑と、クリームの微小な丸点 (数は少ない)
+    //   - 縦棒: ダークグリーン / ダークブラウンの細い茎が疎らに立つ。同じ Scorpion 系の米陸軍 OCP には無い識別点
+    // MultiCam は Crye Precision の商標・意匠なのでソース図案は作らず、特徴の手続き再現に留める (Issue #33)
+    name: 'マルチカム風 (MultiCam)', kind: 'layered', ref: 'multicam',
+    // 背景帯: bandX 360 / bandY 110 は参照画像 (1280px 幅を 512px に cover) の帯の横 300〜400px・縦 90〜130px に合わせた。
+    // colors は暗 → 明の順 (帯の推移がこの順で隣り合う: ブラウンはタンとだけ、ペールグリーンはライトタンとだけ接する)。
+    // frac は可視面積比の実測 (下記 gen-src) から前景に覆われる分を戻した値
+    bg: {colors: [3, 1, 0, 2], frac: [0.06, 0.32, 0.20, 0.42], bandX: 300, bandY: 110, mottle: 0.22, mottleR: 70},
+    // 斑点層は genSpots と同じ schema。r は 512px・scale 1 基準の平均半径 px (参照画像の実測: クリーム斑の
+    // 外接矩形 60〜120 × 40〜70、ダークブラウン斑 30〜90 × 12〜30 で横長)。orient 0 = 横長
+    layers: [
+      // クリーム斑 + ライトタンの包み (grow 0.45、shift 0.6 で芯を片寄せ)
+      {color: 5, frac: 0.11, r: [14, 28], elong: [0.20, 0.45], lobe: [0.15, 0.40], wobble: 0.18, gap: 0.25, over: 0.5,
+       orient: 0, orientJitter: 0.6, halo: {color: 0, grow: 0.7, shift: 1.0}},
+      // ダークブラウンの虫状斑: 横向きの太い筆線 (長さ 30〜90 × 太さ 9〜14px、実測 3〜6:1) + ブラウンの縁
+      // halo は grow 1.2 / shift 1.6 で大きくずらし、暗色の斑が「ブラウンの塊の縁に乗る」構図にする
+      // (等幅の縁取りだと輪郭線に見える。実物ではブラウンの版が斑よりずっと大きい)
+      {type: 'stroke', color: 4, frac: 0.07, len: [10, 80], thick: [8, 14], dir: 0, dirJitter: 0.35, sway: 0.35, taper: 0.35,
+       halo: {color: 3, grow: 1.2, shift: 1.6}},
+      // ダークグリーンの小斑
+      {color: 6, frac: 0.03, r: [4, 10], elong: [0.20, 0.50], lobe: [0.10, 0.25], gap: 0.3, over: 0.6, orient: 0, orientJitter: 0.6},
+      // クリームの微小な丸点 (地の色むら扱いで間隔制約に参加しない)
+      {color: 5, frac: 0.006, r: [2.5, 4.5], elong: [0.0, 0.10], lobe: [0.0, 0.05], gap: 1.0, patch: true},
+      // 縦棒 (欠片除去の後に描く)。本数は 512² 基準
+      {type: 'stroke', late: true, color: 6, count: 9, len: [40, 120], thick: 3, dir: Math.PI/2, dirJitter: 0.08, sway: 0.25},
+      {type: 'stroke', late: true, color: 4, count: 3, len: [30, 80],  thick: 3, dir: Math.PI/2, dirJitter: 0.08, sway: 0.3},
+    ],
+    minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/multicam.jpg 7 --blur=1.5 --core=2
+    // (生地写真で織り目が版の色を割るので --blur。グラデーション地なので --flatten は使わない = 帯の色差が
+    //  照明成分と誤推定される。写真自体がグレー〜ピンク寄りの色被りで、実物より彩度が低い値になっている。
+    //  k=8/9 に上げても 2 つ目のグリーン (縦棒の明るい緑) は分離しないので 7 クラスタを採用)。
+    // 面積比: node tools/gen-src.mjs refs/private/multicam.jpg /dev/null 7 MC --blur=1.5
+    //   → 明度降順 [0.081, 0.135, 0.196, 0.243, 0.187, 0.086, 0.072]
+    colors: [
+      {name:'ライトタン',    hex:'#a09d9b'},
+      {name:'タン',          hex:'#97918c'},
+      {name:'ペールグリーン', hex:'#acadb1'},
+      {name:'ブラウン',      hex:'#8c8581'},
+      {name:'ダークブラウン', hex:'#645259'},
+      {name:'クリーム',      hex:'#c5c7d3'},
+      {name:'ダークグリーン', hex:'#757870'},
+    ],
+  },
 };
 
 /* ================= 生成入口 ================= */
@@ -2568,6 +2826,7 @@ export function generate(key, w, h, seed, scale, opt={}){
     case 'growth': return genGrowth(w, h, seed, scale, P, opt);
     case 'spots':  return genSpots(w, h, seed, scale, P, opt);
     case 'splinter': return genSplinter(w, h, seed, scale, P, opt);
+    case 'layered': return genLayered(w, h, seed, scale, P, opt);
     default: throw new Error('unknown kind: ' + P.kind);
   }
 }

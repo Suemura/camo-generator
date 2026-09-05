@@ -2125,6 +2125,39 @@ export const PRESETS = {
       {name:'ブラック',     hex:'#302d31'},
     ],
   },
+  nwu1: {
+    // NWU Type I (米海軍、2008〜2019)。実物の特徴 (refs/nwu1.jpg 実測。面積比 48 / 31 / 17 / 4%):
+    //   - 唯一の寒色デジタル。ネイビーブルーが地色 (48%) で、他のデジタル系のように
+    //     明色が地になっていない。そこで grid の 0 (成長前の初期値) をネイビーに割り当て、
+    //     グレー → ライトブルー → ダークネイビーの順に上へ成長させる
+    //     (colors の並びも明度降順ではなく「地色が先頭」にしている)
+    //   - ピクセルが MARPAT より粗く塊も大きい (Issue #53) → cell 6、min/max も MARPAT より大きめ
+    //   - ライトブルーの塊はグレーの内側〜縁に現れる → seedNear: 1 でグレーに寄せる
+    //   - ダークネイビーは最小面積 (4%) で、ライトブルーの塊のすぐ脇に高コントラストの点として散る
+    //     → eat: [0,2] / seedNear: 2 でライトブルーに連鎖させる
+    //   - 4 色すべて低彩度の寒色でコントラストが低いため、スペックルを強くすると
+    //     クラスタ境界が溶けて識別できなくなる。density は MARPAT と同等に留める
+    name: 'NWU Type I (米海軍)', kind: 'growth', ref: 'nwu1',
+    cell: 6, growDither: 1,
+    layers: [
+      {color: 1, ratio: 0.40, eat: [0], min: 0.0012, max: 0.0065, compact: 1.3, drift: 2.0, jitter: 1.2, wander: 0.35, stratify: 12},
+      {color: 2, ratio: 0.20, eat: [0,1], seedNear: 1, min: 0.0006, max: 0.0045, compact: 1.5, drift: 1.4, jitter: 1.1, wander: 0.30},
+      {color: 3, ratio: 0.05, eat: [0,2], seedNear: 2, min: 0.0002, max: 0.0010, compact: 1.5, drift: 1.2, jitter: 1.0, wander: 0.25},
+    ],
+    growSpeckle: [
+      {on: 1, dot: 0, density: 0.06}, {on: 0, dot: 1, density: 0.05},
+      {on: 2, dot: 1, density: 0.05}, {on: 3, dot: 1, density: 0.04},
+    ],
+    // 実測: node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core
+    // (--core = 領域内部の中央値。素の k-means 重心だと最小面積のダークネイビーが
+    //  ネイビーとの混色に吸収され #3d4a57 まで持ち上がり、実物の黒に近い版を再現できない)
+    colors: [
+      {name:'ネイビーブルー',   hex:'#4f5d77'},
+      {name:'グレー',         hex:'#7f919a'},
+      {name:'ライトブルー',     hex:'#c2d6dd'},
+      {name:'ダークネイビー',   hex:'#333f46'},
+    ],
+  },
   dcu: {
     // 3 カラーデザート (DCU / コーヒーステイン)。実物の特徴:
     //   - ブロブが M81 より大きく丸みが強く、輪郭の入り組みが少ない → 専用ソース図案 (dcusrc) が担う
@@ -2461,7 +2494,7 @@ export const PRESETS = {
     // (jitter / wtVar はこのバックエンドでは使わない)。
     // lineGap 1.6 (帯幅 = cellR·lineGap = 42px 相当) の細かい破片を merge 0.85 で大きくまとめ、
     // 実物の「非凸で腕が伸び、先端が鋭く尖る破片」を作る。統合前の破片を細かくしないと
-    // 尖りが出ず、統合を強めないと紙吹雪状に散る (docs/01-tech-verification.md v33)
+    // 尖りが出ず、統合を強めないと紙吹雪状に散る (docs/01-tech-verification.md v34)
     cells: 'lines', cellR: 26, lineDirs: 5, lineGap: 1.6, merge: 0.85,
     // 実測: node tools/gen-src.mjs refs/private/m90.webp /dev/null 4 M9 (量子化面積比)
     frac: [0.142, 0.400, 0.295, 0.163],

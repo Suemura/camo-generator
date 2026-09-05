@@ -7,7 +7,14 @@ import type { PresetKey } from "@/core/camo.js";
 import { COUNTRY_LABEL } from "@/data/countries";
 
 /** 図案の系統 (生成手法・見た目の大分類)。表示順は PRESET_GROUPS */
-export type PresetGroup = "woodland" | "desert" | "digital" | "stroke" | "geometric" | "other";
+export type PresetGroup =
+  | "woodland"
+  | "desert"
+  | "digital"
+  | "stroke"
+  | "geometric"
+  | "gradient"
+  | "other";
 
 export const PRESET_GROUPS: { key: PresetGroup; label: string }[] = [
   { key: "woodland", label: "ウッドランド系" },
@@ -15,6 +22,7 @@ export const PRESET_GROUPS: { key: PresetGroup; label: string }[] = [
   { key: "digital", label: "デジタル系" },
   { key: "stroke", label: "ストローク系" },
   { key: "geometric", label: "幾何 / 直線系" },
+  { key: "gradient", label: "グラデーション系" },
   { key: "other", label: "その他" },
 ];
 
@@ -289,6 +297,16 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     env: ["urban", "transitional"],
     era: "2000s",
     svg: true,
+  },
+  multicam: {
+    // MultiCam は Crye Precision の商標・意匠。図案は複製せず特徴 (横帯グラデーション + 前景斑 + 縦棒) を手続き再現
+    label: "マルチカム風 (MultiCam)",
+    note: "2004〜 7 色。横帯グラデーション + 斑 + 縦棒 (Crye Precision の商標)",
+    country: "us",
+    group: "gradient",
+    env: ["transitional", "arid", "forest"],
+    era: "2000s",
+    svg: false,
   },
 };
 

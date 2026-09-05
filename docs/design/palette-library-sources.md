@@ -399,6 +399,13 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `splinter-tan` | スプリンター (実測) sp-1 | #dbb78c | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/splinter.webp 4 --core=2`。参照画像は再配布不可のため `refs/private/` に置きリポジトリには含めない) |
 | `splinter-green` | スプリンター (実測) sp-2 | #9f9d70 | 同上 |
 | `splinter-brown` | スプリンター (実測) sp-3 | #876246 | 同上 |
+| `multicam-lighttan` | マルチカム (実測) mc-1 | #a09d9b | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/multicam.jpg 7 --blur=1.5 --core=2`。参照画像は Wikimedia Commons [File:Multicam pattern (cropped).jpg](https://commons.wikimedia.org/wiki/File:Multicam_pattern_(cropped).jpg) パブリックドメイン (Chikumaya)。生地写真がグレー〜ピンク寄りの色被りで、Crye の実物 (Natick 色番号 Cream 524 / Tan 525 / Pale Green 526 / Olive 527 / Dark Green 528 / Brown 529 / Dark Brown 530。公式 sRGB 値は非公開) より彩度が低い) |
+| `multicam-tan` | マルチカム (実測) mc-2 | #97918c | 同上 |
+| `multicam-palegreen` | マルチカム (実測) mc-3 | #acadb1 | 同上 |
+| `multicam-brown` | マルチカム (実測) mc-4 | #8c8581 | 同上 |
+| `multicam-darkbrown` | マルチカム (実測) mc-5 | #645259 | 同上 |
+| `multicam-cream` | マルチカム (実測) mc-6 | #c5c7d3 | 同上 |
+| `multicam-darkgreen` | マルチカム (実測) mc-7 | #757870 | 同上 |
 
 ## 注意事項
 

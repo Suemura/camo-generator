@@ -7,8 +7,10 @@ import { JGSDF2_SRC_W, JGSDF2_SRC_H, JGSDF2_SRC_RLE } from './jgsdf2src.js';
 import { DPM_SRC_W, DPM_SRC_H, DPM_SRC_RLE } from './dpmsrc.js';
 import { AUSCAM_SRC_W, AUSCAM_SRC_H, AUSCAM_SRC_BITS, AUSCAM_SRC_RLE } from './auscamsrc.js';
 import { TIGERSTRIPE_SRC_W, TIGERSTRIPE_SRC_H, TIGERSTRIPE_SRC_RLE } from './tigerstripesrc.js';
+import { BRUSHSTROKE_SRC_W, BRUSHSTROKE_SRC_H, BRUSHSTROKE_SRC_RLE } from './brushstrokesrc.js';
+import { LIZARD_SRC_W, LIZARD_SRC_H, LIZARD_SRC_RLE } from './lizardsrc.js';
 // 静的 import の目安: m81src (24KB) / dcusrc (18KB) / jgsdf2src (24KB) / dpmsrc (22KB) /
-// auscamsrc (20KB) / tigerstripesrc (45KB) は
+// auscamsrc (20KB) / tigerstripesrc (45KB) / brushstrokesrc (46KB) / lizardsrc (47KB) は
 // 数十 KB オーダーで初期バンドルへの影響が小さいため静的 import する。
 // AOR1/AOR2 の実物マップ (digsrc.js, 約 280KB) は 1 桁大きく初期バンドルを膨らませるため、
 // 利用側が動的 import して registerSources() で渡す (ブラウザ: src/lib/generate.ts、Node: tools/render.mjs)。
@@ -662,6 +664,8 @@ const SRCS = {
   // Auscam は 5 値なので 3bit RLE (bits を渡す)。20KB なので静的 import で足りる
   auscam: () => decodeSrc('auscam', AUSCAM_SRC_RLE, AUSCAM_SRC_W, AUSCAM_SRC_H, AUSCAM_SRC_BITS),
   tigerstripe: () => decodeSrc('tigerstripe', TIGERSTRIPE_SRC_RLE, TIGERSTRIPE_SRC_W, TIGERSTRIPE_SRC_H), // 45KB なので静的 import で足りる
+  brushstroke: () => decodeSrc('brushstroke', BRUSHSTROKE_SRC_RLE, BRUSHSTROKE_SRC_W, BRUSHSTROKE_SRC_H), // 46KB
+  lizard: () => decodeSrc('lizard', LIZARD_SRC_RLE, LIZARD_SRC_W, LIZARD_SRC_H), // 47KB
 };
 // 外部ソースマップの登録: registerSources(await import('./digsrc.js'))
 export function registerSources(mod){
@@ -1978,6 +1982,66 @@ export const PRESETS = {
       {name:'カーキ',     hex:'#6f6953'},
       {name:'グリーン',    hex:'#515d49'},
       {name:'ブラック',    hex:'#2e3131'},
+    ],
+  },
+  brushstroke: {
+    // ローデシアン・ブラッシュストローク (1965〜1980)。実物の特徴:
+    //   - 太い刷毛で斜めに掃いた大ぶりな筆跡。タイガーストライプより縞が太く短く、
+    //     端は尖らず丸みを持つ。地色 (サンド) が広く見える
+    //   - 筆跡の縁はドライブラシのかすれで毛先状に割れ、飛沫が飛ぶ。この筆致が識別の核で、
+    //     ノイズ閾値では原理的に出せない → 局所形状がソース図案そのものになるクイルトを使う
+    //   - グリーンをブラウンの上に重ね刷りした箇所が暗いオリーブになる。面積比 13.5% で、
+    //     この 4 値目が無いとブラウン面が広がりすぎて「茶色い迷彩」に見える (k=3 で確認)
+    name: 'ローデシアン・ブラッシュストローク風', kind: 'quilt', src: 'brushstroke', ref: 'brushstroke',
+    // ソース図案の生成:
+    //   node tools/gen-src.mjs refs/private/brushstroke.jpg src/core/brushstrokesrc.js 4 BRUSHSTROKE
+    //   (参照はフラットなスウォッチなので --blur / --flatten は不要。--resize も掛けない:
+    //    960×508 の中身は 480×254 の 1 リピートを 2×2 に敷いたもので、原寸のまま使うと
+    //    パッチ窓をタイル境界にまたがせても図案が連続する)
+    // slopeLock: 筆跡が斜めに走るため、mx·my = -1 のパッチで傾きが反転すると隣接パッチで
+    //   「く」の字に折れて長距離の流れが消える (tigerstripe と同じ理由)
+    // kBase 1.2 / patchR 155: kBase は「ソースもパッチ半径 (R = patchR/k) も同じ比で縮める」
+    //   ズーム操作なので、図案とパッチの大小関係は patchR 側で決まる。kBase 1.4 では実物より
+    //   一回り細かい図案になり、筆跡の大ぶりさが失われたため 1.2 を採る。
+    //   R = 155/1.2 ≈ 129 で 512px あたり 11 枚。色比フィードバック (divw) が働くには
+    //   10 枚以上が要る (v30) ので、これが patchR の上限側の制約になる
+    kBase: 1.2, patchR: 155, organic: true, slopeLock: true,
+    // frac はソース図案の実測面積比 (tools/gen-src.mjs の出力)
+    frac: [0.311, 0.257, 0.298, 0.135], divw: [1, 1, 1, 1],
+    // 実測: node tools/extract-palette.mjs refs/private/brushstroke.jpg 4 --max-edge=960 --core=2
+    //   既定の --max-edge=256 では毛先のかすれが周囲と混色して 4 色とも中間色に寄るため原寸で測る
+    colors: [
+      {name:'サンド',         hex:'#cab17b'},
+      {name:'グリーン',       hex:'#686947'},
+      {name:'ブラウン',       hex:'#775539'},
+      {name:'ダークオリーブ', hex:'#5a5b3b'},
+    ],
+  },
+  lizard: {
+    // フランス軍リザード TAP47 (1950 年代〜1980 年代)。タイガーストライプの原型。実物の特徴:
+    //   - 水平寄りに長く伸びる筆跡。ブラッシュストロークより細く、地色の比率が小さい
+    //   - 刷毛の毛先が分かれた跡が縞の内部を櫛状に走り、端では点状の飛沫になる
+    //   - ブラウンをカーキ地に刷った部分とグリーンの上に刷った部分で明度が違う (重ね刷り)。
+    //     この 2 種のブラウンを 1 色に潰すと平板になるため 4 値で扱う
+    name: 'リザード (TAP47) 風', kind: 'quilt', src: 'lizard', ref: 'lizard',
+    // ソース図案の生成:
+    //   node tools/gen-src.mjs refs/private/lizard.png src/core/lizardsrc.js 4 LIZARD --resize=1200
+    //   (参照は 11202×5000 と巨大なので縮小する。1200 で 47KB / frac は 1600 と 0.3pt 差、
+    //    1600 は 75KB。飛沫の残り具合が同等なので小さい方を採る)
+    //   k=3 は不可: グリーンが消えてブラウンが 2 クラスタに割れる
+    // slopeLock: tigerstripe と同じ。水平寄りの長い流れを隣接パッチ間で保つ
+    // kBase 1.15 / patchR 145: 縞幅は 15〜40px と tigerstripe と同オーダーだが、tigerstripe の
+    //   patchR 120 では 1 パッチに縞が 2〜3 本しか入らず、長い水平の流れがパッチ境界で途切れて
+    //   短くちぎれた縞に見えた。R = 145/1.15 ≈ 126 (512px あたり 11 枚) で流れが繋がる。
+    //   kBase をこれ以上上げると多数決ミップマップが飛沫 (1〜2px) を落とす。1 未満は最近傍で階段化する
+    kBase: 1.15, patchR: 145, organic: true, slopeLock: true,
+    frac: [0.283, 0.261, 0.229, 0.227], divw: [1, 1, 1, 1],
+    // 実測: node tools/extract-palette.mjs refs/private/lizard.png 4 --max-edge=1200 --core=2
+    colors: [
+      {name:'ライトカーキ',   hex:'#b9b18c'},
+      {name:'ブラウン',       hex:'#90664c'},
+      {name:'グリーン',       hex:'#6d7348'},
+      {name:'ダークブラウン', hex:'#76523c'},
     ],
   },
   dbdu: {

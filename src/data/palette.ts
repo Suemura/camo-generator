@@ -51,6 +51,8 @@ export const USE_LABEL: Record<string, string> = {
   "camo-tigerstripe": "タイガーストライプ",
   "camo-berezka": "ベリョースカ (KLMK)",
   "camo-nwu1": "NWU Type I",
+  "camo-brushstroke": "ローデシアン・ブラッシュストローク",
+  "camo-lizard": "リザード (TAP47)",
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

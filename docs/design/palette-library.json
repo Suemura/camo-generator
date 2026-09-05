@@ -3118,6 +3118,118 @@
     "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core。参照画像は Wikimedia Commons 「NWU Type I camouflage pattern swatch.jpg」パブリックドメイン (U.S. Navy))"
   },
   {
+    "id": "brushstroke-sand",
+    "name": "ブラッシュストローク サンド",
+    "std": "ローデシアン・ブラッシュストローク (実測)",
+    "code": "brush-1",
+    "hex": "#cab17b",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-brushstroke", "uniform"],
+      "country": ["rh"]
+    },
+    "note": "地色 (実測 31%)。筆跡の間から広く見える",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/brushstroke.jpg 4 --max-edge=960 --core=2。既定の --max-edge=256 では毛先のかすれが周囲と混色して 4 色とも中間色に寄るため原寸で測る)"
+  },
+  {
+    "id": "brushstroke-green",
+    "name": "ブラッシュストローク グリーン",
+    "std": "ローデシアン・ブラッシュストローク (実測)",
+    "code": "brush-2",
+    "hex": "#686947",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-brushstroke", "uniform"],
+      "country": ["rh"]
+    },
+    "note": "斜めに掃いた筆跡の一方 (実測 26%)",
+    "source": "同上"
+  },
+  {
+    "id": "brushstroke-brown",
+    "name": "ブラッシュストローク ブラウン",
+    "std": "ローデシアン・ブラッシュストローク (実測)",
+    "code": "brush-3",
+    "hex": "#775539",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-brushstroke", "uniform"],
+      "country": ["rh"]
+    },
+    "note": "筆跡のもう一方 (実測 30%)",
+    "source": "同上"
+  },
+  {
+    "id": "brushstroke-darkolive",
+    "name": "ブラッシュストローク ダークオリーブ",
+    "std": "ローデシアン・ブラッシュストローク (実測)",
+    "code": "brush-4",
+    "hex": "#5a5b3b",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-brushstroke", "uniform"],
+      "country": ["rh"]
+    },
+    "note": "グリーンをブラウンに重ね刷りした部分 (実測 14%)。この色が無いとブラウン面が広がりすぎる",
+    "source": "同上"
+  },
+  {
+    "id": "lizard-lightkhaki",
+    "name": "リザード ライトカーキ",
+    "std": "リザード TAP47 (実測)",
+    "code": "lizard-1",
+    "hex": "#b9b18c",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-lizard", "uniform"],
+      "country": ["fr"]
+    },
+    "note": "地色 (実測 28%)。ブラッシュストロークより占める面積が小さい",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/lizard.png 4 --max-edge=1200 --core=2。参照画像は Wikimedia Commons 「French Lizard Pattern Swatch from the 1950s.png」CC0 1.0)"
+  },
+  {
+    "id": "lizard-brown",
+    "name": "リザード ブラウン",
+    "std": "リザード TAP47 (実測)",
+    "code": "lizard-2",
+    "hex": "#90664c",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-lizard", "uniform"],
+      "country": ["fr"]
+    },
+    "note": "カーキ地に刷ったブラウンの筆跡 (実測 26%)",
+    "source": "同上"
+  },
+  {
+    "id": "lizard-green",
+    "name": "リザード グリーン",
+    "std": "リザード TAP47 (実測)",
+    "code": "lizard-3",
+    "hex": "#6d7348",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-lizard", "uniform"],
+      "country": ["fr"]
+    },
+    "note": "水平寄りに長く伸びるグリーンの筆跡 (実測 23%)",
+    "source": "同上"
+  },
+  {
+    "id": "lizard-darkbrown",
+    "name": "リザード ダークブラウン",
+    "std": "リザード TAP47 (実測)",
+    "code": "lizard-4",
+    "hex": "#76523c",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-lizard", "uniform"],
+      "country": ["fr"]
+    },
+    "note": "グリーンの上にブラウンを重ね刷りした部分 (実測 23%)。ブラウンと 2 色に分かれるのが実物の特徴",
+    "source": "同上"
+  },
+  {
     "id": "splinter-tan",
     "name": "スプリンター ライトタン",
     "std": "スプリンター (実測)",

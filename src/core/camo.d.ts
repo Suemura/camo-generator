@@ -10,6 +10,7 @@ export type PresetKey =
   | "cadpat"
   | "pla07"
   | "emr"
+  | "nwu1"
   | "dcu"
   | "dbdu"
   | "jgsdf2"

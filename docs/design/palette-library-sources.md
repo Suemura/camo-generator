@@ -182,6 +182,19 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 近接する既存エントリ: `tigerstripe-green` #515d49 は `frogskin-dgreen` #576b44 と黄味の差で区別でき、`tigerstripe-khaki` #6f6953 は `m81-brown` #5f5345 より明るく緑寄り。いずれも統合せず別エントリとした
 - 参照スウォッチは**再配布できないため `refs/private/` に置き、リポジトリには含めない**（`.gitignore` + 4 層の push 防止）
 
+## 第10弾（迷彩プリセット追加に伴う実測色: NWU Type I）
+
+アプリに NWU Type I 風（米海軍、Issue #53）のプリセットを追加したのに合わせ、既定色 4 色を追記した。ライブラリで初の青系の被服色になる。
+
+### 方法
+
+- `std` は「NWU Type I (実測)」、hex は `src/core/camo.js` の `PRESETS.nwu1.colors` と完全一致させている
+- **公的な色番号は見つからなかった**。NWU の色は米海軍の被服調達仕様（NAVSUP / Natick）で規定されるが、4 色に対応する FS 595 番号や測色値の一次資料は公開されていない。したがって `code` は index 値の順に `nwu1-1`〜`nwu1-4` を振った（CADPAT / EMR と同じ扱い）
+- 参照画像はフラットなスウォッチなので `--flatten` は使わず、`node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core` の実測のみを行った。素の k-means 重心だと最小面積（約 4%）のダークネイビーが地色との混色に吸収されて #3d4a57 まで持ち上がるため、`--core`（領域内部の中央値）が必須
+- **`hue` タグに青が無い**（`green` / `brown` / `tan` / `grey` / `black` / `other` の 6 分類）。地色のネイビーブルー #4f5d77 は `other`、グレー #7f919a とライトブルー #c2d6dd は `grey`、ダークネイビー #333f46 は `black` に割り当てた。青系のプリセットが増えたら `hue` に `blue` を追加して振り直す
+- 用途タグ `camo-nwu1`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「NWU Type I」を追加した。国タグ `us` は既存
+- 近接する既存エントリ（RGB 距離で確認）: `nwu1-grey` #7f919a は `bs381c-637 Medium Sea Grey` #899194 と距離 11.7、`nwu1-darknavy` #333f46 は `fs35042 Sea Blue` #3d454a と距離 12.3、`nwu1-navy` #4f5d77 は `fs36118 Gunship Gray` #5a6269 と距離 18.5、`nwu1-lightblue` #c2d6dd は `pla07-lgray` #d8d7dc と距離 22.0。近い相手はいずれも航空機・艦艇の塗料色で、由来（被服の染色色）と用途タグが異なるため Auscam と同じく別エントリとして登録し、統合はしていない
+
 ## 出典一覧
 
 | id | 規格・コード | hex | 出典 |
@@ -356,6 +369,10 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `tigerstripe-khaki` | タイガーストライプ (実測) tiger-2 | #6f6953 | 同上 |
 | `tigerstripe-green` | タイガーストライプ (実測) tiger-3 | #515d49 | 同上 |
 | `tigerstripe-black` | タイガーストライプ (実測) tiger-4 | #2e3131 | 同上 |
+| `nwu1-navy` | NWU Type I (実測) nwu1-1 | #4f5d77 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core`。参照画像は Wikimedia Commons [File:NWU Type I camouflage pattern swatch.jpg](https://commons.wikimedia.org/wiki/File:NWU_Type_I_camouflage_pattern_swatch.jpg) パブリックドメイン (U.S. Navy)) |
+| `nwu1-grey` | NWU Type I (実測) nwu1-2 | #7f919a | 同上 |
+| `nwu1-lightblue` | NWU Type I (実測) nwu1-3 | #c2d6dd | 同上 |
+| `nwu1-darknavy` | NWU Type I (実測) nwu1-4 | #333f46 | 同上 |
 
 ## 注意事項
 

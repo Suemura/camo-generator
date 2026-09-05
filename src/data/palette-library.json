@@ -2378,5 +2378,61 @@
     },
     "note": "主役の縞 (実測 46%)。横に流れ、先端が鋭く尖り爪状のフリンジが生える",
     "source": "同上"
+  },
+  {
+    "id": "nwu1-navy",
+    "name": "NWU Type I ネイビーブルー",
+    "std": "NWU Type I (実測)",
+    "code": "nwu1-1",
+    "hex": "#4f5d77",
+    "tags": {
+      "hue": "other",
+      "use": ["camo-nwu1", "uniform"],
+      "country": ["us"]
+    },
+    "note": "NWU Type I の地色 (約 48%)。4 色中最大面積",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core。参照画像は Wikimedia Commons 「NWU Type I camouflage pattern swatch.jpg」パブリックドメイン (U.S. Navy))"
+  },
+  {
+    "id": "nwu1-grey",
+    "name": "NWU Type I グレー",
+    "std": "NWU Type I (実測)",
+    "code": "nwu1-2",
+    "hex": "#7f919a",
+    "tags": {
+      "hue": "grey",
+      "use": ["camo-nwu1", "uniform"],
+      "country": ["us"]
+    },
+    "note": "NWU Type I の中間グレー (約 31%)。地色の上に最初に乗る版",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core。参照画像は Wikimedia Commons 「NWU Type I camouflage pattern swatch.jpg」パブリックドメイン (U.S. Navy))"
+  },
+  {
+    "id": "nwu1-lightblue",
+    "name": "NWU Type I ライトブルー",
+    "std": "NWU Type I (実測)",
+    "code": "nwu1-3",
+    "hex": "#c2d6dd",
+    "tags": {
+      "hue": "grey",
+      "use": ["camo-nwu1", "uniform"],
+      "country": ["us"]
+    },
+    "note": "NWU Type I の最明色 (約 17%)。グレーの内側〜縁に塊として出る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core。参照画像は Wikimedia Commons 「NWU Type I camouflage pattern swatch.jpg」パブリックドメイン (U.S. Navy))"
+  },
+  {
+    "id": "nwu1-darknavy",
+    "name": "NWU Type I ダークネイビー",
+    "std": "NWU Type I (実測)",
+    "code": "nwu1-4",
+    "hex": "#333f46",
+    "tags": {
+      "hue": "black",
+      "use": ["camo-nwu1", "uniform"],
+      "country": ["us"]
+    },
+    "note": "NWU Type I の最暗色 (約 4%)。ライトブルーの脇に高コントラストの点として散る",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core。参照画像は Wikimedia Commons 「NWU Type I camouflage pattern swatch.jpg」パブリックドメイン (U.S. Navy))"
   }
 ]

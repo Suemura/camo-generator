@@ -3228,5 +3228,62 @@
     },
     "note": "グリーンの上にブラウンを重ね刷りした部分 (実測 23%)。ブラウンと 2 色に分かれるのが実物の特徴",
     "source": "同上"
+  },
+  {
+    "id": "splinter-tan",
+    "name": "スプリンター ライトタン",
+    "std": "スプリンター (実測)",
+    "code": "sp-1",
+    "hex": "#dbb78c",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-splinter",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "地色 (実測 27%)。多角形の間を埋める最も明るい版",
+    "source": "参照画像 (refs/private/splinter.webp) を k-means (k=4, --core=2) で量子化した実測値。規格値ではない"
+  },
+  {
+    "id": "splinter-green",
+    "name": "スプリンター グリーン",
+    "std": "スプリンター (実測)",
+    "code": "sp-2",
+    "hex": "#9f9d70",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-splinter",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "多角形の一方 (実測 31%)。雨線 (Regenmuster) も同じ版で刷られる",
+    "source": "参照画像 (refs/private/splinter.webp) を k-means (k=4, --core=2) で量子化した実測値。規格値ではない"
+  },
+  {
+    "id": "splinter-brown",
+    "name": "スプリンター ブラウン",
+    "std": "スプリンター (実測)",
+    "code": "sp-3",
+    "hex": "#876246",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-splinter",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "多角形のもう一方 (実測 42%)。面積が最大",
+    "source": "参照画像 (refs/private/splinter.webp) を k-means (k=4, --core=2) で量子化した実測値。規格値ではない"
   }
 ]

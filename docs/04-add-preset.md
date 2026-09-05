@@ -32,7 +32,7 @@ Issue（#21 のサブ Issue）
 | # | 何を | どこに | 備考 |
 |---|------|--------|------|
 | 1 | 生成パラメータ | `src/core/camo.js` の `PRESETS[key]` | `kind` で生成関数にディスパッチ。`ref` は参照画像のキー（= `key`）。コメントには「実物のどの特徴を再現する意図か」を書く |
-| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（選択 UI の見出し）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`transitional` から選択）/ `era`（採用年代: `1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
+| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（系統: `woodland`/`desert`/`digital`/`stroke`/`geometric`/`other`）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`snow`/`transitional` から選択）/ `era`（採用年代: `1930s`/`1940s`/`1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
 | 3 | 参照画像 | `refs/private/<key>.<ext>`（手元のみ・非コミット） | ファイル名は `PRESETS` のキーに一致させる |
 | 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `docs/design/palette-library.json` + `src/data/palette.ts` + `docs/design/palette-library-sources.md` | §3 参照。**PR に含める**（後追いにしない） |

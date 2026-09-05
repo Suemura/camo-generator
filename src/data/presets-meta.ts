@@ -7,13 +7,14 @@ import type { PresetKey } from "@/core/camo.js";
 import { COUNTRY_LABEL } from "@/data/countries";
 
 /** 図案の系統 (生成手法・見た目の大分類)。表示順は PRESET_GROUPS */
-export type PresetGroup = "woodland" | "desert" | "digital" | "stroke" | "other";
+export type PresetGroup = "woodland" | "desert" | "digital" | "stroke" | "geometric" | "other";
 
 export const PRESET_GROUPS: { key: PresetGroup; label: string }[] = [
   { key: "woodland", label: "ウッドランド系" },
   { key: "desert", label: "デザート系" },
   { key: "digital", label: "デジタル系" },
   { key: "stroke", label: "ストローク系" },
+  { key: "geometric", label: "幾何 / 直線系" },
   { key: "other", label: "その他" },
 ];
 
@@ -30,9 +31,10 @@ export const ENV_LABEL: Record<PresetEnv, string> = {
 export const ALL_ENVS = Object.keys(ENV_LABEL) as PresetEnv[];
 
 /** 制式採用年代 (10 年刻み)。note 冒頭の年代表記と一致させる */
-export type PresetEra = "1940s" | "1950s" | "1960s" | "1980s" | "1990s" | "2000s";
+export type PresetEra = "1930s" | "1940s" | "1950s" | "1960s" | "1980s" | "1990s" | "2000s";
 
 export const ERA_LABEL: Record<PresetEra, string> = {
+  "1930s": "1930 年代",
   "1940s": "1940 年代",
   "1950s": "1950 年代",
   "1960s": "1960 年代",
@@ -257,6 +259,16 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     env: ["forest"],
     era: "2000s",
     svg: true,
+  },
+  splinter: {
+    // スプリンター系の始祖。制定は 1931 年 (Splittermuster 31)、雨線は 1938 年以降の版
+    label: "スプリンター風 (Splittertarn)",
+    note: "1931〜 3 色。直線多角形 + 雨線",
+    country: "de",
+    group: "geometric",
+    env: ["forest", "transitional"],
+    era: "1930s",
+    svg: false,
   },
   berezka: {
     // 色で溶け込むのではなく明色の塊で人型シルエットを破断させる設計。

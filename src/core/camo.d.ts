@@ -22,11 +22,12 @@ export type PresetKey =
   | "tigerstripe"
   | "brushstroke"
   | "lizard"
-  | "berezka";
+  | "berezka"
+  | "splinter";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth" | "spots";
+  kind: "quilt" | "growth" | "spots" | "splinter";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;

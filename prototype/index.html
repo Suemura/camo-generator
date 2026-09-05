@@ -1914,6 +1914,209 @@ function genSpots(w, h, seed, scale, P, opt={}){
   return {type:'spots', w, h, index: out};
 }
 
+/* ================= 幾何ハードエッジ (スプリンター系) =================
+   実物構造: ドイツ WWII スプリンター (Splittertarnmuster) は、有機的な斑ではなく
+   「直線だけで囲まれた多角形」で平面を隙間なく分割した図案。
+   参照画像で確認できる識別点は 3 つ:
+     - 輪郭が全て直線。曲線・ギザギザ (デジタル系の階段) が一切ない
+     - 3 つの領域が 1 点で出会う三重点が多い = 重ね刷りの「乗せ」ではなく平面の「分割」
+     - 破片は 1 個の凸多角形ではなく、いくつかの多角形が同色でつながった非凸の塊。
+       角が鋭く辺が長い (M81 のような入り組んだ輪郭とは統計が別)
+   → 斑を 1 つずつ置く genSpots でも、ソース図案を継ぎ合わせる genQuilt でもなく、
+     平面をセルに分割してからセルへ色を割り当てる手法が構造的に合う。
+   ソース図案を持たない完全手続き生成なので、参照画像の派生データはアプリに同梱しない。 */
+
+// 周期境界のパワー図 (重み付きボロノイ) で平面をセルに分割する。
+//   - 素のボロノイは平均 120° の鈍角セルに寄り、実物の鋭角が出ない。サイトごとに重み wt を振った
+//     距離 d = |Δ|² − wt (ラゲール距離) にすると、二等分線は直線のままで (= ハードエッジを保ったまま)
+//     重みの小さいサイトが細長い楔セルになり鋭角が現れる
+//   - サイトはジッタ格子に置く。格子分割数を w / h の約数になるよう丸めるのでトーラス上で閉じ、
+//     タイル境界に継ぎ目も格子ずれも出ない (applyChips と同じ手口)
+// 戻り値: cell (画素 → サイト ID) / area (サイトごとの画素数) / n (サイト数)
+function splinterCells(w, h, seed, S){
+  const { u, cellR, aniso, tilt, wrap } = S;
+  // jitter / wtVar の上限クランプ: 下の探索は ±2 リング (5×5 近傍) 固定で、サイトが自セルを
+  // 大きくはみ出す (jitter 過大) か遠方サイトが重みで逆転する (wtVar 過大) と 5×5 の外に
+  // 最近傍が出て取りこぼす。スプリンター (jitter 1.5・wtVar 0.9) は
+  // scale 0.7/1.0/2.0 × wrap true/false × 65536px の全サイト走査比較で不一致 0 件を確認済みで、
+  // その値をクランプの上限にしても出力は変わらない
+  const jitter = Math.min(S.jitter, 2.0);
+  const wtVar = Math.min(S.wtVar, 1.0);
+  const nx = Math.max(2, Math.round(w / (cellR * u)));
+  const ny = Math.max(2, Math.round(h / (cellR * u)));
+  const cw = w / nx, ch = h / ny;
+  const n = nx * ny;
+  const sx = new Float64Array(n), sy = new Float64Array(n), wt = new Float64Array(n);
+  // 重みの上限はセル間隔の wtVar 倍の 2 乗。これを超えると重みで遠方サイトが勝ち、
+  // 下の 5×5 近傍探索が最近傍を取り逃してセルが破綻する
+  const wtMax = (wtVar * cellR * u) * (wtVar * cellR * u);
+  for(let gy=0; gy<ny; gy++){
+    for(let gx=0; gx<nx; gx++){
+      const i = gy*nx + gx;
+      sx[i] = (gx + 0.5 + jitter*(hash2(gx, gy, seed ^ 0x1f13) - 0.5)) * cw;
+      sy[i] = (gy + 0.5 + jitter*(hash2(gx, gy, seed ^ 0x7c29) - 0.5)) * ch;
+      wt[i] = wtMax * hash2(gx, gy, seed ^ 0x2b55);
+    }
+  }
+  // 全体異方フレーム: 距離を測る前に tilt 回転 + aniso 伸長する。線形変換したパワー図は
+  // 元の座標系でも辺が直線なので、ハードエッジのまま「辺が長い」側に寄せられる。
+  // サイトごとに違う計量 (異方ボロノイ) は二等分線が曲線になるため採らない
+  const cs = Math.cos(tilt), sn = Math.sin(tilt);
+  const ia2 = 1 / (aniso*aniso);
+  const cell = new Int32Array(w*h);
+  const area = new Int32Array(n);
+  for(let y=0; y<h; y++){
+    const gy0 = Math.floor(y / ch);
+    for(let x=0; x<w; x++){
+      const gx0 = Math.floor(x / cw);
+      let best = -1, bd = Infinity;
+      for(let oy=-2; oy<=2; oy++){
+        let gy = gy0 + oy;
+        if(wrap) gy = wrapI(gy, ny); else if(gy < 0 || gy >= ny) continue;
+        for(let ox=-2; ox<=2; ox++){
+          let gx = gx0 + ox;
+          if(wrap) gx = wrapI(gx, nx); else if(gx < 0 || gx >= nx) continue;
+          const i = gy*nx + gx;
+          let dx = sx[i] - x, dy = sy[i] - y;
+          if(wrap){ dx = wrapD(dx, w); dy = wrapD(dy, h); }
+          const rx = dx*cs + dy*sn, ry = -dx*sn + dy*cs;
+          const d = rx*rx*ia2 + ry*ry - wt[i];
+          if(d < bd){ bd = d; best = i; }
+        }
+      }
+      cell[y*w + x] = best;
+      area[best]++;
+    }
+  }
+  return { cell, area, n };
+}
+
+// セルの隣接グラフ (トーラス)。色割当が「隣接セルを同色にまとめて破片を大きくする」ために使う
+function cellAdjacency(cell, w, h, n, wrap){
+  const adj = [];
+  for(let i=0;i<n;i++) adj.push(new Set());
+  const link = (a, b) => { adj[a].add(b); adj[b].add(a); };
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const a = cell[y*w + x];
+      let b;
+      if(x+1 < w) b = cell[y*w + x+1]; else if(wrap) b = cell[y*w]; else b = a;
+      if(b !== a) link(a, b);
+      if(y+1 < h) b = cell[(y+1)*w + x]; else if(wrap) b = cell[x]; else b = a;
+      if(b !== a) link(a, b);
+    }
+  }
+  return adj;
+}
+
+// セルへの色割当。既定は「面積目標の不足が最大の色」を採り、確率 merge で
+// 「既に色が付いた隣接セルのうち最も多い色」に合わせる (= 隣接セルの統合)。
+//   merge = 0 → 1 セル 1 色のモザイク、merge 大 → 数セルが同色につながった非凸の破片。
+// 統合は面積目標を超えていない色にだけ許す。超過色への統合まで許すと 1 色が画面の半分を覆う
+// (不足率の差は色が均衡した後は 0.01 未満しかなく、統合項を足し込む形にすると必ず統合が勝つ)。
+// 走査順は mulberry32 でシャッフルする (格子順のままだと同色の帯が左上から右下へ流れる)
+function assignCellColors(area, adj, n, seed, frac, merge, total){
+  const nc = frac.length;
+  const col = new Int32Array(n).fill(-1);
+  const target = new Float64Array(nc), got = new Float64Array(nc);
+  for(let c=0;c<nc;c++) target[c] = Math.max(1, frac[c] * total);
+  const rng = mulberry32(seed ^ 0x3d71);
+  const order = new Int32Array(n);
+  for(let i=0;i<n;i++) order[i] = i;
+  for(let i=n-1;i>0;i--){ const j = Math.floor(rng()*(i+1)); const t = order[i]; order[i] = order[j]; order[j] = t; }
+  const cnt = new Float64Array(nc);
+  for(let k=0;k<n;k++){
+    const i = order[k];
+    cnt.fill(0);
+    for(const j of adj[i]) if(col[j] >= 0) cnt[col[j]]++;
+    let best = -1;
+    if(rng() < merge){
+      let bc = -1;
+      for(let c=0;c<nc;c++) if(cnt[c] > 0 && got[c] < target[c] && (bc < 0 || cnt[c] > cnt[bc])) bc = c;
+      best = bc;
+    }
+    if(best < 0){
+      let bs = -Infinity;
+      for(let c=0;c<nc;c++){
+        const s = (target[c] - got[c]) / target[c];
+        if(s > bs){ bs = s; best = c; }
+      }
+    }
+    col[i] = best;
+    got[best] += area[i];
+  }
+  return col;
+}
+
+// 雨線 (Regenmuster): スプリンターだけが持つ縦の短い破線。実物は多角形の版とは別に
+// 細い縦線の版を重ね刷りしたもので、遠距離で多角形の輪郭を溶かす役割を持つ。
+// 色は既存のインデックス (実物と同じ緑の版) を使うので色数は増えない。
+// P.rain: {color, spacing, len, gap, thick, density, jitter} — 長さは 512px・scale 1.0 基準 px
+function applyRain(index, w, h, seed, u, R, wrap){
+  const seg = (R.len + R.gap) * u;
+  const th = Math.max(1, Math.round((R.thick ?? 1) * u));
+  // 線の太さは 1px より細くできないので、u が小さい (scale 大 / 小さいキャンバス) とき
+  // 間隔だけが縮んで雨線が塗り潰しになる。間隔の下限を太さの 4 倍に切り、被覆率を保つ
+  const nx = Math.max(1, Math.round(w / Math.max(R.spacing * u, 4 * th)));
+  const ny = Math.max(1, Math.round(h / seg));
+  const cw = w / nx, ch = h / ny;
+  const dens = R.density ?? 1, jit = R.jitter ?? 0.8;
+  const duty = R.len / (R.len + R.gap);
+  for(let gy=0; gy<ny; gy++){
+    for(let gx=0; gx<nx; gx++){
+      if(hash2(gx, gy, seed ^ 0x51a7) > dens) continue;
+      const x0 = Math.round((gx + 0.5 + jit*(hash2(gx, gy, seed ^ 0x6e11) - 0.5)) * cw);
+      // 線の長さは平均の 0.5〜1.5 倍に散らす (実物の雨線は長短が混じる)
+      const len = Math.max(2, Math.round(R.len * u * (0.5 + hash2(gx, gy, seed ^ 0x2c4d))));
+      const y0 = Math.round((gy + hash2(gx, gy, seed ^ 0x91b3) * (1 - duty)) * ch);
+      for(let k=0;k<len;k++){
+        let y = y0 + k;
+        if(wrap) y = wrapI(y, h); else if(y < 0 || y >= h) continue;
+        for(let t=0;t<th;t++){
+          let x = x0 + t;
+          if(wrap) x = wrapI(x, w); else if(x < 0 || x >= w) continue;
+          index[y*w + x] = R.color;
+        }
+      }
+    }
+  }
+}
+
+// P.cellR (セル間隔) / jitter (格子ジッタ) / wtVar (重みの散らし = 鋭角の出方) /
+// aniso・tilt (全体異方フレーム) / merge (隣接セルの統合の強さ) / frac (面積比) /
+// minFrag (欠片除去閾値 px²) / rain (雨線。無ければ描かない) で図案を決める。
+// ソース図案を持たず計算量が画素数に線形なので opt.baseMax は参照せず常に実寸で生成する
+// (縮小生成 → 拡大の経路を通らないため、ハードエッジが最近傍拡大で階段化する問題が起きない)
+function genSplinter(w, h, seed, scale, P, opt={}){
+  const wrap = opt.tileable !== false;
+  const progress = typeof opt.progress === 'function' ? opt.progress : null;
+  const u = (w/512) / scale;              // 特徴サイズの単位 (scale 大 = 模様細かい、他手法と同じ規約)
+  const S = {
+    u, wrap, cellR: P.cellR,
+    jitter: P.jitter ?? 0.9, wtVar: P.wtVar ?? 0.5,
+    aniso: P.aniso ?? 1, tilt: P.tilt ?? 0,
+  };
+  const { cell, area, n } = splinterCells(w, h, seed, S);
+  if(progress) progress(0.6);
+  const adj = cellAdjacency(cell, w, h, n, wrap);
+  if(progress) progress(0.75);
+  const col = assignCellColors(area, adj, n, seed, P.frac, P.merge ?? 0.5, w*h);
+  const out = new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++) out[i] = col[cell[i]];
+  if(progress) progress(0.9);
+  // 楔セルが細く潰れると 1〜2px の欠片として残るので近傍多数色へ併合する。
+  // 雨線はこの後に描く (先に描くと細い線が欠片と判定されて消える)
+  if(P.minFrag){
+    const minArea = P.minFrag * u * u;
+    for(let p=0; p<8; p++){
+      if(!cleanupFragments(out, w, h, minArea, wrap, P.frac.length)) break;
+    }
+  }
+  if(P.rain) applyRain(out, w, h, seed, u, P.rain, wrap);
+  if(progress) progress(1);
+  return {type:'splinter', w, h, index: out};
+}
+
 /* ================= プリセット ================= */
 const PRESETS = {
   woodland: {
@@ -2494,6 +2697,31 @@ const PRESETS = {
       {name:'ダークグリーン',  hex:'#2d4d57'},
     ],
   },
+  splinter: {
+    // ドイツ WWII スプリンター (Splittertarnmuster、1931 年制定・1945 年まで)。実物の特徴:
+    //   - 3 色。ライトタン地をグリーンとブラウンの多角形が分割する。破片は小ぶりで数が多い
+    //   - 全面に細い縦の破線 (雨線 / Regenmuster) が重なる。1938 年以降のテント幕・スモックの識別点で、
+    //     遠距離で多角形の輪郭を溶かすために足された版
+    // リファレンスは refs/private/splinter.webp。ソース図案は持たず genSplinter で手続き生成する
+    name: 'スプリンター風 (Splittertarn)', kind: 'splinter', ref: 'splinter',
+    // cellR 14: 参照画像 (750px タイル) を 512px に合わせたときの 1 破片の差し渡し 27〜40px を、
+    // merge 0.5 による 1〜3 セルの統合で作る寸法
+    cellR: 14, jitter: 1.5, wtVar: 0.9, merge: 0.5,
+    // 実測: node tools/gen-src.mjs refs/private/splinter.webp /dev/null 3 SP (量子化面積比)
+    frac: [0.274, 0.311, 0.415],
+    minFrag: 70,
+    // 雨線は実物と同じくグリーンの版 (color 1)。spacing / len / gap は参照画像を 512px 換算した見え方に
+    // 合わせた値 (線間隔 8px・線長 8〜24px・縦の間隔 16px・太さ 1px)。density 0.65 で列を間引き、
+    // 全面を均一に覆わず「所々に降っている」濃淡を作る (0.45 では実物より疎、0.7 超で全面が縞に見える)
+    rain: {color: 1, spacing: 8, len: 16, gap: 16, thick: 1, density: 0.65, jitter: 0.9},
+    // 実測: node tools/extract-palette.mjs refs/private/splinter.webp 4 --core=2
+    // (k=4 の 4 クラスタ目は参照画像の透かし文字で内部画素 0。実インクは 3 色)
+    colors: [
+      {name:'ライトタン', hex:'#dbb78c'},
+      {name:'グリーン',   hex:'#9f9d70'},
+      {name:'ブラウン',   hex:'#876246'},
+    ],
+  },
   berezka: {
     // ベリョースカ (白樺) / KLMK オーバーオール、ソ連 1957〜。実物の特徴:
     //   - 2 色のみ。中間色の緑が地 (実測 77%)、その上に淡色の「葉/小枝」状シルエットが散る (23%)。
@@ -2545,6 +2773,7 @@ function generate(key, w, h, seed, scale, opt={}){
     case 'quilt':  return genQuilt(w, h, seed, scale, P, opt);
     case 'growth': return genGrowth(w, h, seed, scale, P, opt);
     case 'spots':  return genSpots(w, h, seed, scale, P, opt);
+    case 'splinter': return genSplinter(w, h, seed, scale, P, opt);
     default: throw new Error('unknown kind: ' + P.kind);
   }
 }

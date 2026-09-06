@@ -2387,13 +2387,15 @@ const PRESETS = {
       {on: 1, dot: 0, density: 0.09}, {on: 0, dot: 1, density: 0.06},
       {on: 2, dot: 0, density: 0.04}, {on: 3, dot: 1, density: 0.08},
     ],
-    // 実測: node tools/extract-palette.mjs refs/private/pla07_ocean.jpg 6 --max-edge=856 --core=2 --blur=1.0
-    // (布地写真で襞の影が独立クラスタになるため k=6 で分離し、影 2 クラスタ (#1a2129 / #375369) を捨てた 4 色)
+    // 実測: 制服写真 3 枚 (Commons PD、2013 Harbin / 2014 Haikou / 2016 Hengshui) の順光部を色相ゲートで版ごとに集め、
+    // 露出が飽和していない 2016 Hengshui (ヘルメットカバー + 胸ポケット) の中央値を採った。
+    // 初版は 2013 Harbin の白飛びした 1 枚から測っており、ブルーが明るく紫寄り (#6699bc)、タンが灰寄りになっていた
+    // (docs/01-tech-verification.md v38「色味の改定」)。k-means は小面積の緑を青の影と混ぜるため使わない
     colors: [
-      {name:'ブルー',        hex:'#6699bc'},
-      {name:'ホワイトグレー', hex:'#d7d4de'},
-      {name:'オリーブグリーン', hex:'#757a6e'},
-      {name:'タン',          hex:'#bcb09a'},
+      {name:'ブルー',        hex:'#5a7f95'},
+      {name:'ホワイトグレー', hex:'#cdd2d8'},
+      {name:'オリーブグリーン', hex:'#707b6d'},
+      {name:'タン',          hex:'#c3b388'},
     ],
   },
   emr: {

@@ -246,7 +246,7 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 
 - `std` は「07 式 海洋 (実測)」、hex は `src/core/camo.js` の `PRESETS.pla07_ocean.colors` と完全一致させている
 - **公的な色番号は見つからなかった**ので `code` は index 値の順に `pla07ocean-1`〜`pla07ocean-4` を振った（07 式 通用迷彩と同じ扱い）
-- 参照画像は Wikimedia Commons [File:Type 07 Ocean camo.jpg](https://commons.wikimedia.org/wiki/File:Type_07_Ocean_camo.jpg)（パブリックドメイン、U.S. Navy photo）。制服の写真で襞の影が独立クラスタになるため、k=4 では影が 1 色を占めてタンがホワイトグレーに吸収される。`node tools/extract-palette.mjs refs/private/pla07_ocean.jpg 6 --max-edge=856 --core=2 --blur=1.0` で k=6 に分け、影の 2 クラスタ（#1a2129 / #375369。隣接色が緑・青のみで、図案の版ではなく襞）を除いた 4 色を採った。`--flatten` は襞のスケール（50〜100px）が図案のブロブ幅と同程度で照明成分と分離できないため使っていない
+- 参照画像はすべて Wikimedia Commons のパブリックドメイン（U.S. Navy photo）の制服写真。初版は [File:Type 07 Ocean camo.jpg](https://commons.wikimedia.org/wiki/File:Type_07_Ocean_camo.jpg)（2013 年、強い日光で白飛び気味）1 枚を `extract-palette.mjs` の k=6 で測り影クラスタを除いた値だったが、ブルーが明るく紫寄り（#6699bc）になった。改定版は 2013 / 2014 / 2016 年の 3 枚の順光部を**色相ゲート**（白: 低彩度高明度、青: b > r+30、タン: r > b+25、緑: g が最大）で版ごとに集めた中央値で比較し、露出が飽和していない 2016 年（RIMPAC、Hengshui 乗員）の値を採った。k-means は小面積の緑を青の影と混ぜるため使っていない。`--flatten` も襞のスケール（50〜100px）が図案のブロブ幅と同程度で照明成分と分離できないため使っていない
 - Issue の当初記述（ブルー / ライトブルー / ホワイトグレー / 濃紺）は参照と一致しない。実物はブルー地 / ホワイトグレー / オリーブグリーン / タンの 4 色で、Commons の Skjoldbro スウォッチ（CC BY-SA 4.0。色は様式化されているので実測には使わない）も同じ 4 色構成
 - **`hue` に `blue` を追加した**（第10弾の残課題）。ブルー #6699bc を `blue` とし、NWU Type I のネイビーブルー #4f5d77（`other` → `blue`）とライトブルー #c2d6dd（`grey` → `blue`）を振り直した。グレー #7f919a とダークネイビー #333f46 は据え置き
 - 用途タグ `camo-pla07-ocean`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「07 式 海洋」を追加した。国タグ `cn` は既存
@@ -477,10 +477,10 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `m84urban-pale` | M/84 アーバン (実測) m84urban-1 | #cac1b2 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m84urban.jpg 3 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:M84urban.jpg](https://commons.wikimedia.org/wiki/File:M84urban.jpg) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
 | `m84urban-grey` | M/84 アーバン (実測) m84urban-2 | #817873 | 同上 |
 | `m84urban-black` | M/84 アーバン (実測) m84urban-3 | #211d1a | 同上 |
-| `pla07ocean-blue` | 07 式 海洋 (実測) pla07ocean-1 | #6699bc | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/pla07_ocean.jpg 6 --max-edge=856 --core=2 --blur=1.0`。襞の影 2 クラスタを除いた 4 色。参照画像は Wikimedia Commons [File:Type 07 Ocean camo.jpg](https://commons.wikimedia.org/wiki/File:Type_07_Ocean_camo.jpg) パブリックドメイン (U.S. Navy photo)) |
-| `pla07ocean-whitegrey` | 07 式 海洋 (実測) pla07ocean-2 | #d7d4de | 同上 |
-| `pla07ocean-olive` | 07 式 海洋 (実測) pla07ocean-3 | #757a6e | 同上 |
-| `pla07ocean-tan` | 07 式 海洋 (実測) pla07ocean-4 | #bcb09a | 同上 |
+| `pla07ocean-blue` | 07 式 海洋 (実測) pla07ocean-1 | #5a7f95 | app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値。露出が飽和していない 2016 年の写真 Wikimedia Commons [File:Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg](https://commons.wikimedia.org/wiki/File:Multinational_VBSS_Exercise_at_RIMPAC_160714-N-MV764-001.jpg) パブリックドメイン (U.S. Navy photo) を採用。`docs/01-tech-verification.md` v38「色味の改定」) |
+| `pla07ocean-whitegrey` | 07 式 海洋 (実測) pla07ocean-2 | #cdd2d8 | 同上 |
+| `pla07ocean-olive` | 07 式 海洋 (実測) pla07ocean-3 | #707b6d | 同上 |
+| `pla07ocean-tan` | 07 式 海洋 (実測) pla07ocean-4 | #c3b388 | 同上 |
 
 ## 注意事項
 

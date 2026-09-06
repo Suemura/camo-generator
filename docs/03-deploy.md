@@ -59,12 +59,14 @@ main の Branch protection で `ci` ジョブを required にすると、CI が�
 
 ## 3. 日常運用
 
-- **通常のリリース**: PR をマージするだけ。Actions の「Deploy」が成功すれば本番反映済み
+- **通常のリリース**: 対象 PR の明示的なマージ依頼と実行直前の承認を得てマージする。共通 `land` 手順は `.agents/skills/land/SKILL.md`。PR の `mergeCommit` SHA を取得し、`gh run list --workflow deploy.yml --commit <mergeCommit SHA>` で対応する Deploy を特定して成功を確認する。最新1件の成功だけで対象の反映完了と判断しない
 - **手動で再デプロイ**（Secrets 変更後の確認、Cloudflare 側の障害復旧後など）:
   ```sh
   gh workflow run deploy.yml --ref main
-  gh run watch $(gh run list --workflow Deploy --limit 1 --json databaseId --jq '.[0].databaseId')
+  gh run list --workflow deploy.yml --event workflow_dispatch --branch main --json databaseId,headSha,status,url,createdAt
+  gh run watch <対象runのdatabaseId> --exit-status
   ```
+  dispatch した時刻と対象 main の SHA に一致する run を選ぶ。他のリリースと取り違えない。
 - **ローカルから緊急デプロイ**: `pnpm deploy`（`wrangler login` 済み前提、ask 権限）。Actions が使えないときの退避手段であり、通常は使わない
 - **反映確認**:
   ```sh

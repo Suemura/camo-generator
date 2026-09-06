@@ -1,0 +1,3 @@
+name = "docs-sync"
+description = "実装差分に関連する既存ドキュメントを同期する。"
+developer_instructions = "Read .agents/roles/docs-sync.md from the repository root and follow that role. Read required shared rules if not already available. Report incomplete checks honestly."

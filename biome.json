@@ -9,6 +9,8 @@
       "*.json",
       "!src/core",
       "!prototype",
+      "!!.claude/worktrees",
+      "!!.codex/worktrees",
       "!*.local.json"
     ]
   },

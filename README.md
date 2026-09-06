@@ -56,14 +56,17 @@ docs/
   03-deploy.md             自動デプロイの運用 (GitHub Actions / Cloudflare)
   04-add-preset.md         迷彩プリセット追加ガイド (7 点セット・カラーライブラリ登録・検証・PR・マージまで)
   design/                  spacious トークン原本 / パレットライブラリ (palette-library.json + 出典 palette-library-sources.md)
-.claude/skills/design-system/SKILL.md  LLM 向けデザインルール (spacious, typeui.sh で取得)
+AGENTS.md          Claude Code / Codex 共通の作業規約と参照先
+.agents/           共通スキル・役割・ワークフロー規則（デザインもここが正本）
+.claude/           Claude Code の設定・コマンド・エージェント入口
+.codex/            Codex のフック設定・エージェント入口
 wrangler.jsonc      Cloudflare Workers (Static Assets) 設定
 ```
 
 ## 開発コマンド
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev          # 開発サーバー
 pnpm build        # dist/ 生成 (tokens → tsc → vite)
 pnpm test         # 決定性テスト
@@ -84,11 +87,15 @@ node tools/gen-src.mjs refs/private/<key>.png src/core/<key>src.js <k> <PREFIX> 
 bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検査 (CI と pre-push が自動実行)
 ```
 
+### Claude Code / Codex での開発
+
+共通規約は [AGENTS.md](AGENTS.md)、モジュール構成は [docs/architecture.md](docs/architecture.md)。手順・役割・デザインは `.agents/` を正本とし、製品側には読込の入口と固有設定を置く。導入、スキルの使い方、フックの検証は [共用ハーネスガイド](docs/05-agent-workflow.md) を参照。
+
 ### リファレンス画像の運用（`refs/`）
 
 - 実物リファレンスは**開発時専用**。アプリには同梱せず、UI の「実物比較」モードは廃止した。比較は `render.mjs --compare`、パレット実測は `extract-palette.mjs`
-- **リファレンス画像はリポジトリで管理しない**。ライセンスの種類にかかわらず `mkdir -p refs/private` して `refs/private/<presetKey>.<ext>` に各自で置く。`.gitignore` 対象で、`.githooks/pre-push` / Claude Code の PreToolUse フック / CI・Deploy の 4 層が混入を止める。**`git add -f` しないこと**
-- 新プリセット追加の手順は `docs/04-add-preset.md`（`PRESETS` / `PRESET_META` / 手元のリファレンス画像 / パレット既定値の実測 / カラーライブラリ登録 / 決定性スナップショット / 検証プロトタイプ。加えて PR への検証画像貼付）
+- **リファレンス画像はリポジトリで管理しない**。ライセンスの種類にかかわらず `mkdir -p refs/private` して `refs/private/<presetKey>.<ext>` に各自で置く。`.gitignore` 対象で、`.githooks/pre-push` / Claude Code / Codex の PreToolUse 補助フック / CI・Deploy の 4 層が混入を止める。**`git add -f` しないこと**
+- 新プリセット追加の手順は `docs/04-add-preset.md`（`PRESETS` / `PRESET_META` / 手元のリファレンス画像 / パレット既定値の実測 / カラーライブラリ登録 / サムネイル / 決定性スナップショット / 検証プロトタイプ。加えて PR への検証画像貼付）
 
 ### 検証プロトタイプ（`prototype/`）
 
@@ -125,7 +132,7 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 1. クイルト方式の MARPAT への展開検討（現状は布地写真ソースのみのため成長方式）
 2. 有機系パターンの SVG 出力（marching squares によるベクタ化）
 3. ~~シームレスタイリング（生地印刷用途）~~ → v15 で実装済（既定 ON）
-4. 高解像度時のパフォーマンス（Web Worker / WebGL 化。現状 scale 2 で ~2s）
+4. 高解像度時のパフォーマンス（当初は Web Worker / WebGL 化を検討。Web Worker 化は Issue #3 で対応済み）
 5. Cloudflare 構成の確定（生成は完全クライアントサイド → 静的ホスティングで足りる見込み）
 6. カスタムオリジナル迷彩機能（experimental/polygon.js のポリゴン分割方式が候補）
 

@@ -1,0 +1,60 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-push-guard.sh\"",
+            "timeout": 30
+          }
+        ],
+        "matcher": "Bash|exec_command"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/format.sh\"",
+            "timeout": 30
+          }
+        ],
+        "matcher": "Write|Edit|apply_patch"
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/pr-created.sh\"",
+            "timeout": 30
+          }
+        ],
+        "matcher": "Bash|exec_command"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/session-start-worktrees.sh\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/check-on-stop.sh\"",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

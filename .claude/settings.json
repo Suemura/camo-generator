@@ -1,6 +1,13 @@
 {
   "permissions": {
-    "allow": ["Bash", "Read", "Edit", "Write", "WebFetch", "WebSearch"],
+    "allow": [
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "WebFetch",
+      "WebSearch"
+    ],
     "ask": [
       "Bash(gh pr merge)",
       "Bash(gh pr merge *)",
@@ -19,41 +26,36 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git push*)",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-push-guard.sh\"",
-            "timeout": 30,
-            "statusMessage": "refs/private の混入を検査中..."
+            "command": "bash \"$(git rev-parse --show-toplevel)/.claude/hooks/pre-push-guard.sh\"",
+            "timeout": 30
           }
-        ]
+        ],
+        "matcher": "Bash|exec_command"
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // empty' | { read -r f; case \"$f\" in */prototype/*|*/src/core/*) ;; *.ts|*.tsx|*.js|*.mjs|*.json) pnpm exec biome check --write \"$f\" 2>/dev/null || true;; esac; }",
-            "timeout": 30,
-            "statusMessage": "Biome でフォーマット中..."
+            "command": "bash \"$(git rev-parse --show-toplevel)/.claude/hooks/format.sh\"",
+            "timeout": 30
           }
-        ]
+        ],
+        "matcher": "Write|Edit|apply_patch"
       },
       {
-        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(gh pr create*)",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pr-created.sh\"",
-            "timeout": 30,
-            "statusMessage": "PR 作成を検知..."
+            "command": "bash \"$(git rev-parse --show-toplevel)/.claude/hooks/pr-created.sh\"",
+            "timeout": 30
           }
-        ]
+        ],
+        "matcher": "Bash|exec_command"
       }
     ],
     "SessionStart": [
@@ -61,9 +63,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start-worktrees.sh\"",
-            "timeout": 20,
-            "statusMessage": "stale worktree を確認中..."
+            "command": "bash \"$(git rev-parse --show-toplevel)/.claude/hooks/session-start-worktrees.sh\"",
+            "timeout": 20
           }
         ]
       }
@@ -73,9 +74,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-on-stop.sh\"",
-            "timeout": 300,
-            "statusMessage": "check / typecheck / test を実行中..."
+            "command": "bash \"$(git rev-parse --show-toplevel)/.claude/hooks/check-on-stop.sh\"",
+            "timeout": 300
           }
         ]
       }

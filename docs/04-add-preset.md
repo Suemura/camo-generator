@@ -5,15 +5,15 @@ Issue #21（迷彩プリセットの拡充）のサブ Issue を `/start-issue <
 DCU（#23 / PR #39）・CCE（#25 / PR #40）・DBDU（#24 / PR #41）の 3 件を追加したセッションから、
 「毎回やること」と「ユーザーに指摘されて後追いになったこと」を抽出して手順化した。
 
-CLAUDE.md の各節（検証ワークフロー / 検証プロトタイプ / 規約）はこのガイドの要約であり、食い違ったら本ガイドを直してから CLAUDE.md を合わせる。
+`AGENTS.md` は共通規約の入口。このガイドがプリセット追加・生成品質検証の正本であり、手順が変わる場合は本ガイドと関連する共通スキルを合わせる。
 
 ## 0. 全体の流れ
 
 ```
 Issue（#21 のサブ Issue）
   → /start-issue <N>        worktree 作成 → planner → 実装 → 検証 → docs-sync → PR 作成 → 自動レビュー
-  → ユーザーの精度検証        Artifact（Camo Lab）でシード・スケールを変えながら実物と比較。指摘はスクショ + シード + スケールで来る
-  → 精度改善ループ            指摘 → 原因分析 → 修正 → render --compare → 01-tech-verification に vN 追記 → プロトタイプ再ビルド + 再デプロイ → push
+  → ユーザーの精度検証        ローカル Camo Lab でシード・スケールを変えながら実物と比較。指摘はスクショ + シード + スケールで来る
+  → 精度改善ループ            指摘 → 原因分析 → 修正 → render --compare → 01-tech-verification に vN 追記 → プロトタイプ再ビルド・ローカル確認 → push（Artifact は §5 の追加手順）
   → /resolve-conflicts <PR>  並列 Issue が先に main に入っていればマージ取り込み（スナップショット再生成）
   → /land <N>                ユーザーが PR を特定して「マージして」と言ったときだけ。AskUserQuestion で承認を得てからマージ
 ```
@@ -38,7 +38,7 @@ Issue（#21 のサブ Issue）
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `docs/design/palette-library.json` + `src/data/palette.ts` + `docs/design/palette-library-sources.md` | §3 参照。**PR に含める**（後追いにしない） |
 | 6 | **サムネイル生成** | `public/thumbs/<key>.jpg` | `node tools/gen-thumbs.mjs [--force] [--preset=key]`。既定は既存ファイルを skip。既存プリセットは再生成不要（JPEG エンコーダ差での無意味な diff を避けるため）。生成手法を変えて見た目が変わったときだけ `--force` で全体再生成 |
 | 7 | 決定性スナップショット | `tests/__snapshots__/determinism.test.ts.snap` | `pnpm test -u`。差分が新プリセットの 1 行追加だけであることを確認する（既存プリセットの行が変わっていたら共通ロジックに触っている） |
-| 8 | 検証プロトタイプ | `node prototype/build.mjs` + Artifact 再デプロイ | §5 参照 |
+| 8 | 検証プロトタイプ | `node prototype/build.mjs` + ローカル Camo Lab 確認 | §5 参照 |
 
 必要に応じて:
 
@@ -86,7 +86,7 @@ CCE の 4 色は 2026-09-04 時点で未登録（残課題、§9）。
 3. `src/data/palette.ts` の `USE_LABEL` に `camo-<key>` のラベルを追加（用途タブの見出しになる。無いとタグ名がそのまま表示される）
 4. `docs/design/palette-library-sources.md` の「出典一覧」表に行を追加（**総数は書かない**。「100 色以上」で足りる。数値を書くと追加のたびに 4 箇所を直す羽目になり、直し漏れで嘘になる）
 
-総数（「132 色」等）はどこにも書かない。README・CLAUDE.md・`docs/02-spec.md`・`palette-library-sources.md` の 4 箇所に散り、色を 1 つ足すたびに全部を直す羽目になる（実際に直し漏れて食い違った）。「100 色以上」で必要な情報は伝わる。
+総数（「132 色」等）はどこにも書かない。README・規約・仕様・`palette-library-sources.md` に散り、色を 1 つ足すたびに全部を直す羽目になる（実際に直し漏れて食い違った）。「100 色以上」で必要な情報は伝わる。
 
 ### 3.4 確認
 
@@ -94,7 +94,7 @@ CCE の 4 色は 2026-09-04 時点で未登録（残課題、§9）。
 
 ## 4. 検証（生成品質）
 
-CLAUDE.md「検証ワークフロー」の具体化。出力先はリポジトリ外（例: `/tmp/camo-render/`）。
+`AGENTS.md`「コマンドと検証」の具体化。出力先はリポジトリ外（例: `/tmp/camo-render/`）。
 
 ```bash
 # 複数シード × 複数スケール（512px）
@@ -137,57 +137,55 @@ node tools/render.mjs /tmp/camo-render/hi 1234 --size=2048x2048 --crop=512 --pre
 - **`patchR` を大きくしすぎない**: クイルト系の色比フィードバック（`deficit` → 候補スコアの `div` 項、重みは `divw`）はパッチを 1 枚貼るごとに働くので、**パッチ枚数が少ないと収束しない**。パッチ枚数は `2.2·(w·h)/(π·R²)`（`R = patchR / k`）でおおよそ決まり、512px キャンバスで `patchR 200` / `kBase 0.95` だと 5 枚しか貼られず、`divw` を変えても出力が 1px も変わらなくなる。線図案はソースの局所形状が「面」でないぶんパッチを大きく取る誘惑があるが、面積比を合わせたいなら 10 枚以上になる `patchR` を選ぶ
 - **ソース参照の反転は `P.slopeLock` で連動させる**: 既定では x 反転と y 反転を独立に振るため、`mx·my = -1` のパッチだけ縞の傾きが逆転する。ブロブ図案では無害だが、縞図案では隣接パッチで縞が折れて長距離の流れが消える
 
-## 5. 検証プロトタイプ（Artifact）の更新
+## 5. 検証プロトタイプ（Camo Lab）の更新
 
-ユーザーが精度を確認する環境は Artifact "Camo Lab"（URL は CLAUDE.md「検証プロトタイプ」）。**PR 作成前に必ず更新する**。更新が無いと「これどこで確認すればいいの?」で止まる。
+Claude Code / Codex 共通の精度確認環境はローカルの Camo Lab。**新プリセット追加・生成品質変更では PR 作成前に必ず再ビルドして確認する**。生成コアを変えた後の各改善・競合統合でも繰り返す。
 
-1. 参照画像は**プロトタイプに入れない**（`prototype/refs.js` は空の `REFS` を保ち、`prototype/index.html` は git 管理）。左右比較は `node prototype/build.mjs` が同時に出力する `prototype/index.local.html`（gitignore、`refs/private/` の画像を 420px JPEG の data URI で埋め込む）で行う
-2. `node prototype/build.mjs` で `prototype/index.html` を再ビルドする（直接編集しない）
-3. `Artifact` ツールに `file_path: prototype/index.html` と既存 URL を `url` で渡し、同じ URL に再デプロイする
-4. 報告に Artifact の URL を書く
+1. `prototype/refs.js` は空の `REFS` を保つ。参照画像は `refs/private/` からのみ読み、公開用ファイルへ含めない。
+2. `node prototype/build.mjs` で `prototype/index.html` と `prototype/index.local.html` を再ビルドする。生成物は直接編集しない。
+3. `prototype/index.local.html` をローカルブラウザで開き、生成と実物を比較する。参照画像を 420px JPEG の data URI で含むため、gitignore 対象であり、コミット・アップロードしない。`prototype/index.html` は参照画像を含まない git 管理の成果物。
+4. ユーザーが同じ結果を開けるよう、ローカルファイルの場所、確認したプリセット・シード・スケールを報告する。`tests/prototype-sync.test.ts` は再ビルド忘れを検出するが、画質やブラウザ確認の代わりにはならない。
 
-精度改善ループの各イテレーションでも 2 と 3 を繰り返す。別 Issue のユーザー検証が Artifact 上で進行中なら、再デプロイのタイミングだけユーザーに合わせる（生成コアは共通なので、再ビルドは常に行う）。
+### 追加の Artifact 公開
+
+既存の [Claude Artifact「Camo Lab」](https://claude.ai/code/artifact/3bbf14ba-1a62-4a9c-917e-0c6fbbbebfa1) は維持する。Artifact ツールが利用可能で、依頼または既存運用の範囲に公開が含まれる場合は追加で更新する。
+
+- `file_path: prototype/index.html` と上記 URL を `url` に渡し、**同じ URL** へ再デプロイする。参照画像付きの `index.local.html` は渡さない。
+- 別 Issue の検証が進行中なら公開のタイミングを調整する。ローカル再ビルド・確認は常に行う。
+- 報告には更新結果と URL を書く。ツールがない場合は「Artifact 更新未実施」と明記する。別サービスの URL に名前を置換せず、公開成功を推測しない。
 
 ## 6. PR 本文
 
-`.claude/commands/start-issue.md` 手順 10 に加えて、迷彩追加の PR では以下を書く。
+`.agents/skills/start-issue/SKILL.md` の PR 手順に加えて、迷彩追加の PR では以下を書く。
 
 - 何を追加したか、実物のどの特徴をどの手法で再現したか（手法の選択理由、見送った案とその理由）
 - リファレンス画像のライセンス判断（派生物の扱い）
 - パラメータと `colors` の実測方法（`extract-palette.mjs` の `k`）
 - **生成結果への影響**: 既存プリセットの index マップが不変であること（スナップショット差分が新プリセットの 1 行のみ）、render.mjs で確認したシード × スケール、面積比、性能
 - カラーライブラリの登録内容（追加した色数と `std` / `code` の根拠）
-- Artifact の URL
+- ローカル Camo Lab の確認方法と結果、追加の Artifact 更新有無（更新した場合は URL）
 
 ### 検証画像を PR に貼る
 
 レンダ結果を PR 本文に埋め込むと、レビュアーもユーザーも生成結果をその場で見られる（DBDU の PR #41 で導入）。画像は main に入れず、専用の孤立ブランチ `verify-assets` に置く。
 
-```bash
-# 1. 貼る画像を作る（--compare / 複数スケールの並置 / --tile と --crop を sharp で 1 枚ずつに結合）
-#    ファイル名は <key>-compare.png / <key>-scales.png / <key>-tile-crop.png に揃える
-# 2. verify-assets ブランチに Issue 番号のディレクトリで置く（作業ツリーを汚さないよう一時 worktree を使う）
-git fetch origin verify-assets
-git worktree add /tmp/verify-assets origin/verify-assets
-mkdir -p /tmp/verify-assets/issue-<N> && cp /tmp/camo-render/pr/*.png /tmp/verify-assets/issue-<N>/
-git -C /tmp/verify-assets add issue-<N> && git -C /tmp/verify-assets commit -m "chore: Issue #<N> (<迷彩名>) の検証画像を追加"
-git -C /tmp/verify-assets push origin HEAD:verify-assets
-git worktree remove /tmp/verify-assets
-# 3. PR 本文から参照する
-#    ![生成 vs 実物](https://raw.githubusercontent.com/Suemura/camo-generator/verify-assets/issue-<N>/<key>-compare.png)
-```
+公開するのは**生成器の出力のみ**。`--compare` の実物側、`refs/private/` の画像、参照画像付きプロトタイプを、別名・結合画像・別ブランチでも公開しない。Git のパス検査は結合画像の内容まで検査できないため、公開候補を目視する。実物比較画像は手元の検証用に残す。
 
-`verify-assets` は main にマージしない置き場。初回作成時は `git checkout --orphan verify-assets` で作った。
+1. `render.mjs` で生成のみの通常画像、複数スケール、`--tile` と `--crop` を出力する。必要なら生成画像同士を結合し、`<key>-generated.png` / `<key>-scales.png` / `<key>-tile-crop.png` とする。
+2. `git fetch origin verify-assets` の後、衝突しない一時パスへ `git worktree add --detach <一時パス> origin/verify-assets`。登録済み worktree を上書きしない。
+3. 内容を確認した生成画像だけを `issue-<N>/` にコピーし、対象ファイルを選んでコミットする。`git push origin HEAD:verify-assets` で公開する。更新競合時は fetch して既存画像を保持したまま統合し、force push しない。
+4. PR 本文では `https://raw.githubusercontent.com/Suemura/camo-generator/verify-assets/issue-<N>/<key>-generated.png` 等を参照する。
+5. push 済みで clean な一時 worktree だけを削除する。`verify-assets` は main にマージしない。未作成なら他の作業木に影響しない場所で孤立ブランチを作る。
 
 ## 7. 精度改善ループ（PR 作成後）
 
-PR を作ったら終わりではない。ユーザーが Artifact で確認し、違和感をスクリーンショット + シード + スケールで伝えてくる。CCE では PR 作成後に 3 回の改善（v21 → v22 → v23）が入った。
+PR を作ったら終わりではない。ユーザーがローカル Camo Lab（追加公開した場合は Artifact も）で確認し、違和感をスクリーンショット + シード + スケールで伝えてくる。CCE では PR 作成後に 3 回の改善（v21 → v22 → v23）が入った。
 
 - 指摘は `docs/01-tech-verification.md` の既知アーティファクト一覧と照合してから着手する（同じ轍を踏まない）
 - 原因を構造的に説明できるまで分析する。「パラメータを少し変える」で済ませない（CCE の黒が緑に削られる問題は、黒を最上層の版として刷り直す `P.topLayer` という構造の変更で解消した）
 - **同じ問題を持つ既存プリセットにも同じ対策を適用する**。ユーザーは「M81 でも同じ問題がある」と横展開を求める。共通ロジックを変えると既存プリセットのハッシュが変わるので、その旨を vN 節と PR に書く
 - 「改善したが残った」指摘（CCE の平行な細線）は、対策の効いていない原因を別に探す。修正前後の直接比較（同シード）を vN 節に載せる
-- 各イテレーションで: render 目視 → vN 追記 → `node prototype/build.mjs` → Artifact 再デプロイ → `pnpm test -u` → push。コミットは 1 イテレーション 1 コミットにして、レビューで差し戻せるようにする
+- 各イテレーションで: render 目視 → vN 追記 → `node prototype/build.mjs` → ローカル確認 → `pnpm test -u`（更新操作の承認条件は `AGENTS.md` に従う） → push。コミットは 1 イテレーション 1 コミットにして、レビューで差し戻せるようにする
 
 ## 8. 並列 Issue との統合とマージ
 
@@ -201,16 +199,16 @@ PR を作ったら終わりではない。ユーザーが Artifact で確認し�
 | `prototype/index.html` | `merge=ours`（自動）。**マージ後に必ず `node prototype/build.mjs` で再生成する**（`tests/prototype-sync.test.ts` が忘れを検出する） |
 | `src/core/camo.js` / `presets-meta.ts` / `palette.ts` / `camo.d.ts` | 手で解く。**両側を残す**（DBDU の `applyChips` と CCE の `cleanupSlivers`、`PRESETS` の両エントリなど） |
 | `docs/01-tech-verification.md` | 手で解く。時系列に両方残し、自分の節番号を繰り下げる |
-| `README.md` / `CLAUDE.md` / その他 docs | 手で解く。両側の記述を統合する |
+| `README.md` / `AGENTS.md` / その他 docs | 手で解く。両側の記述を統合する |
 
 `merge=ours` は git 組み込みではないため `git config merge.ours.driver true` が要る。`pnpm install` の
 `prepare` が設定するので、worktree を作ったら一度 `pnpm install` すること。
 
 - `/resolve-conflicts <PR>` で origin/main をマージ取り込みする（rebase しない）
 - スナップショットは手で統合せず、マージ後に `pnpm test -u`。**自分のプリセットのハッシュが相手側の共通ロジック変更で変わる**ことがある（DBDU は CCE 側の 1px 筋除去で変わった）。`--compare` / `--tile` で劣化がないことを目視し、vN 節に「統合」小節として書く
-- マージ後にプロトタイプを再ビルドし、Artifact を再デプロイする
-- **マージはユーザーが PR を特定して明示的に依頼したときだけ**。「精度検証 OK、マージして」が合図。`/land <N>` の中で `AskUserQuestion` により PR 番号・タイトル・マージ方式を提示して承認を得る。「デプロイして」「進めて」からマージを推測しない（`.claude/rules/workflow-orchestration.md`）
-- マージ後は GitHub Actions の Deploy 成功を確認し、`/land` で worktree とブランチを片付ける
+- origin/main を作業ブランチへ統合した後はプロトタイプを再ビルドし、§5 のローカル確認を行う。Artifact は同節の追加手順に従う
+- **マージはユーザーが PR を特定して明示的に依頼したときだけ**。「精度検証 OK、マージして」が合図。共通 `land` スキル（Claude では `/land <N>`）の中で、利用可能な質問機構または通常の会話により PR 番号・タイトル・マージ方式を提示して承認を得る。「デプロイして」「進めて」からマージを推測しない（`.agents/rules/workflow-orchestration.md`）
+- PR マージ後は対象の mergeCommit SHA に対応した GitHub Actions の Deploy 成功を確認する。共通 `land` 手順で worktree とブランチを安全に片付ける
 
 ## 9. チェックリスト（PR 作成前に自己チェック）
 
@@ -223,13 +221,13 @@ PR を作ったら終わりではない。ユーザーが Artifact で確認し�
 - [ ] render.mjs: 3 シード × 4 スケール / --compare / --tile / --size=2048 --crop=512 を目視、既知アーティファクトなし
 - [ ] 既存プリセットのスナップショットが不変（差分は新プリセットの 1 行のみ）。共通ロジックを変えた場合はその旨を明記
 - [ ] docs/01-tech-verification.md に vN 節を追記してから pnpm test -u
-- [ ] node prototype/build.mjs → Artifact を同じ URL に再デプロイ（refs.js は空のまま）
+- [ ] node prototype/build.mjs → ローカル Camo Lab 確認（refs.js は空、Artifact 追加更新の実施有無を記録）
 - [ ] README の対応迷彩一覧・生成手法表を更新（派生データを同梱するならクレジット節と About.tsx も）
-- [ ] PR 本文: 生成結果への影響 / ライセンス判断 / カラーライブラリ登録 / 検証画像（verify-assets）/ Artifact URL
+- [ ] PR 本文: 生成結果への影響 / ライセンス判断 / カラーライブラリ登録 / 生成のみの検証画像（verify-assets）/ ローカル確認方法と Artifact 更新有無
 - [ ] pnpm check / typecheck / test 成功
 ```
 
 ## 残課題
 
 - CCE の 4 色（ライトカーキ / グリーン / ブラウン / ブラック）がカラーライブラリに未登録。フランス CE 迷彩の色に公的規格番号は見つかっていないため、「CCE (実測)」+ `camo-cce` タグで登録する
-- 検証画像の結合（`--compare` / スケール並置 / タイル + クロップ）は毎回 sharp のスクリプトを書いている。`tools/` に定型化する余地がある
+- 公開用の生成画像の結合（スケール並置 / タイル + クロップ）は毎回 sharp のスクリプトを書いている。`tools/` に定型化する余地がある

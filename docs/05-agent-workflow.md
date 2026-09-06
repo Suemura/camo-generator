@@ -12,10 +12,11 @@
 | `.agents/roles/` | planner / reviewer / docs-sync / PR レビュー・対応の本文 | Claude の `.md` と Codex の `.toml` |
 | `tools/agent-harness/run.mjs` | フックの共通処理 | 両製品の小さな shell 入口 |
 | `.claude/settings.json` / `.codex/hooks.json` | 製品ごとの権限・イベント登録 | 各製品の設定読込 |
+| `.codex/config.toml` | Codex のプロジェクトローカルな承認・サンドボックス設定 | Codex の設定読込 |
 
 共通の内容を両製品側へコピーして編集しないでください。`.agents/rules/` と `.agents/roles/` は本プロジェクトの参照資料であり、このディレクトリ名だけで自動注入される仕組みではありません。各入口で読むように指示しています。
 
-`docs/architecture.md` は詳しいモジュール構成、`docs/04-add-preset.md` は生成品質検証の正本です。AGENTS には毎回必要な規約と参照だけを置きます。個人の口調、グローバルスキル、モデル設定、絶対パスはリポジトリへ持ち込まずホーム側で管理します。
+`docs/architecture.md` は詳しいモジュール構成、`docs/04-add-preset.md` は生成品質検証の正本です。AGENTS には毎回必要な規約と参照だけを置きます。個人の口調、グローバルスキル、モデル設定、絶対パスはリポジトリへ持ち込まずホーム側で管理します。例外として、このリポジトリの `.codex/config.toml` は `approval_policy = "never"` と `sandbox_mode = "danger-full-access"` を設定しています。信頼できるコードと依頼だけを扱い、Codex がホスト全体を変更できることを理解した上で使用してください。
 
 ## 始め方
 

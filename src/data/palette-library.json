@@ -2386,7 +2386,7 @@
     "code": "nwu1-1",
     "hex": "#4f5d77",
     "tags": {
-      "hue": "other",
+      "hue": "blue",
       "use": ["camo-nwu1", "uniform"],
       "country": ["us"]
     },
@@ -2414,7 +2414,7 @@
     "code": "nwu1-3",
     "hex": "#c2d6dd",
     "tags": {
-      "hue": "grey",
+      "hue": "blue",
       "use": ["camo-nwu1", "uniform"],
       "country": ["us"]
     },
@@ -3092,5 +3092,61 @@
     },
     "note": "ダークグリーン + ブラック版の統合 (約 25%)",
     "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m84urban.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "pla07ocean-blue",
+    "name": "07 式 海洋 ブルー",
+    "std": "07 式 海洋 (実測)",
+    "code": "pla07ocean-1",
+    "hex": "#6699bc",
+    "tags": {
+      "hue": "blue",
+      "use": ["camo-pla07-ocean", "uniform"],
+      "country": ["cn"]
+    },
+    "note": "07 式 海洋迷彩の地色 (約 49%)。4 色中最大面積",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/pla07_ocean.jpg 6 --max-edge=856 --core=2 --blur=1.0。布地写真の襞の影が独立クラスタになるため k=6 で分離し、影の 2 クラスタを除いた 4 色。参照画像は Wikimedia Commons 「Type 07 Ocean camo.jpg」パブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "pla07ocean-whitegrey",
+    "name": "07 式 海洋 ホワイトグレー",
+    "std": "07 式 海洋 (実測)",
+    "code": "pla07ocean-2",
+    "hex": "#d7d4de",
+    "tags": {
+      "hue": "grey",
+      "use": ["camo-pla07-ocean", "uniform"],
+      "country": ["cn"]
+    },
+    "note": "大きな塊 (約 26%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/pla07_ocean.jpg 6 --max-edge=856 --core=2 --blur=1.0。布地写真の襞の影が独立クラスタになるため k=6 で分離し、影の 2 クラスタを除いた 4 色。参照画像は Wikimedia Commons 「Type 07 Ocean camo.jpg」パブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "pla07ocean-olive",
+    "name": "07 式 海洋 オリーブグリーン",
+    "std": "07 式 海洋 (実測)",
+    "code": "pla07ocean-3",
+    "hex": "#757a6e",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-pla07-ocean", "uniform"],
+      "country": ["cn"]
+    },
+    "note": "小さな塊が多数 (約 14%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/pla07_ocean.jpg 6 --max-edge=856 --core=2 --blur=1.0。布地写真の襞の影が独立クラスタになるため k=6 で分離し、影の 2 クラスタを除いた 4 色。参照画像は Wikimedia Commons 「Type 07 Ocean camo.jpg」パブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "pla07ocean-tan",
+    "name": "07 式 海洋 タン",
+    "std": "07 式 海洋 (実測)",
+    "code": "pla07ocean-4",
+    "hex": "#bcb09a",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-pla07-ocean", "uniform"],
+      "country": ["cn"]
+    },
+    "note": "ホワイトグレーの縁に重なる中程度の塊 (約 11%)。最小面積",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/pla07_ocean.jpg 6 --max-edge=856 --core=2 --blur=1.0。布地写真の襞の影が独立クラスタになるため k=6 で分離し、影の 2 クラスタを除いた 4 色。参照画像は Wikimedia Commons 「Type 07 Ocean camo.jpg」パブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない)"
   }
 ]

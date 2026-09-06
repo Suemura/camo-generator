@@ -23,7 +23,17 @@ export type PresetKey =
   | "brushstroke"
   | "lizard"
   | "berezka"
-  | "splinter";
+  | "splinter"
+  | "flecktarn"
+  | "wuestentarn"
+  | "tibetarn"
+  | "arid_flecktarn"
+  | "m84"
+  | "m01dk"
+  | "t99dk"
+  | "flectar_d"
+  | "schneetarn"
+  | "m84urban";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;

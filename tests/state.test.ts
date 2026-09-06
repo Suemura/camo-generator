@@ -33,7 +33,7 @@ describe("URL 状態", () => {
     expect(s.preset).toBe("woodland");
     expect(s.seed).toBe(DEFAULT_STATE.seed);
     expect(parseState("", 99).seed).toBe(99);
-    expect(s.scale).toBe(2.5);
+    expect(s.scale).toBe(5);
     expect(s.palette).toBeNull();
     expect(s.w).toBe(512);
   });

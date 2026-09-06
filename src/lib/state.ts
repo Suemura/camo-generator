@@ -19,7 +19,7 @@ export interface AppState {
 }
 
 export const LIMITS = {
-  scale: { min: 0.4, max: 2.5 },
+  scale: { min: 0.4, max: 5 },
   px: { min: 512, max: 8192 },
   dpi: { min: 36, max: 1200 },
   seed: { min: 0, max: 2 ** 31 - 1 },

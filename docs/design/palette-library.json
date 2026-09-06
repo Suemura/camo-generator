@@ -3437,5 +3437,537 @@
     },
     "note": "2 版目 (約 26%)。全面に散り、疎密はあるが塊にはならない",
     "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/wuestentarn_swatch.png 5 --core=2。k=3 だと輪郭の混色クラスタに 1 枠取られてグリーンが落ちるため k=5 まで上げ、内部画素を持つ 3 クラスタを採る。参照画像は Wikimedia Commons 「Tropentarn.png」CC BY-SA 4.0)"
+  },
+  {
+    "id": "tibetarn-pale",
+    "name": "Tibetarn ペールブルーグレー",
+    "std": "Tibetarn (実測)",
+    "code": "tibetarn-1",
+    "hex": "#dce4e8",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "camo-tibetarn",
+        "uniform"
+      ],
+      "country": [
+        "cn"
+      ]
+    },
+    "note": "独図案の地色スロット (約 22%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/tibetarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "tibetarn-grey",
+    "name": "Tibetarn グレー",
+    "std": "Tibetarn (実測)",
+    "code": "tibetarn-2",
+    "hex": "#a7b3b8",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "camo-tibetarn",
+        "uniform"
+      ],
+      "country": [
+        "cn"
+      ]
+    },
+    "note": "グリーン版に相当するスロット (約 24%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/tibetarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "tibetarn-brown",
+    "name": "Tibetarn ミッドブラウン",
+    "std": "Tibetarn (実測)",
+    "code": "tibetarn-3",
+    "hex": "#5a3f2e",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-tibetarn",
+        "uniform"
+      ],
+      "country": [
+        "cn"
+      ]
+    },
+    "note": "レッドブラウン版に相当し最大面積 (約 30%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/tibetarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "tibetarn-orange",
+    "name": "Tibetarn オレンジブラウン",
+    "std": "Tibetarn (実測)",
+    "code": "tibetarn-4",
+    "hex": "#98450e",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-tibetarn",
+        "uniform"
+      ],
+      "country": [
+        "cn"
+      ]
+    },
+    "note": "ダークグリーン版に相当 (約 18%)。明度が反転する",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/tibetarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "tibetarn-black",
+    "name": "Tibetarn ブラック",
+    "std": "Tibetarn (実測)",
+    "code": "tibetarn-5",
+    "hex": "#211d1a",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-tibetarn",
+        "uniform"
+      ],
+      "country": [
+        "cn"
+      ]
+    },
+    "note": "ブラック版 (約 6%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/tibetarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "arid-flecktarn-sand",
+    "name": "Arid フレックターン ペールサンド",
+    "std": "Arid フレックターン (実測)",
+    "code": "arid-flecktarn-1",
+    "hex": "#d8d1c0",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "独図案の地色スロット (約 22%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/arid_flecktarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "arid-flecktarn-khaki",
+    "name": "Arid フレックターン カーキ",
+    "std": "Arid フレックターン (実測)",
+    "code": "arid-flecktarn-2",
+    "hex": "#ae9c70",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "グリーン版に相当するスロット (約 24%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/arid_flecktarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "arid-flecktarn-brown",
+    "name": "Arid フレックターン ブラウン",
+    "std": "Arid フレックターン (実測)",
+    "code": "arid-flecktarn-3",
+    "hex": "#6b4935",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "レッドブラウン版に相当し最大面積 (約 30%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/arid_flecktarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "arid-flecktarn-green",
+    "name": "Arid フレックターン ミッドグリーン",
+    "std": "Arid フレックターン (実測)",
+    "code": "arid-flecktarn-4",
+    "hex": "#486838",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ダークグリーン版に相当 (約 18%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/arid_flecktarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "arid-flecktarn-dbrown",
+    "name": "Arid フレックターン ダークブラウン",
+    "std": "Arid フレックターン (実測)",
+    "code": "arid-flecktarn-5",
+    "hex": "#3a2112",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-flecktarn",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ブラック版に相当 (約 6%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/arid_flecktarn.png 5 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m84-black",
+    "name": "M/84 ブラック",
+    "std": "M/84 (実測)",
+    "code": "m84-1",
+    "hex": "#231e1a",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "独図案の地色スロット (約 22%)。明度が反転する",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m84.jpeg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m84-olive",
+    "name": "M/84 ミッドオリーブ",
+    "std": "M/84 (実測)",
+    "code": "m84-2",
+    "hex": "#4e741f",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "グリーン + レッドブラウン版の統合 (約 54%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m84.jpeg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m84-lgreen",
+    "name": "M/84 ライトグリーン",
+    "std": "M/84 (実測)",
+    "code": "m84-3",
+    "hex": "#9bc44f",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "ダークグリーン + ブラック版の統合 (約 25%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m84.jpeg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m01dk-green",
+    "name": "M/01 オリーブグリーン",
+    "std": "M/01 (実測)",
+    "code": "m01dk-1",
+    "hex": "#415a35",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "独図案の地色スロット (約 22%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m01dk.jpeg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m01dk-tan",
+    "name": "M/01 タン",
+    "std": "M/01 (実測)",
+    "code": "m01dk-2",
+    "hex": "#baaf9d",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "グリーン + レッドブラウン版の統合 (約 54%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m01dk.jpeg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m01dk-brown",
+    "name": "M/01 レッドブラウン",
+    "std": "M/01 (実測)",
+    "code": "m01dk-3",
+    "hex": "#8d452d",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "ダークグリーン + ブラック版の統合 (約 25%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m01dk.jpeg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "t99dk-sage",
+    "name": "T/99 セージグリーン",
+    "std": "T/99 (実測)",
+    "code": "t99dk-1",
+    "hex": "#627864",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "独図案の地色スロット (約 22%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/t99dk.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "t99dk-offwhite",
+    "name": "T/99 オフホワイト",
+    "std": "T/99 (実測)",
+    "code": "t99dk-2",
+    "hex": "#e5e4e0",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "グリーン + レッドブラウン版の統合 (約 54%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/t99dk.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "t99dk-pink",
+    "name": "T/99 ピンクブラウン",
+    "std": "T/99 (実測)",
+    "code": "t99dk-3",
+    "hex": "#c48c72",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "ダークグリーン + ブラック版の統合 (約 25%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/t99dk.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "flectar-d-black",
+    "name": "Flectar-D ブラック",
+    "std": "Flectar-D (実測)",
+    "code": "flectar-d-1",
+    "hex": "#231e1b",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "ru"
+      ]
+    },
+    "note": "独図案の地色スロット (約 22%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/flectar_d.png 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "flectar-d-green",
+    "name": "Flectar-D ミッドグリーン",
+    "std": "Flectar-D (実測)",
+    "code": "flectar-d-2",
+    "hex": "#5c843e",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "ru"
+      ]
+    },
+    "note": "グリーン + レッドブラウン版の統合 (約 54%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/flectar_d.png 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "flectar-d-pale",
+    "name": "Flectar-D ペールイエロー",
+    "std": "Flectar-D (実測)",
+    "code": "flectar-d-3",
+    "hex": "#e2e8ba",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "ru"
+      ]
+    },
+    "note": "ダークグリーン + ブラック版の統合 (約 25%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/flectar_d.png 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "schneetarn-black",
+    "name": "Schneetarn ブラック",
+    "std": "Schneetarn (実測)",
+    "code": "schneetarn-1",
+    "hex": "#231e1b",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "独図案の地色スロット (約 22%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/schneetarn.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "schneetarn-white",
+    "name": "Schneetarn ホワイト",
+    "std": "Schneetarn (実測)",
+    "code": "schneetarn-2",
+    "hex": "#fefefe",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "グリーン + レッドブラウン版の統合 (約 54%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/schneetarn.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "schneetarn-olive",
+    "name": "Schneetarn ダークオリーブ",
+    "std": "Schneetarn (実測)",
+    "code": "schneetarn-3",
+    "hex": "#405a35",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "de"
+      ]
+    },
+    "note": "ダークグリーン + ブラック版の統合 (約 25%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/schneetarn.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m84urban-pale",
+    "name": "M/84 アーバン ペールグレー",
+    "std": "M/84 アーバン (実測)",
+    "code": "m84urban-1",
+    "hex": "#cac1b2",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "独図案の地色スロット (約 22%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m84urban.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m84urban-grey",
+    "name": "M/84 アーバン ミッドグレー",
+    "std": "M/84 アーバン (実測)",
+    "code": "m84urban-2",
+    "hex": "#817873",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "グリーン + レッドブラウン版の統合 (約 54%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m84urban.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m84urban-black",
+    "name": "M/84 アーバン ブラック",
+    "std": "M/84 アーバン (実測)",
+    "code": "m84urban-3",
+    "hex": "#211d1a",
+    "tags": {
+      "hue": "black",
+      "use": [
+        "camo-m84",
+        "uniform"
+      ],
+      "country": [
+        "dk"
+      ]
+    },
+    "note": "ダークグリーン + ブラック版の統合 (約 25%)",
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m84urban.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
   }
 ]

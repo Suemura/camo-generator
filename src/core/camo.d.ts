@@ -25,7 +25,15 @@ export type PresetKey =
   | "berezka"
   | "splinter"
   | "flecktarn"
-  | "wuestentarn";
+  | "wuestentarn"
+  | "tibetarn"
+  | "arid_flecktarn"
+  | "m84"
+  | "m01dk"
+  | "t99dk"
+  | "flectar_d"
+  | "schneetarn"
+  | "m84urban";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;

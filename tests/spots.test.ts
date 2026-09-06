@@ -56,11 +56,25 @@ describe("genSpots", () => {
       it("minFrag を持つ", () => {
         expect(P.minFrag).toBeGreaterThan(0);
       });
-      it("layers の color は 1..colors.length-1 を重複なく覆う (0 は地色)", () => {
+      // remap を持つプリセットは「元図案の版数」で合成してから colors の数へ写像するので、
+      // 層が覆うべき範囲は colors.length ではなく remap.length で決まる (M/84 系は 5 版 → 3 色)
+      const remap = P.remap as number[] | undefined;
+      const nSrc = remap ? remap.length : P.colors.length;
+      it("layers の color は 1..(元図案の版数-1) を重複なく覆う (0 は地色)", () => {
         const layers = P.layers as { color: number }[];
         const colors = layers.map((l) => l.color).sort((a, b) => a - b);
-        expect(colors).toEqual(P.colors.map((_, i) => i).slice(1));
+        expect(colors).toEqual(Array.from({ length: nSrc - 1 }, (_, i) => i + 1));
       });
+      if (remap) {
+        it("remap は元図案の全版を colors の全 index へ写す (取りこぼし・範囲外なし)", () => {
+          expect(remap.length).toBe(nSrc);
+          for (const v of remap) {
+            expect(v).toBeGreaterThanOrEqual(0);
+            expect(v).toBeLessThan(P.colors.length);
+          }
+          expect(new Set(remap).size).toBe(P.colors.length);
+        });
+      }
       for (const seed of SEEDS) {
         it(`seed ${seed}: 全色が出現し、地色 (0) が残り、どの版も支配的にならない`, () => {
           const r = generate(key, 512, 512, seed, 1.0);

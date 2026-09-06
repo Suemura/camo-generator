@@ -310,6 +310,82 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     era: "1990s",
     svg: false,
   },
+  // ---- フレックターン図案の配色替え (形状は flecktarn と共有) ----
+  tibetarn: {
+    label: "Tibetarn 風 (中国 高原)",
+    note: "2000 年代〜 5 色。独図案の高原配色",
+    country: "cn",
+    group: "desert",
+    env: ["arid", "transitional"],
+    era: "2000s",
+    svg: false,
+  },
+  arid_flecktarn: {
+    // Mil-Tec の商用製品で軍の制式採用はない。country は製造元のドイツ
+    label: "Arid フレックターン風 (商用)",
+    note: "2013〜 5 色。MultiCam 寄りの配色",
+    country: "de",
+    group: "desert",
+    env: ["arid", "transitional"],
+    era: "2000s",
+    svg: false,
+  },
+  // ---- M/84 系 (独 5 版を 3 群に統合した配色替え) ----
+  m84: {
+    label: "M/84 風 (デンマーク)",
+    note: "1984〜2018 3 色。独図案を 3 色に統合",
+    country: "dk",
+    group: "woodland",
+    env: ["forest"],
+    era: "1980s",
+    svg: false,
+  },
+  m01dk: {
+    label: "M/01 デザート風 (デンマーク)",
+    note: "2001〜 3 色。M/84 の砂漠配色",
+    country: "dk",
+    group: "desert",
+    env: ["arid"],
+    era: "2000s",
+    svg: false,
+  },
+  t99dk: {
+    label: "T/99 デザート風 (デンマーク)",
+    note: "1999 3 色。M/01 前段の試験型",
+    country: "dk",
+    group: "desert",
+    env: ["arid"],
+    era: "1990s",
+    svg: false,
+  },
+  flectar_d: {
+    label: "Flectar-D 風 (ロシア)",
+    note: "2006〜 3 色。M/84 の明色地配色",
+    country: "ru",
+    group: "woodland",
+    env: ["forest", "transitional"],
+    era: "2000s",
+    svg: false,
+  },
+  schneetarn: {
+    // TacGear の商用スノー迷彩。仏 13e RDP が雪中で使用する。country は製造元のドイツ
+    label: "Schneetarn 風 (スノー)",
+    note: "3 色。白地に黒とオリーブ",
+    country: "de",
+    group: "other",
+    env: ["transitional"],
+    era: "2000s",
+    svg: false,
+  },
+  m84urban: {
+    label: "M/84 アーバン風",
+    note: "3 色。無彩色 3 段の市街地配色",
+    country: "dk",
+    group: "other",
+    env: ["urban"],
+    era: "2000s",
+    svg: false,
+  },
 };
 
 export const PRESET_KEYS = Object.keys(PRESET_META) as PresetKey[];

@@ -224,6 +224,20 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - ヴュステンターンの `k` を 3 ではなく 5 にしているのは、k=3 だと輪郭のアンチエイリアス（版と版の混色）が 1 クラスタを占有してグリーンが落ちるため。内部画素を持つ 3 クラスタを採る
 - **名称について**: Wikipedia は「Wüstentarn はしばしば誤って Tropentarn と呼ばれる」と注記しており、参照に使った Commons のスウォッチも "Tropentarn" 名で 3 版しか持たない。実測した版数（3）に従い 3-Farben-Tarndruck = ヴュステンターンとして登録した。5 色の本来のトロペンターンは信頼できる参照が得られていないため未登録
 
+## 第13弾（迷彩プリセット追加に伴う実測色: フレックターン図案の配色替え 8 種）
+
+フレックターンと同一図案の配色替え（Issue #73 / #74）を 8 種追加したのに合わせ、実測色 28 色を追記した。
+
+### 方法
+
+- 対象は Tibetarn（中国）/ Arid フレックターン（商用）/ M/84・M/01・T/99（デンマーク）/ Flectar-D（ロシア）/ Schneetarn / M/84 アーバン
+- `std` は「〜 (実測)」、hex は `src/core/camo.js` の各 `PRESETS.<key>.colors` と完全一致させている
+- **公的な色番号は見つからなかった**ので `code` は index 値の順に `<key>-1`〜 を振った（CADPAT / EMR / NWU / フレックターンと同じ扱い）
+- **版と色の対応は明度順ではない**。Commons の各国スウォッチ（User:Skjoldbro）は同一ベクター図案の色替えだが明度順を保存しておらず、Arid の最暗版が M/84 の最明版に対応するといった反転がある。ドイツ配色版（Commons「Belgian Flecktarn.png」。ベルギー空軍は図案・配色ともドイツ版を変更せず使用）と各変種を最近傍リサイズで同寸に揃えて量子化し、**画素単位で交差集計**して対応を決めた（5 色変種で一致率 96〜100%）。詳細は `docs/01-tech-verification.md` v37
+- 3 色版 6 種は、5 版を {地} / {グリーン + レッドブラウン} / {ダークグリーン + ブラック} の 3 群にまとめた配色替えで、群の切り方が 6 種すべてで同一だった。`note` に元の版との対応を書いてある
+- 用途タグは `camo-tibetarn` / `camo-m84`（いずれも新規）と既存の `camo-flecktarn`（Arid）。`src/data/palette.ts` の `USE_LABEL` にラベルを追加した。国タグは `dk`（デンマーク）を `COUNTRY_LABEL` に新設し、`cn` / `ru` / `de` は既存
+- 参照スウォッチはいずれも Wikimedia Commons の CC BY-SA 4.0（User:Skjoldbro）。**`refs/private/` に置き、リポジトリには含めない**。量子化したソース図案も作らない（`docs/04-add-preset.md` §1）
+
 ## 出典一覧
 
 | id | 規格・コード | hex | 出典 |
@@ -421,6 +435,34 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `wuestentarn-tan` | ヴュステンターン (実測) wuestentarn-1 | #baaf9d | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/wuestentarn_swatch.png 5 --core=2`。参照画像は Wikimedia Commons [File:Tropentarn.png](https://commons.wikimedia.org/wiki/File:Tropentarn.png) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
 | `wuestentarn-darkgreen` | ヴュステンターン (実測) wuestentarn-2 | #405a35 | 同上 |
 | `wuestentarn-redbrown` | ヴュステンターン (実測) wuestentarn-3 | #68391e | 同上 |
+| `tibetarn-pale` | Tibetarn (実測) tibetarn-1 | #dce4e8 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/tibetarn.png 5 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:Chinese Flecktarn.png](https://commons.wikimedia.org/wiki/File:Chinese_Flecktarn.png) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
+| `tibetarn-grey` | Tibetarn (実測) tibetarn-2 | #a7b3b8 | 同上 |
+| `tibetarn-brown` | Tibetarn (実測) tibetarn-3 | #5a3f2e | 同上 |
+| `tibetarn-orange` | Tibetarn (実測) tibetarn-4 | #98450e | 同上 |
+| `tibetarn-black` | Tibetarn (実測) tibetarn-5 | #211d1a | 同上 |
+| `arid-flecktarn-sand` | Arid フレックターン (実測) arid-flecktarn-1 | #d8d1c0 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/arid_flecktarn.png 5 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:Arid Flecktarn.png](https://commons.wikimedia.org/wiki/File:Arid_Flecktarn.png) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
+| `arid-flecktarn-khaki` | Arid フレックターン (実測) arid-flecktarn-2 | #ae9c70 | 同上 |
+| `arid-flecktarn-brown` | Arid フレックターン (実測) arid-flecktarn-3 | #6b4935 | 同上 |
+| `arid-flecktarn-green` | Arid フレックターン (実測) arid-flecktarn-4 | #486838 | 同上 |
+| `arid-flecktarn-dbrown` | Arid フレックターン (実測) arid-flecktarn-5 | #3a2112 | 同上 |
+| `m84-black` | M/84 (実測) m84-1 | #231e1a | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m84.jpeg 3 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:M84camo.jpeg](https://commons.wikimedia.org/wiki/File:M84camo.jpeg) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
+| `m84-olive` | M/84 (実測) m84-2 | #4e741f | 同上 |
+| `m84-lgreen` | M/84 (実測) m84-3 | #9bc44f | 同上 |
+| `m01dk-green` | M/01 (実測) m01dk-1 | #415a35 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m01dk.jpeg 3 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:M01DKcamo.jpeg](https://commons.wikimedia.org/wiki/File:M01DKcamo.jpeg) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
+| `m01dk-tan` | M/01 (実測) m01dk-2 | #baaf9d | 同上 |
+| `m01dk-brown` | M/01 (実測) m01dk-3 | #8d452d | 同上 |
+| `t99dk-sage` | T/99 (実測) t99dk-1 | #627864 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/t99dk.jpg 3 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:T99 DK camo.jpg](https://commons.wikimedia.org/wiki/File:T99_DK_camo.jpg) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
+| `t99dk-offwhite` | T/99 (実測) t99dk-2 | #e5e4e0 | 同上 |
+| `t99dk-pink` | T/99 (実測) t99dk-3 | #c48c72 | 同上 |
+| `flectar-d-black` | Flectar-D (実測) flectar-d-1 | #231e1b | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/flectar_d.png 3 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:Flectar-D.png](https://commons.wikimedia.org/wiki/File:Flectar-D.png) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
+| `flectar-d-green` | Flectar-D (実測) flectar-d-2 | #5c843e | 同上 |
+| `flectar-d-pale` | Flectar-D (実測) flectar-d-3 | #e2e8ba | 同上 |
+| `schneetarn-black` | Schneetarn (実測) schneetarn-1 | #231e1b | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/schneetarn.jpg 3 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:M84Snow.jpg](https://commons.wikimedia.org/wiki/File:M84Snow.jpg) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
+| `schneetarn-white` | Schneetarn (実測) schneetarn-2 | #fefefe | 同上 |
+| `schneetarn-olive` | Schneetarn (実測) schneetarn-3 | #405a35 | 同上 |
+| `m84urban-pale` | M/84 アーバン (実測) m84urban-1 | #cac1b2 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m84urban.jpg 3 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:M84urban.jpg](https://commons.wikimedia.org/wiki/File:M84urban.jpg) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
+| `m84urban-grey` | M/84 アーバン (実測) m84urban-2 | #817873 | 同上 |
+| `m84urban-black` | M/84 アーバン (実測) m84urban-3 | #211d1a | 同上 |
 
 ## 注意事項
 

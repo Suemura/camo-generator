@@ -1752,6 +1752,13 @@ export function genSpots(w, h, seed, scale, P, opt={}){
   // B 自体が別の色へ併合」の順で A の画素が 1 px 取り残されることがある (2048px・scale 0.7 で実際に発生)。
   // 3 個以上の欠片が数珠つなぎに連鎖する稀なケースにも対応できるよう、変化がなくなるまで繰り返す
   // (実測では 2 パス目で収束。上限 8 は理論上の異常系向けの安全弁で通常消費されない)
+  // 値の統合 (P.remap): 同じ図案を少ない色数で刷った派生迷彩を、元図案の版構成で合成してから
+  // index を写像する (クイルト系の DDPM と同じ考え方)。M/84 系はドイツ フレックターンの 5 版を
+  //   {地} / {グリーン + レッドブラウン} / {ダークグリーン + ブラック}
+  // の 3 群にまとめた色替えで、群の切り方は 6 種の配色すべてで共通だった (画素単位の交差集計で確認)。
+  // 欠片除去より「前」に写像するのは、統合で消える境界 (同じ群どうしの接触) を欠片と誤判定させないため。
+  // 写像後は色数が減るので cleanupFragments の色数も写像後の値で数える
+  if(P.remap) for(let i=0;i<out.length;i++) out[i] = P.remap[out[i]];
   if(P.minFrag){
     const minArea = P.minFrag * u * u;
     for(let p=0; p<8; p++){
@@ -1964,6 +1971,33 @@ export function genSplinter(w, h, seed, scale, P, opt={}){
   if(progress) progress(1);
   return {type:'splinter', w, h, index: out};
 }
+
+/* ドイツ フレックターンの版構成。M/84 系・中国 Tibetarn・商用 Arid など多数の迷彩が
+   「この図案の配色替え」なので、層定義を 1 か所に置いて参照で共有する。
+   各層の意図は PRESETS.flecktarn のコメントを参照。配色違い側は colors (と必要なら remap) だけ差し替える。
+   **この配列を変えると共有している全プリセットの生成結果が変わる**（スナップショットで検知される）。 */
+const FLECKTARN_LAYERS = [
+  // グリーンとレッドブラウンは全面に散り、偏在しない (参照の塊り比 34.6 / 33.0 で 5 版中最小)
+  {color: 1, frac: 0.47, r: [6, 34], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.40, over: 0.8},
+  {color: 2, frac: 0.42, r: [6, 32], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.38, over: 0.8},
+  // 暗色 2 版は同じ密度場 (field: 0) を共有して同じ塊に集まるが、強さが違う。
+  // ダークグリーンは塊の外縁まで散り (thr 低め・soft 広め)、ブラックはその内側の芯にだけ乗る
+  // (thr 0.62・soft 0.06 のほぼハード閾値。参照左上の黒い大領域を作るのはこの設定)。
+  // cell を 170 → 210 と大きく取るのは、黒の塊を他の版より一段大きい単位にするため
+  {color: 3, frac: 0.22, r: [6, 30], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.38, over: 0.8,
+   clump: {cell: 170, thr: 0.36, soft: 0.26, field: 0}},
+  {color: 4, frac: 0.068, r: [8, 34], elong: [0.16, 0.44], lobe: [0.12, 0.28], wobble: 0.12, gap: -0.44, over: 0.8,
+   clump: {cell: 210, thr: 0.62, soft: 0.06, field: 0}},
+];
+/* M/84 系がフレックターンの 5 版を 3 群にまとめる写像。
+   {地} / {グリーン + レッドブラウン} / {ダークグリーン + ブラック} の 3 群で、
+   デンマーク M/84・M/01・T/99、ロシア Flectar-D、Schneetarn、M84 Urban の 6 配色すべてで
+   群の切り方が同一だった (基準スウォッチとの画素単位の交差集計で 74〜100% 一致)。
+   統合後の面積比は 0.208 / 0.521 / 0.270 で、これは実物 M/84 の実測 0.248 / 0.609 / 0.143〜
+   0.285 / 0.534 / 0.181 (参照 2 枚) と整合する。
+   注意: 群と色の対応は明度順ではない。M/84 ではドイツ版の**地色**が黒に、**暗色 2 版**が
+   ライトグリーンになる (明度が反転する)。明度で対応付けると別物になる */
+const M84_REMAP = [0, 1, 1, 2, 2];
 
 /* ================= プリセット ================= */
 export const PRESETS = {
@@ -2635,19 +2669,7 @@ export const PRESETS = {
     // frac は「その版が塗る面積比」(後の版に覆われる分を含む)。参照実測の可視面積比
     // 0.228 / 0.218 / 0.308 / 0.175 / 0.072 に対し、生成結果 (512px・scale 1.0・3 シード平均) は
     // 0.216 / 0.238 / 0.299 / 0.182 / 0.064
-    layers: [
-      // グリーンとレッドブラウンは全面に散り、偏在しない (参照の塊り比 34.6 / 33.0 で 5 版中最小)
-      {color: 1, frac: 0.47, r: [6, 34], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.40, over: 0.8},
-      {color: 2, frac: 0.42, r: [6, 32], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.38, over: 0.8},
-      // 暗色 2 版は同じ密度場 (field: 0) を共有して同じ塊に集まるが、強さが違う。
-      // ダークグリーンは塊の外縁まで散り (thr 低め・soft 広め)、ブラックはその内側の芯にだけ乗る
-      // (thr 0.62・soft 0.06 のほぼハード閾値。参照左上の黒い大領域を作るのはこの設定)。
-      // cell を 170 → 210 と大きく取るのは、黒の塊を他の版より一段大きい単位にするため
-      {color: 3, frac: 0.22, r: [6, 30], elong: [0.16, 0.46], lobe: [0.12, 0.30], wobble: 0.12, gap: -0.38, over: 0.8,
-       clump: {cell: 170, thr: 0.36, soft: 0.26, field: 0}},
-      {color: 4, frac: 0.068, r: [8, 34], elong: [0.16, 0.44], lobe: [0.12, 0.28], wobble: 0.12, gap: -0.44, over: 0.8,
-       clump: {cell: 210, thr: 0.62, soft: 0.06, field: 0}},
-    ],
+    layers: FLECKTARN_LAYERS,
     minFrag: 30,
     // 実測: node tools/extract-palette.mjs refs/private/flecktarn.jpg 5 --core=2
     // (平坦なデジタルスウォッチなので --blur / --flatten は不要。k=6/7 に上げても内部画素を持つ
@@ -2696,6 +2718,121 @@ export const PRESETS = {
       {name:'タン',         hex:'#baaf9d'},
       {name:'ダークグリーン', hex:'#405a35'},
       {name:'レッドブラウン', hex:'#68391e'},
+    ],
+  },
+
+  /* ---- フレックターン図案の配色替え (5 色のまま。FLECKTARN_LAYERS を共有) ----
+     いずれも版の対応は明度順ではなく、ドイツ配色版 (Commons「Belgian Flecktarn.png」= 図案・配色とも
+     ドイツ版のまま) との画素単位の交差集計で決めた (一致率 96〜100%)。
+     参照スウォッチは同一ベクター図案の色替えなので**色の根拠にしかならない**が、
+     形状は flecktarn から共有するのでそれで足りる (docs/01-tech-verification.md v37) */
+  tibetarn: {
+    // 中国 07 式以前の高原用「Type 03 Plateau」、通称 Tibetarn (2000 年代前半)。実物の特徴:
+    //   - ドイツ フレックターンと同一図案の 5 色配色替え。淡いブルーグレーの地に
+    //     グレー / ミッドブラウン / オレンジブラウン / ブラック。岩と乾いた土の高原向け
+    //   - Wikipedia は「図案はドイツ版と同一だが、中国版は完全な図案の一部だけを使う」と注記する。
+    //     手続き生成では「一部だけ」に相当する切り出しは持たない (シードで無限に生成するため)
+    name: 'Tibetarn 風 (中国 高原)', kind: 'spots', ref: 'tibetarn',
+    layers: FLECKTARN_LAYERS, minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/tibetarn.png 5 --core=2
+    colors: [
+      {name:'ペールブルーグレー', hex:'#dce4e8'},
+      {name:'グレー',           hex:'#a7b3b8'},
+      {name:'ミッドブラウン',     hex:'#5a3f2e'},
+      {name:'オレンジブラウン',   hex:'#98450e'},
+      {name:'ブラック',         hex:'#211d1a'},
+    ],
+  },
+  arid_flecktarn: {
+    // Arid Flecktarn (独 Mil-Tec、2013〜)。実物の特徴:
+    //   - ドイツ フレックターンと同一図案の 5 色配色替えで、配色を MultiCam 寄りに振ったもの
+    //   - **商用製品で、いずれの軍でも制式採用されていない**
+    name: 'Arid フレックターン風 (商用)', kind: 'spots', ref: 'arid_flecktarn',
+    layers: FLECKTARN_LAYERS, minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/arid_flecktarn.png 5 --core=2
+    colors: [
+      {name:'ペールサンド',   hex:'#d8d1c0'},
+      {name:'カーキ',        hex:'#ae9c70'},
+      {name:'ブラウン',      hex:'#6b4935'},
+      {name:'ミッドグリーン',  hex:'#486838'},
+      {name:'ダークブラウン',  hex:'#3a2112'},
+    ],
+  },
+
+  /* ---- M/84 系 (フレックターンの 5 版を 3 群に統合した配色替え。M84_REMAP を共有) ----
+     デンマークが 1984 年にフレックターン B の斑形状をそのまま採り、色数を 5 → 3 に減らしたもの。
+     ロシア Flectar-D と各種の砂漠・雪・市街地版はさらにその配色替えで、いずれも群の切り方は同じ。
+     色の対応は明度が反転する場合があるので、参照ごとに交差集計で確かめてある */
+  m84: {
+    // デンマーク M/84 (1984〜2018、MultiCam ベースの M/11 に置き換え)。実物の特徴:
+    //   - 3 色。ミッドオリーブが最大面積 (0.52) で、ライトグリーン (0.27) とブラック (0.21)
+    //   - フレックターンと同じ「丸い小斑の融合」だが、5 版が 3 群にまとまる分だけ
+    //     ひとつの色の連結塊が大きく見える。斑そのものの寸法は変えていない
+    //   - **ドイツ版の地色が黒に、暗色 2 版がライトグリーンになる**。明度の割り当てが反転する
+    name: 'M/84 風 (デンマーク)', kind: 'spots', ref: 'm84',
+    layers: FLECKTARN_LAYERS, remap: M84_REMAP, minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/m84.jpeg 3 --core=2
+    // (参照 2 枚が独立に一致する: Skjoldbro のスウォッチ #99c24d/#4f7420/#24201b と、
+    //  M/84 記事自身のスウォッチ #9ac34f/#4f7420/#171d1d)
+    colors: [
+      {name:'ブラック',      hex:'#231e1a'},
+      {name:'ミッドオリーブ', hex:'#4e741f'},
+      {name:'ライトグリーン', hex:'#9bc44f'},
+    ],
+  },
+  m01dk: {
+    // デンマーク M/01 デザート (2001〜)。M/84 の砂漠配色
+    name: 'M/01 デザート風 (デンマーク)', kind: 'spots', ref: 'm01dk',
+    layers: FLECKTARN_LAYERS, remap: M84_REMAP, minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/m01dk.jpeg 3 --core=2
+    colors: [
+      {name:'オリーブグリーン', hex:'#415a35'},
+      {name:'タン',           hex:'#baaf9d'},
+      {name:'レッドブラウン',   hex:'#8d452d'},
+    ],
+  },
+  t99dk: {
+    // デンマーク T/99 デザート試験型 (1999)。M/01 の前段で、より淡い
+    name: 'T/99 デザート風 (デンマーク)', kind: 'spots', ref: 't99dk',
+    layers: FLECKTARN_LAYERS, remap: M84_REMAP, minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/t99dk.jpg 3 --core=2
+    colors: [
+      {name:'セージグリーン', hex:'#627864'},
+      {name:'オフホワイト',   hex:'#e5e4e0'},
+      {name:'ピンクブラウン', hex:'#c48c72'},
+    ],
+  },
+  flectar_d: {
+    // ロシア Flectar-D / Sever (2006〜)。M/84 とほぼ同一図案でタン寄りの明色地
+    name: 'Flectar-D 風 (ロシア)', kind: 'spots', ref: 'flectar_d',
+    layers: FLECKTARN_LAYERS, remap: M84_REMAP, minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/flectar_d.png 3 --core=2
+    colors: [
+      {name:'ブラック',        hex:'#231e1b'},
+      {name:'ミッドグリーン',   hex:'#5c843e'},
+      {name:'ペールイエロー',   hex:'#e2e8ba'},
+    ],
+  },
+  schneetarn: {
+    // Schneetarn (独 TacGear の商用スノー迷彩。仏 13e RDP が雪中で使用)。M/84 派生の白地配色
+    name: 'Schneetarn 風 (スノー)', kind: 'spots', ref: 'schneetarn',
+    layers: FLECKTARN_LAYERS, remap: M84_REMAP, minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/schneetarn.jpg 3 --core=2
+    colors: [
+      {name:'ブラック',        hex:'#231e1b'},
+      {name:'ホワイト',        hex:'#fefefe'},
+      {name:'ダークオリーブ',   hex:'#405a35'},
+    ],
+  },
+  m84urban: {
+    // M/84 アーバン (商用配色)。無彩色 3 段で、寒色にも暖色にも寄せていない
+    name: 'M/84 アーバン風', kind: 'spots', ref: 'm84urban',
+    layers: FLECKTARN_LAYERS, remap: M84_REMAP, minFrag: 30,
+    // 実測: node tools/extract-palette.mjs refs/private/m84urban.jpg 3 --core=2
+    colors: [
+      {name:'ペールグレー',   hex:'#cac1b2'},
+      {name:'ミッドグレー',   hex:'#817873'},
+      {name:'ブラック',      hex:'#211d1a'},
     ],
   },
 };

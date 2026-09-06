@@ -22,7 +22,7 @@
 
 ### 1.2 今後の開発予定（GitHub Issues に登録済み）
 
-#1 3D プレビュー（段階①実装済）/ #2 有機系 SVG / #3 Web Worker 化 / #4 PBR マップ / #5 布地ポストエフェクト / #6 カスタム迷彩 / #7 MARPAT クイルト化 / #8 パレットファイル出力 / #9 英語 UI / #10 履歴・お気に入り / #11 PWA / #12 実寸スケール校正 / #21 迷彩プリセットの拡充（親。サブ Issue #22〜#74。#22 共通基盤は実装済: 実物比較 UI 廃止・`refs/` 運用・プリセット選択のグループ化。#23 DCU / #24 DBDU / #25 CCE / #27 Auscam / #28 陸自 Type 2 / #31 タイガーストライプ / #32 ブラッシュストローク・リザード / #35 フレックターン・ヴュステンターン / #36 スプリンター / #53 NWU Type I / #64 ベリョースカ は実装済。#73 M/84 系 / #74 フレックターン配色バリアントは未着手）
+#1 3D プレビュー（段階①実装済）/ #2 有機系 SVG / #3 Web Worker 化（実装済） / #4 PBR マップ / #5 布地ポストエフェクト / #6 カスタム迷彩 / #7 MARPAT クイルト化 / #8 パレットファイル出力 / #9 英語 UI / #10 履歴・お気に入り / #11 PWA / #12 実寸スケール校正 / #21 迷彩プリセットの拡充（親。サブ Issue #22〜#74。#22 共通基盤は実装済: 実物比較 UI 廃止・`refs/` 運用・プリセット選択のグループ化。#23 DCU / #24 DBDU / #25 CCE / #27 Auscam / #28 陸自 Type 2 / #31 タイガーストライプ / #32 ブラッシュストローク・リザード / #35 フレックターン・ヴュステンターン / #36 スプリンター / #53 NWU Type I / #64 ベリョースカ は実装済。#73 M/84 系 / #74 フレックターン配色バリアントは未着手）
 
 ### 1.3 対象外
 
@@ -213,7 +213,7 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 ```
 src/
   core/            camo.js, m81src.js, dcusrc.js, digsrc.js (依存ゼロ維持), camo.d.ts
-  workers/         palette-extract.worker.ts, (将来) generate.worker.ts
+  workers/         palette-extract.worker.ts, generate.worker.ts
   lib/             url-state.ts, png-phys.ts, share.ts, kmeans.ts, scene3d.ts, preview3d-math.ts, webgl.ts
   components/      ControlPanel/, Preview/, Preview3D/, PaletteLibrary/, ExportPanel/ ...
   data/            palette-library.json, presets-meta.ts (サムネ・表記名)
@@ -221,11 +221,13 @@ src/
   app/             App.tsx, About.tsx
 tools/             render.mjs (検証ハーネス、prototype から移動), gen-tokens.mjs, gen-src.mjs
 public/3d/         env.hdr, fabric_normal.jpg, fabric_rough.jpg, ripstop_normal.jpg, ripstop_rough.jpg
-.claude/skills/design-system/SKILL.md   spacious (LLM 向けデザインルール)
+.agents/skills/design-system/SKILL.md  spacious (共通デザインルールの正本)
+AGENTS.md / .agents/                  共通規約・開発手順・役割
+.claude/ / .codex/                    製品固有の設定と読込入口
 docs/design/spacious-DESIGN.md          spacious トークンの原本
 ```
 
-`prototype/` はフェーズ1 の記録として残し、`src/core` へ移した時点で README に「参照のみ」と明記する。
+`prototype/` は生成コアをインライン展開する現役の検証環境として維持する。`node prototype/build.mjs` で再ビルドし、参照画像付きの `index.local.html` はローカル比較だけに使う。詳細は `docs/04-add-preset.md` §5。
 
 ---
 
@@ -278,7 +280,7 @@ docs/design/spacious-DESIGN.md          spacious トークンの原本
 ### 6.1 取り込み方（調査結果）
 
 - 配布元: [bergside/awesome-design-skills](https://github.com/bergside/awesome-design-skills)（MIT）。`skills/spacious/SKILL.md`（LLM 向けルール）と `DESIGN.md`（トークン定義、YAML frontmatter）の 2 ファイル
-- CLI: `npx typeui.sh pull spacious -p claude-code -f skill` → `.claude/skills/design-system/SKILL.md` に配置される（**実施済み**、コミット対象）。`-p claude` は無効なプロバイダ名で、`claude-code` が正しい。`.agents/` にも複製されるが Claude Code では不要なので削除した
+- 初回取得には `npx typeui.sh pull spacious -p claude-code -f skill` を使用した。現在の正本は `.agents/skills/design-system/SKILL.md`。Claude 側は同ファイルへの相対 symlink を使い、Codex と共用する。再取得は一時ディレクトリで行い、生成されたマーカー内の差分を正本へ反映する。CLI に symlink を置き換えさせず、プロジェクト固有の追記を保持する
 - `DESIGN.md` は CLI がプロジェクト直下に置こうとするため、手動で `docs/design/spacious-DESIGN.md` に保存した（トークンの原本）
 - 更新: `SKILL.md` は `TYPEUI_SH_MANAGED_START/END` マーカー内が CLI 管理領域。プロジェクト固有の追記（迷彩ジェネレータの UI 語彙、「〜風」表記ルール、キャンバス周辺の配色ルール等）はマーカーの**外**に書く。再 pull しても消えない
 

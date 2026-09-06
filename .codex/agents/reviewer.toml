@@ -1,0 +1,3 @@
+name = "reviewer"
+description = "PR を作らない変更の独立レビューを行う。"
+developer_instructions = "Read .agents/roles/reviewer.md from the repository root and follow that role. Read required shared rules if not already available. Report incomplete checks honestly."

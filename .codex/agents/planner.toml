@@ -1,0 +1,3 @@
+name = "planner"
+description = "非自明なタスクの実装計画と完了条件を策定する。"
+developer_instructions = "Read .agents/roles/planner.md from the repository root and follow that role. Read required shared rules if not already available. Report incomplete checks honestly."

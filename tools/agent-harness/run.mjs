@@ -13,9 +13,18 @@ try {
   process.exit(2);
 }
 const input = event.tool_input || {};
-const cwd = realpathSync(
-  input.workdir || event.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd(),
-);
+const block = (message) => {
+  console.error(message);
+  process.exit(2);
+};
+let cwd;
+try {
+  const base = event.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  // Codex local exec_command の workdir は相対パスの可能性があるためイベント cwd 基準で解決する。
+  cwd = realpathSync(input.workdir ? resolve(base, input.workdir) : base);
+} catch {
+  block("作業ディレクトリを特定できません。検査未実施。");
+}
 const run = (command, args, options = {}) =>
   spawnSync(command, args, { cwd, encoding: "utf8", timeout: 240000, ...options });
 const git = (...args) => run("git", args);
@@ -24,10 +33,6 @@ const root = rootResult.stdout?.trim();
 const command = input.command || input.cmd || "";
 const context = (hookEventName, additionalContext) =>
   console.log(JSON.stringify({ hookSpecificOutput: { hookEventName, additionalContext } }));
-const block = (message) => {
-  console.error(message);
-  process.exit(2);
-};
 
 if (action === "check-on-stop" && event.stop_hook_active === true) {
   console.log(
@@ -75,10 +80,16 @@ if (action === "pre-push-guard") {
     block(
       "node_modules がないため検査未実施。pnpm install --frozen-lockfile 後、check/typecheck/test を実行してください。",
     );
+  // フック側の上限 300 秒に収める。test は git / node を多数 spawn するため予算を厚くする。
+  const budgets = { check: 40000, typecheck: 40000, test: 200000 };
   const errors = [];
   for (const check of ["check", "typecheck", "test"]) {
-    const result = run("pnpm", [check], { cwd: root, timeout: 85000 });
-    if (result.status !== 0)
+    const result = run("pnpm", [check], { cwd: root, timeout: budgets[check] });
+    if (result.error?.code === "ETIMEDOUT")
+      errors.push(
+        `pnpm ${check} が ${budgets[check] / 1000} 秒で完了せず検査未完了。手動で実行して確認してください。`,
+      );
+    else if (result.status !== 0)
       errors.push(`pnpm ${check} 失敗:\n${result.stderr}${result.stdout}${result.error || ""}`);
   }
   if (errors.length) block(errors.join("\n\n"));

@@ -157,10 +157,16 @@ describe("共通エージェントフック", () => {
   it("main の無関係操作は通し、暗黙 push は止める", () => {
     const { dir, git } = repo();
     git("branch", "-m", "main");
-    expect(hook("pre-push-guard", { tool_input: { command: "git status" } }, dir).status).toBe(0);
-    expect(hook("pre-push-guard", { tool_input: { command: "git push origin" } }, dir).status).toBe(
-      2,
-    );
+    // Claude Code はフック実行時に CLAUDE_PROJECT_DIR を渡す。fixture が実リポジトリへ漏れないよう cwd を明示する。
+    expect(
+      hook("pre-push-guard", { cwd: dir, tool_input: { command: "git status" } }, dir).status,
+    ).toBe(0);
+    expect(
+      hook("pre-push-guard", { cwd: dir, tool_input: { command: "git push origin" } }, dir).status,
+    ).toBe(2);
+    const missing = hook("check-on-stop", { cwd: join(dir, "missing") }, dir);
+    expect(missing.status).toBe(2);
+    expect(missing.stderr).toContain("検査未実施");
   });
   it("Stop はイベント cwd の worktree を検査し、依存不足を成功扱いしない", () => {
     const { dir, git } = repo();

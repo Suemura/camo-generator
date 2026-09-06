@@ -31,7 +31,7 @@
 ## フックと検証
 
 - `PreToolUse`: push 前の補助検査。私有参照画像の本来の検査は `.githooks/pre-push` と `tools/check-private-refs.sh` で行い、CI / Deploy でも確認します。
-- `PostToolUse`: 対応する編集の Biome 整形と、PR 作成成功時のレビュー開始案内。
+- `PostToolUse`: 対応する編集の Biome 整形と、PR 作成成功時のレビュー開始案内。作成直後のコンフリクト検知はしない（GitHub の mergeable 計算が非同期で待ちが必要なため）。競合は `land` のマージ前確認と `resolve-conflicts` で扱う。
 - `SessionStart`: Git に登録された worktree とマージ済み PR を照合し、残っている作業木を案内。削除はしません。
 - `Stop`: 対象ソースの未コミット変更があれば check / typecheck / test。失敗や依存不足を成功扱いせず報告します。フックからの再入ではループを避け、手動での完了確認を促します。
 

@@ -3105,7 +3105,7 @@
       "country": ["cn"]
     },
     "note": "07 式 海洋迷彩の地色 (約 49%)。4 色中最大面積",
-    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v38「色味の改定」)"
+    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。測り方の判断は docs/design/palette-library-sources.md「実測で判断が要った点」)"
   },
   {
     "id": "pla07ocean-whitegrey",
@@ -3119,7 +3119,7 @@
       "country": ["cn"]
     },
     "note": "大きな塊 (約 26%)",
-    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v38「色味の改定」)"
+    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。測り方の判断は docs/design/palette-library-sources.md「実測で判断が要った点」)"
   },
   {
     "id": "pla07ocean-olive",
@@ -3133,7 +3133,7 @@
       "country": ["cn"]
     },
     "note": "小さな塊が多数 (約 14%)",
-    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v38「色味の改定」)"
+    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。測り方の判断は docs/design/palette-library-sources.md「実測で判断が要った点」)"
   },
   {
     "id": "pla07ocean-tan",
@@ -3147,7 +3147,7 @@
       "country": ["cn"]
     },
     "note": "ホワイトグレーの縁に重なる中程度の塊 (約 11%)。最小面積",
-    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v38「色味の改定」)"
+    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。測り方の判断は docs/design/palette-library-sources.md「実測で判断が要った点」)"
   },
   {
     "id": "strichtarn-greybeige",

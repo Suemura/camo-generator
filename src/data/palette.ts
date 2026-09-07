@@ -1,4 +1,4 @@
-// パレットライブラリ (docs/design/palette-library.json のコピー)。規格名ベース、模型塗料品番は note のみ。
+// パレットライブラリ。規格名ベース、模型塗料品番は note のみ。出典は各エントリの source と docs/design/palette-library-sources.md。
 import raw from "./palette-library.json";
 
 export type Hue = "green" | "brown" | "tan" | "grey" | "blue" | "black" | "other";

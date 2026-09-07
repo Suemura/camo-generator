@@ -1,6 +1,6 @@
 # デプロイ運用ガイド
 
-`main` にマージされた変更は GitHub Actions が自動で本番（`https://camo-generator.suemura.app`）へデプロイする。本書はその仕組み・初期設定・日常運用・障害時の対処をまとめる。方針の決定経緯は `docs/02-spec.md` §5。
+`main` にマージされた変更は GitHub Actions が自動で本番（`https://camo-generator.suemura.app`）へデプロイする。本書はその仕組み・初期設定・日常運用・障害時の対処をまとめる。方針の決定経緯は `docs/02-spec.md` §5。Workers Builds（Cloudflare 側の連携ビルド）はテスト失敗時のゲートを CI と一本化するため使わない。
 
 ## 1. 全体の流れ
 
@@ -96,7 +96,7 @@ curl -s https://api.cloudflare.com/client/v4/accounts/<id>/workers/services/camo
   -H "Authorization: Bearer <token>" | head -c 300
 ```
 
-初回導入時は Account 権限の欠落（1 回目）と Zone: Workers ルートの欠落（2 回目）で失敗し、追加して 3 回目で成功した。ダッシュボードの日本語 UI では Workers Routes が「Workers ルート」と表示される。
+ダッシュボードの日本語 UI では Workers Routes が「Workers ルート」と表示される。
 
 ### `Test timed out in 5000ms`
 
@@ -110,7 +110,3 @@ GitHub 側の runtime 非推奨。使用している action（`actions/checkout`
 
 - `workflow_dispatch` は `deploy.yml` が **default ブランチ（main）に存在するときだけ** 実行できる。ブランチ上で編集中のワークフローは PR マージ後に試す
 - `pnpm install --frozen-lockfile` が失敗する場合は `pnpm-lock.yaml` が `package.json` と不整合。ローカルで `pnpm install` してロックファイルをコミットする
-
-## 5. 変更履歴
-
-- 2026-09-03: 導入（PR #17）。手動 `pnpm deploy` 運用から移行。Workers Builds（Cloudflare 側 Git 連携）案はテスト失敗時のゲートを CI と一本化するため不採用

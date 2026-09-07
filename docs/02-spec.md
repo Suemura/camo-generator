@@ -1,13 +1,13 @@
-# フェーズ2: 仕様設計（初期リリース）
+# 仕様
 
-フェーズ1 のプロトタイプ（`prototype/index.html`）を、Cloudflare にホストする本番 Web アプリへ移行するための仕様。
-機能の仕分け（初期 / 今後 / 対象外）の結論を先頭に置き、以降は初期リリースに絞って画面・データ・技術・デプロイ・デザインシステムを定める。
+検証プロトタイプ（`prototype/index.html`）を Cloudflare にホストする Web アプリへ移行したときの仕様。
+機能の仕分け（初期 / 今後 / 対象外）の結論を先頭に置き、以降は画面・データ・技術・デプロイ・デザインシステムを定める。
 
 ---
 
 ## 1. 機能の仕分け
 
-### 1.1 初期リリース（本ドキュメントの対象）
+### 1.1 初期リリース
 
 | # | 機能 | 要点 |
 |---|------|------|
@@ -20,9 +20,9 @@
 | A7 | 画像からパレット抽出 | 画像ドロップ → k-means → スロットへ流し込み |
 | A8 | ライト / ダークテーマ | デザイントークンを CSS カスタムプロパティ化して切替 |
 
-### 1.2 今後の開発予定（GitHub Issues に登録済み）
+### 1.2 今後の開発予定
 
-#1 3D プレビュー（段階①実装済）/ #2 有機系 SVG / #3 Web Worker 化（実装済） / #4 PBR マップ / #5 布地ポストエフェクト / #6 カスタム迷彩 / #7 MARPAT クイルト化 / #8 パレットファイル出力 / #9 英語 UI / #10 履歴・お気に入り / #11 PWA / #12 実寸スケール校正 / #21 迷彩プリセットの拡充（親。サブ Issue #22〜#74。#22 共通基盤は実装済: 実物比較 UI 廃止・`refs/` 運用・プリセット選択のグループ化。#23 DCU / #24 DBDU / #25 CCE / #27 Auscam / #28 陸自 Type 2 / #31 タイガーストライプ / #32 ブラッシュストローク・リザード / #35 フレックターン・ヴュステンターン / #36 スプリンター / #53 NWU Type I / #54 07 式 海洋迷彩 / #58 シュトリヒタルン / #64 ベリョースカ は実装済。#73 M/84 系 / #74 フレックターン配色バリアントは未着手）
+GitHub Issues が正本。実装済み / 未着手の状態はここに写さない。迷彩プリセットの拡充は親 Issue #21 のサブ Issue で進め、手順は `docs/04-add-preset.md`。
 
 ### 1.3 対象外
 
@@ -129,15 +129,13 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 
 ## 3. 機能仕様（初期リリース）
 
-### 3.1 シームレスタイリング（A6）— **実装・検証済（v15、`docs/01-tech-verification.md`）**
-
-生成コアの変更で、フェーズ1 と同じ「レンダ → 目視」検証ループを実施した。
+### 3.1 シームレスタイリング（A6）
 
 - クイルト方式（M81 / AOR1 / AOR2 / CCE）: パッチ配置と領域成長シームをトーラス座標で行う（`x mod w`, `y mod h`）。多数決ミップマップ・フラグメント除去も周期境界で
 - クラスタ成長（MARPAT / UCP）: 隣接参照をラップ。境界ディザ・スペックルの座標ハッシュは周期化した座標で引く
 - 受け入れ基準: タイル 2×2 表示で境界が視認できない。`docs/01-tech-verification.md` の既知アーティファクトが再発しない
 - `generate()` にオプション `{ tileable: boolean }` を追加。既定 `true`。形状 / 色分離は維持
-- 出力の最小サイズは 512px とする（小キャンバスではクイルトのブロブ境界切断が継ぎ目に乗ることがある。v15 参照。v18 でブロブ境界の円弧切断そのものは解消）
+- 出力の最小サイズは 512px とする（小キャンバスではパッチが数枚しか置かれず面積比が振れる）
 
 ### 3.2 実寸モードと pHYs（A4）
 
@@ -164,7 +162,7 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 - 名称・コードは公的規格（FS 595 / RAL / BS 381C / ソ連規格名 4BO 等）のみ。模型塗料の品番（TS-xx / C-xx）は `note` の参考情報に留め、商標名を主キーにしない
 - 初期収録は 30〜50 色。カテゴリ軸: 色味（green / brown / tan / grey / blue / black / other）、用途（camo-*, tank, aircraft, ship）、国（us / ru / uk / de / jp / other）
 - hex は規格の公称値または信頼できる換算値を採用し、`source` フィールドで出典を残す
-- 収録数は 100 色以上（公的規格色 + 各プリセットの実測色）。正確な内訳と出典は `docs/design/palette-library-sources.md`
+- 収録数は 100 色以上（公的規格色 + 各プリセットの実測色）。出典は各エントリの `source`、収録方針は `docs/design/palette-library-sources.md`
 - 迷彩プリセットを追加したら、その既定色もライブラリに登録する（公的規格の色番号が無い色は「〜 (実測)」エントリ、ある色は既存エントリに `camo-<key>` タグ）。手順は `docs/04-add-preset.md` §3
 
 ### 3.4 画像からパレット抽出（A7）
@@ -188,7 +186,7 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 ### 3.7 パフォーマンス目標
 
 - 1024px 生成: 300ms 以内（現状同等）
-- 4096px: 進捗表示付きで約 10 秒以内に完了（v17 多段解像度）。生成は Web Worker で UI をブロックしない（Issue #3 対応済）。プレビューは粗い結果を先に出す
+- 4096px: 進捗表示付きで約 10 秒以内に完了（多段解像度）。生成は Web Worker で UI をブロックしない。プレビューは粗い結果を先に出す
 - 初期表示: JS 総量 300KB gzip 以下を目標。`digsrc.js`（AOR 実物マップ、約 280KB）はプリセット選択時に動的 import。three.js（約 135KB gzip）は 3D モード選択時のみ動的ロード
 
 ---
@@ -271,7 +269,7 @@ docs/design/spacious-DESIGN.md          spacious トークンの原本
 - `.github/workflows/ci.yml`（`pull_request`）: `pnpm install --frozen-lockfile` → `pnpm check` → `pnpm test` → `pnpm build`
 - `.github/workflows/deploy.yml`（`push` to `main` / `workflow_dispatch`）: 同じ検証を再実行してから `cloudflare/wrangler-action` で `wrangler deploy`。マージコミットが PR 時点と異なりうるため CI の結果は再利用しない。`concurrency` で直列化し途中キャンセルはしない
 - Secrets: `CLOUDFLARE_API_TOKEN`（最小権限の Custom Token）/ `CLOUDFLARE_ACCOUNT_ID`。権限一覧・運用手順・障害対処は `docs/03-deploy.md`
-- 決定性テストが落ちたら生成結果が変わったことを意味する。意図した変更なら `docs/01-tech-verification.md` へ追記してスナップショット更新
+- 決定性テストが落ちたら生成結果が変わったことを意味する。意図した変更なら目視確認のうえスナップショット更新（`docs/04-add-preset.md` §4）
 
 ---
 
@@ -350,16 +348,3 @@ Open Sans / Montserrat / IBM Plex Mono はいずれも SIL OFL で自前配信�
 | フォント更新 | 自動 | パッケージ更新 |
 
 決定: **自前配信**。手間はほぼ同じで、CSP・プライバシー・将来の PWA すべてで有利。
-
----
-
-## 7. 未決事項
-
-なし（フェーズ2 完了）。
-
-決定済み: フォントは自前配信（`@fontsource/open-sans` / `@fontsource/montserrat` / `@fontsource/ibm-plex-mono`、§6.4）。カスタムドメインは `camo-generator.suemura.app`（§5.2）。`/about` は独立ページ（§2.4）。パレット初期リストは 50 色、`docs/design/palette-library.json` に調査エージェントが作成。
-
-## 8. フェーズ3（設計）への引き継ぎ
-
-- §3.1 シームレスタイリング: 完了（`tools/render.mjs --tile`、`tests/tiling.test.ts`）
-- §6.3 のトークン生成スクリプトとテーマ切替は、コンポーネント実装前に骨格として先に作る

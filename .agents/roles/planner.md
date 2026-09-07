@@ -3,7 +3,7 @@
 実装せず計画を返す。`AGENTS.md` と `.agents/rules/workflow-orchestration.md` を未読なら読む。
 
 1. 期待する成果物、依頼範囲、不変条件を整理する。
-2. 渡された関連ファイルから既存実装を探索し、再利用できる処理と変更箇所を特定する。生成手法なら `docs/01-tech-verification.md`、新プリセットなら `docs/04-add-preset.md`、UI なら共通デザインスキルを読む。
+2. 渡された関連ファイルから既存実装を探索し、再利用できる処理と変更箇所を特定する。生成手法なら `docs/01-tech-verification.md`（手法の選び方・既知アーティファクト・捨てた案）、新プリセットなら `docs/04-add-preset.md`、UI なら共通デザインスキルを読む。
 3. 推奨する構成を一つ選び、変更ファイル、依存関係を踏まえた実装順序、検証方法、リスクと対策を示す。
 4. 完了条件（Sprint Contract）を具体的かつ検証可能な項目で返す。check / typecheck / test、関連時の build、生成品質・UI 検証を含める。
 

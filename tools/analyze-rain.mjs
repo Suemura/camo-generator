@@ -221,14 +221,13 @@ if (mode === "ref") {
   analyze(dark, w, h);
   const dump = flags.find((f) => f.startsWith("--dump="))?.slice(7);
   if (dump) {
-    const { writePng } = await import("./render.mjs");
-    const out = new Uint8ClampedArray(w * h * 4);
-    for (let i = 0; i < w * h; i++) {
-      const v = dark[i] ? 40 : 220;
-      out[i * 4] = out[i * 4 + 1] = out[i * 4 + 2] = v;
-      out[i * 4 + 3] = 255;
-    }
-    writePng(dump, out, w, h);
+    // render.mjs は import 時に CLI 本体が走るので writePng を借りず、画像入力と同じ sharp で書く
+    const { default: sharp } = await import("sharp");
+    const out = Buffer.alloc(w * h);
+    for (let i = 0; i < w * h; i++) out[i] = dark[i] ? 40 : 220;
+    await sharp(out, { raw: { width: w, height: h, channels: 1 } })
+      .png()
+      .toFile(dump);
   }
 } else {
   const key = args[1];

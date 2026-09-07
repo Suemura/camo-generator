@@ -1268,9 +1268,14 @@ export function genQuilt(w, h, seed, scale, P, opt={}){
     // 遷移が必ず実シェイプの輪郭上に乗り、切断面が出ない
     pasteBlob(out, w, h, best, cx, cy, bbInX, bbInY, bbX, bbY, rad, OUT_HI, mkAllowExtend(deficit), srcGet, srcIn, wrap, tstate, oldBuf, quant);
   }
-  // 未塗布セルが残っていれば、その位置を中心に追加パッチで埋める
+  // 未塗布セルが残っていれば、その位置を中心に追加パッチで埋める。
+  // 反復上限は暴走防止の安全弁で、未塗布が尽きれば即終了する (既存スケールは 300 回未満で終わる)。
+  // 高スケールではパッチが小さく穴の数が scale² で増えるため固定 300 では足りない
+  // (aor1 の scale 10・512px で約 1000 回必要。不足すると 255 が残り toRGBA が落ちる)。
+  // 毎回中心セルは必ず埋まる (下の無条件充填) ので画素数で必ず止まる。上限は画素数 / 64。
   let guard = 0;
-  while(guard++ < 300){
+  const guardMax = Math.max(300, (w*h) >> 6);
+  while(guard++ < guardMax){
     let hole = -1;
     for(let i=0;i<w*h;i+=331){ if(out[i]===255){ hole = i; break; } }
     if(hole < 0){
@@ -1984,7 +1989,7 @@ export function genSplinter(w, h, seed, scale, P, opt={}){
 //     → 各値を hash2 で一様に散らす。tiltVar を大きくすると扇状に交差して別物になる
 //   - 端は角ばらず丸い (スクリーン刷りの丸端) → 線分から半径 th/2 のカプセルとして塗る
 // genSplinter の applyRain (1px 固定幅・傾きなし) の一般化だが、applyRain を置き換えると
-// splinter の出力ハッシュが変わるため別関数にしている (docs/01-tech-verification.md v39)。
+// splinter の出力ハッシュが変わるため別関数にしている (docs/01-tech-verification.md v40)。
 // 長さの単位は全て 512px・scale 1.0 基準 px。opt.baseMax は参照せず常に実寸で生成する
 // (計算量はダッシュの被覆画素数に線形で、縮小 → 拡大の経路を通らないので丸端が階段化しない)。
 export function genRain(w, h, seed, scale, P, opt={}){

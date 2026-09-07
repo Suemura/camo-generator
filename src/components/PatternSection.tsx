@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PresetKey } from "@/core/camo.js";
 import { countryLabel, PRESET_META } from "@/data/presets-meta";
 import { type AppState, LIMITS } from "@/lib/state";
+import { ConfirmDialog } from "./ConfirmDialog";
 import styles from "./PatternSection.module.scss";
 import { PresetPickerDrawer } from "./PresetPickerDrawer";
 
@@ -22,6 +23,23 @@ export function PatternSection({ state, onChange }: Props) {
     onChange({ preset: k, palette: null });
     setPickerOpen(false);
     trigger.current?.focus();
+  };
+  // 模様スケール: LIMITS.scale.heavy 未満はドラッグ中も即反映する (従来どおり)。
+  // heavy 以上はクイルト系の生成時間が scale² で伸び、Worker への要求は取り消せずに積み上がるため、
+  // ドラッグ中はローカル値だけ動かし、離した時点で 1 回だけ確定する。heavy 未満 → 以上へ跨ぐときは
+  // 確認モーダルを挟む (既に heavy 以上で使っている間は再確認しない)
+  const HEAVY = LIMITS.scale.heavy;
+  const [scaleDraft, setScaleDraft] = useState(state.scale);
+  const [heavyPending, setHeavyPending] = useState<number | null>(null);
+  useEffect(() => setScaleDraft(state.scale), [state.scale]);
+  const moveScale = (v: number) => {
+    setScaleDraft(v);
+    if (v < HEAVY) onChange({ scale: v });
+  };
+  const commitScale = () => {
+    if (scaleDraft < HEAVY || scaleDraft === state.scale || heavyPending !== null) return;
+    if (state.scale >= HEAVY) onChange({ scale: scaleDraft });
+    else setHeavyPending(scaleDraft);
   };
   return (
     <div className="section">
@@ -109,7 +127,7 @@ export function PatternSection({ state, onChange }: Props) {
       </div>
       <div className="field">
         <label className="label" htmlFor="scale">
-          模様スケール <span className="mono">×{state.scale.toFixed(2)}</span>
+          模様スケール <span className="mono">×{scaleDraft.toFixed(2)}</span>
         </label>
         <input
           id="scale"
@@ -118,10 +136,34 @@ export function PatternSection({ state, onChange }: Props) {
           min={LIMITS.scale.min}
           max={LIMITS.scale.max}
           step={0.05}
-          value={state.scale}
-          onChange={(e) => onChange({ scale: Number(e.target.value) })}
+          value={scaleDraft}
+          onChange={(e) => moveScale(Number(e.target.value))}
+          onPointerUp={commitScale}
+          onKeyUp={commitScale}
+          onBlur={commitScale}
         />
+        <p className="hint">
+          ×{LIMITS.scale.heavy} 以上は生成に時間がかかります (細かさの 2 乗で増加。数十秒〜数分)
+        </p>
       </div>
+      <ConfirmDialog
+        open={heavyPending !== null}
+        title="生成に時間がかかります"
+        onConfirm={() => {
+          if (heavyPending !== null) onChange({ scale: heavyPending });
+          setHeavyPending(null);
+        }}
+        onCancel={() => {
+          setHeavyPending(null);
+          setScaleDraft(state.scale);
+        }}
+      >
+        <p>
+          模様スケール ×{heavyPending?.toFixed(2)} はプレビューと書き出しの計算量が大きく、PC
+          に負荷がかかります。生成が終わるまで数十秒〜数分かかることがあります。
+        </p>
+        <p>このまま進めますか?</p>
+      </ConfirmDialog>
       <label className="toggle">
         <input
           type="checkbox"

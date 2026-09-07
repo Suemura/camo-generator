@@ -2196,14 +2196,6 @@ function paintLayeredBackground(out, w, h, seed, u, B){
   const warpX = Math.max(1, Math.round(w / ((B.warpCell ?? 170) * u)));
   const warpY = Math.max(1, Math.round(h / ((B.warpCell ?? 170) * u)));
   const warp = (B.warp ?? 0.32) * Math.min(B.featureX, B.featureY) * u;
-  const dxField = new Float32Array(w*h), dyField = new Float32Array(w*h);
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
-      const i=y*w+x;
-      dxField[i] = (layeredNoise(x, y, w, h, warpX, warpY, seed + 1103) - 0.5) * warp;
-      dyField[i] = (layeredNoise(x, y, w, h, warpX, warpY, seed + 1877) - 0.5) * warp;
-    }
-  }
   out.fill(255);
   let remain=w*h, wanted=0;
   // 小さい版から独立場の高い領域を取る。最後の版が残りを埋めるため面積比は安定するが、
@@ -2211,16 +2203,18 @@ function paintLayeredBackground(out, w, h, seed, u, B){
   for(let k=0;k<B.colors.length-1;k++){
     wanted += B.frac[k] * w*h;
     const take=Math.max(0,Math.min(remain,Math.round(wanted)-(w*h-remain)));
-    const field=new Float32Array(w*h);
     const values=[];
     const sampleStep=Math.max(1,Math.floor(remain/20000));
     let eligible=0;
     for(let y=0;y<h;y++) for(let x=0;x<w;x++){
       const i=y*w+x;
       if(out[i]!==255) continue;
-      const score=layeredNoise(x+dxField[i],y+dyField[i],w,h,cellsX,cellsY,seed+3001+k*977);
-      field[i]=score;
-      if(eligible++ % sampleStep === 0) values.push(score);
+      if(eligible++ % sampleStep !== 0) continue;
+      // Float32Array に保持していた warp 値の丸めを再現し、従来と同じ閾値を得る。
+      const dx=Math.fround((layeredNoise(x,y,w,h,warpX,warpY,seed+1103)-0.5)*warp);
+      const dy=Math.fround((layeredNoise(x,y,w,h,warpX,warpY,seed+1877)-0.5)*warp);
+      const score=layeredNoise(x+dx,y+dy,w,h,cellsX,cellsY,seed+3001+k*977);
+      values.push(score);
     }
     values.sort((a,b)=>a-b);
     const q=1-take/Math.max(1,remain);
@@ -2229,7 +2223,11 @@ function paintLayeredBackground(out, w, h, seed, u, B){
     for(let y=0;y<h;y++) for(let x=0;x<w;x++){
       const i=y*w+x;
       if(out[i]!==255) continue;
-      if(field[i]>=threshold){ out[i]=B.colors[k]; painted++; }
+      const dx=Math.fround((layeredNoise(x,y,w,h,warpX,warpY,seed+1103)-0.5)*warp);
+      const dy=Math.fround((layeredNoise(x,y,w,h,warpX,warpY,seed+1877)-0.5)*warp);
+      // field への代入時と同じ Float32 丸め後の値で比較する。
+      const score=Math.fround(layeredNoise(x+dx,y+dy,w,h,cellsX,cellsY,seed+3001+k*977));
+      if(score>=threshold){ out[i]=B.colors[k]; painted++; }
     }
     remain-=painted;
   }
@@ -2266,10 +2264,10 @@ function paintLayeredPath(out, w, h, cx, cy, len, width, angle, bend, phase, col
   }
 }
 
-function layeredThreshold(field, fraction){
-  const step=Math.max(1,Math.floor(field.length/20000));
+function layeredThreshold(length, fraction, valueAt){
+  const step=Math.max(1,Math.floor(length/20000));
   const sample=[];
-  for(let i=0;i<field.length;i+=step) sample.push(field[i]);
+  for(let i=0;i<length;i+=step) sample.push(valueAt(i));
   sample.sort((a,b)=>a-b);
   return sample[Math.max(0,Math.min(sample.length-1,Math.floor((1-fraction)*sample.length)))];
 }
@@ -2279,21 +2277,23 @@ function layeredThreshold(field, fraction){
 function paintLayeredMaskPair(out, w, h, seed, u, L){
   const cx=Math.max(1,Math.round(w/(L.feature[0]*u)));
   const cy=Math.max(1,Math.round(h/(L.feature[1]*u)));
-  const shared=new Float32Array(w*h), carrier=new Float32Array(w*h), core=new Float32Array(w*h);
   const sx=(L.shift?.[0] ?? 0)*u, sy=(L.shift?.[1] ?? 0)*u;
-  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
-    const i=y*w+x;
-    shared[i]=layeredNoise(x,y,w,h,cx,cy,seed+L.salt);
-    carrier[i]=0.68*shared[i]+0.32*layeredNoise(x,y,w,h,cx*2,cy*2,seed+L.salt+409);
-  }
-  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
-    const i=y*w+x;
+  const sharedAt=(x,y)=>Math.fround(layeredNoise(x,y,w,h,cx,cy,seed+L.salt));
+  const carrierAt=(i)=>{
+    const x=i%w, y=Math.floor(i/w);
+    return Math.fround(0.68*sharedAt(x,y)
+      +0.32*layeredNoise(x,y,w,h,cx*2,cy*2,seed+L.salt+409));
+  };
+  const coreAt=(i)=>{
+    const x=i%w, y=Math.floor(i/w);
     const xx=wrapI(Math.round(x+sx),w), yy=wrapI(Math.round(y+sy),h);
-    core[i]=0.58*shared[yy*w+xx]+0.42*layeredNoise(x,y,w,h,cx*2,cy*2,seed+L.salt+887);
-  }
-  const carrierT=layeredThreshold(carrier,L.carrierFrac), coreT=layeredThreshold(core,L.coreFrac);
-  for(let i=0;i<out.length;i++) if(carrier[i]>=carrierT) out[i]=L.carrier;
-  for(let i=0;i<out.length;i++) if(core[i]>=coreT) out[i]=L.color;
+    return Math.fround(0.58*sharedAt(xx,yy)
+      +0.42*layeredNoise(x,y,w,h,cx*2,cy*2,seed+L.salt+887));
+  };
+  const carrierT=layeredThreshold(out.length,L.carrierFrac,carrierAt);
+  const coreT=layeredThreshold(out.length,L.coreFrac,coreAt);
+  for(let i=0;i<out.length;i++) if(carrierAt(i)>=carrierT) out[i]=L.carrier;
+  for(let i=0;i<out.length;i++) if(coreAt(i)>=coreT) out[i]=L.color;
 }
 
 function paintLayeredMotifs(out, w, h, seed, u, L, wrap){

@@ -38,6 +38,7 @@ export const USE_LABEL: Record<string, string> = {
   "camo-aor": "AOR 系",
   "camo-ucp": "UCP",
   "camo-multicam": "MultiCam 系",
+  "camo-ocp": "OCP / Scorpion W2",
   "camo-flecktarn": "フレックターン",
   "camo-wuestentarn": "ヴュステンターン (3 色デザート)",
   "camo-tibetarn": "Tibetarn (中国 高原)",

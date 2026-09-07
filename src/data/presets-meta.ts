@@ -7,12 +7,20 @@ import type { PresetKey } from "@/core/camo.js";
 import { COUNTRY_LABEL } from "@/data/countries";
 
 /** 図案の系統 (生成手法・見た目の大分類)。表示順は PRESET_GROUPS */
-export type PresetGroup = "woodland" | "desert" | "digital" | "stroke" | "geometric" | "other";
+export type PresetGroup =
+  | "woodland"
+  | "desert"
+  | "digital"
+  | "gradient"
+  | "stroke"
+  | "geometric"
+  | "other";
 
 export const PRESET_GROUPS: { key: PresetGroup; label: string }[] = [
   { key: "woodland", label: "ウッドランド系" },
   { key: "desert", label: "デザート系" },
   { key: "digital", label: "デジタル系" },
+  { key: "gradient", label: "グラデーション系" },
   { key: "stroke", label: "ストローク系" },
   { key: "geometric", label: "幾何 / 直線系" },
   { key: "other", label: "その他" },
@@ -393,6 +401,24 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     country: "dk",
     group: "other",
     env: ["urban"],
+    era: "2000s",
+    svg: false,
+  },
+  multicam: {
+    label: "マルチカム風 (MultiCam)",
+    note: "2000 年代〜 7 色。横流れの地 + 大小の前景斑 + 疎な縦要素。MultiCam は Crye Precision の商標",
+    country: "us",
+    group: "gradient",
+    env: ["transitional"],
+    era: "2000s",
+    svg: false,
+  },
+  ocp: {
+    label: "OCP 風 (Scorpion W2)",
+    note: "2015〜 7 色。横流れの地 + 水平に群生する微小斑。米陸軍所有図案を特徴再現",
+    country: "us",
+    group: "gradient",
+    env: ["transitional"],
     era: "2000s",
     svg: false,
   },

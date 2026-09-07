@@ -45,4 +45,15 @@ describe("URL 状態", () => {
       "#333333",
     ]);
   });
+  it("7 色プリセットのパレットを URL で往復できる", () => {
+    const s = {
+      ...DEFAULT_STATE,
+      preset: "multicam" as const,
+      palette: ["#111111", "#222222", "#333333", "#444444", "#555555", "#666666", "#777777"],
+    };
+    expect(parseState(serializeState(s))).toEqual(s);
+    expect(
+      parseState("?p=multicam&c=111111,222222,333333,444444,555555,666666").palette,
+    ).toBeNull();
+  });
 });

@@ -1972,6 +1972,180 @@ export function genSplinter(w, h, seed, scale, P, opt={}){
   return {type:'splinter', w, h, index: out};
 }
 
+/* ================= 多層遷移 (MultiCam / OCP 系) =================
+   実物の識別点は、単一濃淡場を段階分けした地形図ではなく、異なる版が重なった多層構造にある。
+   背景は独立した周期ノイズ場を競合させ、前景は同じ軌道を共有する carrier / core の 2 版で作る。
+   各層は固有 salt の座標ハッシュだけを使うため、層の追加・削除で他層の配置が変わらない。 */
+function layeredNoise(x, y, w, h, cellsX, cellsY, seed){
+  const gx = x / w * cellsX, gy = y / h * cellsY;
+  return 0.68 * pvnoise(gx, gy, cellsX, cellsY, seed)
+       + 0.32 * pvnoise(gx*2, gy*2, cellsX*2, cellsY*2, seed + 101);
+}
+
+// 横長の周期・異方背景。ワープ場と各版の score 場は別 salt。
+// max-score 合成なので、単一 scalar 場の quantile に由来する入れ子状等高線を作らない。
+function paintLayeredBackground(out, w, h, seed, u, B){
+  const cellsX = Math.max(1, Math.round(w / (B.featureX * u)));
+  const cellsY = Math.max(1, Math.round(h / (B.featureY * u)));
+  const warpX = Math.max(1, Math.round(w / ((B.warpCell ?? 170) * u)));
+  const warpY = Math.max(1, Math.round(h / ((B.warpCell ?? 170) * u)));
+  const warp = (B.warp ?? 0.32) * Math.min(B.featureX, B.featureY) * u;
+  out.fill(255);
+  let remain=w*h, wanted=0;
+  // 小さい版から独立場の高い領域を取る。最後の版が残りを埋めるため面積比は安定するが、
+  // 各境界は異なる場に由来し、等高線の入れ子にはならない。
+  for(let k=0;k<B.colors.length-1;k++){
+    wanted += B.frac[k] * w*h;
+    const take=Math.max(0,Math.min(remain,Math.round(wanted)-(w*h-remain)));
+    const values=[];
+    const sampleStep=Math.max(1,Math.floor(remain/20000));
+    let eligible=0;
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+      const i=y*w+x;
+      if(out[i]!==255) continue;
+      if(eligible++ % sampleStep !== 0) continue;
+      // Float32Array に保持していた warp 値の丸めを再現し、従来と同じ閾値を得る。
+      const dx=Math.fround((layeredNoise(x,y,w,h,warpX,warpY,seed+1103)-0.5)*warp);
+      const dy=Math.fround((layeredNoise(x,y,w,h,warpX,warpY,seed+1877)-0.5)*warp);
+      const score=layeredNoise(x+dx,y+dy,w,h,cellsX,cellsY,seed+3001+k*977);
+      values.push(score);
+    }
+    values.sort((a,b)=>a-b);
+    const q=1-take/Math.max(1,remain);
+    const threshold=values[Math.max(0,Math.min(values.length-1,Math.floor(q*values.length)))];
+    let painted=0;
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+      const i=y*w+x;
+      if(out[i]!==255) continue;
+      const dx=Math.fround((layeredNoise(x,y,w,h,warpX,warpY,seed+1103)-0.5)*warp);
+      const dy=Math.fround((layeredNoise(x,y,w,h,warpX,warpY,seed+1877)-0.5)*warp);
+      // field への代入時と同じ Float32 丸め後の値で比較する。
+      const score=Math.fround(layeredNoise(x+dx,y+dy,w,h,cellsX,cellsY,seed+3001+k*977));
+      if(score>=threshold){ out[i]=B.colors[k]; painted++; }
+    }
+    remain-=painted;
+  }
+  for(let i=0;i<out.length;i++) if(out[i]===255) out[i]=B.colors[B.colors.length-1];
+}
+
+function stampLayeredDisk(out, w, h, cx, cy, r, color, wrap){
+  const rr = Math.max(1.1, r), r2 = rr*rr;
+  const x0 = Math.floor(cx-rr), x1 = Math.ceil(cx+rr);
+  const y0 = Math.floor(cy-rr), y1 = Math.ceil(cy+rr);
+  for(let y=y0;y<=y1;y++){
+    const yy = wrap ? wrapI(y,h) : y;
+    if(yy<0 || yy>=h) continue;
+    for(let x=x0;x<=x1;x++){
+      const xx = wrap ? wrapI(x,w) : x;
+      if(xx<0 || xx>=w) continue;
+      const dx=x+0.5-cx, dy=y+0.5-cy;
+      if(dx*dx+dy*dy <= r2) out[yy*w+xx] = color;
+    }
+  }
+}
+
+// 曲線軌道を、端部テーパー + 2 周期の幅変調で描く。等幅 capsule は使わない。
+function paintLayeredPath(out, w, h, cx, cy, len, width, angle, bend, phase, color, wrap, salt){
+  const steps = Math.max(3, Math.ceil(len/2));
+  const ux=Math.cos(angle), uy=Math.sin(angle), nx=-uy, ny=ux;
+  const wave=2 + hash2(salt, steps, salt+31)*1.5;
+  for(let j=0;j<=steps;j++){
+    const p=j/steps, t=p-0.5;
+    const off=bend*len*Math.sin(Math.PI*p)*Math.sin(phase + Math.PI*p);
+    const taper=0.42 + 0.58*Math.pow(Math.sin(Math.PI*p), 0.45);
+    const variable=1 + 0.30*Math.sin(phase + p*Math.PI*wave);
+    stampLayeredDisk(out,w,h,cx+ux*t*len+nx*off,cy+uy*t*len+ny*off,width*0.5*taper*variable,color,wrap);
+  }
+}
+
+function layeredThreshold(length, fraction, valueAt){
+  const step=Math.max(1,Math.floor(length/20000));
+  const sample=[];
+  for(let i=0;i<length;i+=step) sample.push(valueAt(i));
+  sample.sort((a,b)=>a-b);
+  return sample[Math.max(0,Math.min(sample.length-1,Math.floor((1-fraction)*sample.length)))];
+}
+
+// carrier と core は共有低周波成分を持つが、別 salt の輪郭成分・座標 shift・閾値で別々に切る。
+// 一方が他方を完全包含しないため、同心 halo やドーナツでなく、不定形の面が部分的に重なる。
+function paintLayeredMaskPair(out, w, h, seed, u, L){
+  const cx=Math.max(1,Math.round(w/(L.feature[0]*u)));
+  const cy=Math.max(1,Math.round(h/(L.feature[1]*u)));
+  const sx=(L.shift?.[0] ?? 0)*u, sy=(L.shift?.[1] ?? 0)*u;
+  const sharedAt=(x,y)=>Math.fround(layeredNoise(x,y,w,h,cx,cy,seed+L.salt));
+  const carrierAt=(i)=>{
+    const x=i%w, y=Math.floor(i/w);
+    return Math.fround(0.68*sharedAt(x,y)
+      +0.32*layeredNoise(x,y,w,h,cx*2,cy*2,seed+L.salt+409));
+  };
+  const coreAt=(i)=>{
+    const x=i%w, y=Math.floor(i/w);
+    const xx=wrapI(Math.round(x+sx),w), yy=wrapI(Math.round(y+sy),h);
+    return Math.fround(0.58*sharedAt(xx,yy)
+      +0.42*layeredNoise(x,y,w,h,cx*2,cy*2,seed+L.salt+887));
+  };
+  const carrierT=layeredThreshold(out.length,L.carrierFrac,carrierAt);
+  const coreT=layeredThreshold(out.length,L.coreFrac,coreAt);
+  for(let i=0;i<out.length;i++) if(carrierAt(i)>=carrierT) out[i]=L.carrier;
+  for(let i=0;i<out.length;i++) if(coreAt(i)>=coreT) out[i]=L.color;
+}
+
+function paintLayeredMotifs(out, w, h, seed, u, L, wrap){
+  if(L.type==='maskPair'){
+    paintLayeredMaskPair(out,w,h,seed,u,L);
+    return;
+  }
+  const salt = seed + L.salt;
+  const cw=Math.max(5, L.cell[0]*u), ch=Math.max(5, L.cell[1]*u);
+  const nx=Math.max(1,Math.round(w/cw)), ny=Math.max(1,Math.round(h/ch));
+  const cellW=w/nx, cellH=h/ny;
+  for(let gy=0;gy<ny;gy++) for(let gx=0;gx<nx;gx++){
+    let density=L.density ?? 1;
+    if(L.clump){
+      const qx=Math.max(1,Math.round(w/(L.clump.cell[0]*u)));
+      const qy=Math.max(1,Math.round(h/(L.clump.cell[1]*u)));
+      const f=layeredNoise((gx+0.5)*cellW,(gy+0.5)*cellH,w,h,qx,qy,salt+701);
+      if(f < L.clump.threshold) continue;
+      density *= Math.min(1, (f-L.clump.threshold)/(1-L.clump.threshold)*1.8);
+    }
+    if(hash2(gx,gy,salt+11) >= density) continue;
+    const cx=(gx + 0.1 + 0.8*hash2(gx,gy,salt+23))*cellW;
+    const cy=(gy + 0.1 + 0.8*hash2(gx,gy,salt+37))*cellH;
+    if(L.on && !L.on.includes(out[wrapI(Math.round(cy),h)*w+wrapI(Math.round(cx),w)])) continue;
+    const len=(L.len[0] + (L.len[1]-L.len[0])*hash2(gx,gy,salt+41))*u;
+    const width=(L.width[0] + (L.width[1]-L.width[0])*hash2(gx,gy,salt+53))*u;
+    const angle=L.angle + (hash2(gx,gy,salt+67)-0.5)*2*(L.angleJitter ?? 0);
+    const bend=(hash2(gx,gy,salt+71)-0.5)*2*(L.bend ?? 0);
+    const phase=hash2(gx,gy,salt+83)*Math.PI*2;
+    if(L.carrier !== undefined){
+      const carrierW=width*(L.carrierGrow[0] + (L.carrierGrow[1]-L.carrierGrow[0])*hash2(gx,gy,salt+89));
+      const carrierLen=len*(0.88 + 0.30*hash2(gx,gy,salt+97));
+      const side=(hash2(gx,gy,salt+101)-0.5)*width*(L.carrierShift ?? 1.2);
+      paintLayeredPath(out,w,h,cx-Math.sin(angle)*side,cy+Math.cos(angle)*side,carrierLen,carrierW,
+        angle,bend*1.25,phase+0.9,L.carrier,wrap,salt+107);
+    }
+    paintLayeredPath(out,w,h,cx,cy,len,width,angle,bend,phase,L.color,wrap,salt+131);
+  }
+}
+
+// P.background → P.layers 順に合成。baseMax 非依存の実寸生成。grid は返さない。
+export function genLayered(w, h, seed, scale, P, opt={}){
+  const wrap=opt.tileable !== false;
+  const progress=typeof opt.progress === 'function' ? opt.progress : null;
+  const u=(w/512)/scale;
+  const out=new Uint8Array(w*h);
+  if(progress) progress(0);
+  if(P.background) paintLayeredBackground(out,w,h,seed,u,P.background);
+  if(progress) progress(0.35);
+  const layers=P.layers ?? [];
+  for(let i=0;i<layers.length;i++){
+    paintLayeredMotifs(out,w,h,seed,u,layers[i],wrap);
+    if(progress) progress(0.35 + 0.6*(i+1)/Math.max(1,layers.length));
+  }
+  if(progress) progress(1);
+  return {type:'layered',w,h,index:out};
+}
+
 /* ドイツ フレックターンの版構成。M/84 系・中国 Tibetarn・商用 Arid など多数の迷彩が
    「この図案の配色替え」なので、層定義を 1 か所に置いて参照で共有する。
    各層の意図は PRESETS.flecktarn のコメントを参照。配色違い側は colors (と必要なら remap) だけ差し替える。
@@ -2184,7 +2358,7 @@ export const PRESETS = {
     // 実測: 制服写真 3 枚 (Commons PD、2013 Harbin / 2014 Haikou / 2016 Hengshui) の順光部を色相ゲートで版ごとに集め、
     // 露出が飽和していない 2016 Hengshui (ヘルメットカバー + 胸ポケット) の中央値を採った。
     // 初版は 2013 Harbin の白飛びした 1 枚から測っており、ブルーが明るく紫寄り (#6699bc)、タンが灰寄りになっていた
-    // (docs/01-tech-verification.md v38「色味の改定」)。k-means は小面積の緑を青の影と混ぜるため使わない
+    // (docs/01-tech-verification.md v39「色味の改定」)。k-means は小面積の緑を青の影と混ぜるため使わない
     colors: [
       {name:'ブルー',        hex:'#5a7f95'},
       {name:'ホワイトグレー', hex:'#cdd2d8'},
@@ -2868,6 +3042,62 @@ export const PRESETS = {
       {name:'ブラック',      hex:'#211d1a'},
     ],
   },
+  multicam: {
+    // 背景の横長遷移、ずれた carrier/core の虫状斑、疎な可変幅の縦要素を別版として再現。
+    // 商標図案の複製を避け、参照生地から実測した 7 色と構造上の特徴だけを手続き生成する。
+    name:'マルチカム風 (MultiCam)', kind:'layered', ref:'multicam',
+    background:{colors:[0,1,2,3], frac:[0.08,0.36,0.35,0.21], featureX:230, featureY:78, warpCell:155, warp:0.48},
+    layers:[
+      {type:'maskPair', salt:1109, color:5, carrier:0, carrierFrac:0.18, coreFrac:0.095,
+       feature:[125,55], shift:[27,-11]},
+      {type:'maskPair', salt:2377, color:4, carrier:3, carrierFrac:0.15, coreFrac:0.07,
+       feature:[92,42], shift:[19,9]},
+      {type:'maskPair', salt:3559, color:6, carrier:2, carrierFrac:0.075, coreFrac:0.035,
+       feature:[68,38], shift:[13,-7]},
+      // MultiCam 識別点: 均等配置を避けた疎な茎。太さ 3〜8px、曲率・長さも個体差を持つ。
+      {role:'vertical', salt:4937, color:6, on:[2,6], cell:[128,128], density:0.62, len:[24,62], width:[4,10],
+       angle:Math.PI/2, angleJitter:0.22, bend:0.18},
+      {role:'vertical', salt:5153, color:4, on:[3,4], cell:[170,170], density:0.52, len:[22,55], width:[4,9],
+       angle:Math.PI/2, angleJitter:0.24, bend:0.20},
+    ],
+    colors:[
+      {name:'オリーブ', hex:'#a5a1a0'},
+      {name:'タン', hex:'#938d88'},
+      {name:'ペールグリーン', hex:'#7b8f8b'},
+      {name:'ブラウン', hex:'#8c7f7b'},
+      {name:'ダークブラウン', hex:'#5c4a51'},
+      {name:'クリーム', hex:'#c5c7d2'},
+      {name:'ダークグリーン', hex:'#6f807a'},
+    ],
+  },
+  ocp: {
+    // Scorpion W2 / OCP の横長背景と carrier/core は共通文法。MultiCam の縦要素を持たず、
+    // 短い水平 micro が低周波の密度域に群生する差を独立 salt 層で表す。
+    name:'OCP 風 (Scorpion W2)', kind:'layered', ref:'ocp',
+    background:{colors:[0,1,2,3], frac:[0.13,0.34,0.38,0.15], featureX:245, featureY:82, warpCell:165, warp:0.44},
+    layers:[
+      {type:'maskPair', salt:6101, color:5, carrier:0, carrierFrac:0.19, coreFrac:0.105,
+       feature:[132,58], shift:[25,-10]},
+      {type:'maskPair', salt:7213, color:4, carrier:3, carrierFrac:0.145, coreFrac:0.065,
+       feature:[96,44], shift:[18,8]},
+      {type:'maskPair', salt:8233, color:6, carrier:2, carrierFrac:0.07, coreFrac:0.03,
+       feature:[72,40], shift:[12,-6]},
+      // OCP 識別点: 全面均等でなく低周波域に集まる、短い水平 micro の群れ。
+      {role:'micro', salt:9341, color:6, cell:[17,14], density:0.88, clump:{cell:[145,105], threshold:0.38},
+       len:[6,20], width:[2.5,5.5], angle:0, angleJitter:0.20, bend:0.13},
+      {role:'micro', salt:10453, color:5, cell:[23,18], density:0.50, clump:{cell:[165,120], threshold:0.48},
+       len:[5,15], width:[2.2,4.5], angle:0, angleJitter:0.24, bend:0.12},
+    ],
+    colors:[
+      {name:'ライトセージ', hex:'#939f9c'},
+      {name:'タン', hex:'#a79c86'},
+      {name:'オリーブ', hex:'#978975'},
+      {name:'ブラウン', hex:'#857064'},
+      {name:'バークブラウン', hex:'#392c32'},
+      {name:'ダーククリーム', hex:'#e0e1e3'},
+      {name:'ダークグリーン', hex:'#57504b'},
+    ],
+  },
 };
 
 /* ================= 生成入口 ================= */
@@ -2880,6 +3110,7 @@ export function generate(key, w, h, seed, scale, opt={}){
     case 'growth': return genGrowth(w, h, seed, scale, P, opt);
     case 'spots':  return genSpots(w, h, seed, scale, P, opt);
     case 'splinter': return genSplinter(w, h, seed, scale, P, opt);
+    case 'layered': return genLayered(w, h, seed, scale, P, opt);
     default: throw new Error('unknown kind: ' + P.kind);
   }
 }

@@ -238,7 +238,19 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグは `camo-tibetarn` / `camo-m84`（いずれも新規）と既存の `camo-flecktarn`（Arid）。`src/data/palette.ts` の `USE_LABEL` にラベルを追加した。国タグは `dk`（デンマーク）を `COUNTRY_LABEL` に新設し、`cn` / `ru` / `de` は既存
 - 参照スウォッチはいずれも Wikimedia Commons の CC BY-SA 4.0（User:Skjoldbro）。**`refs/private/` に置き、リポジトリには含めない**。量子化したソース図案も作らない（`docs/04-add-preset.md` §1）
 
-## 第14弾（迷彩プリセット追加に伴う実測色: 07 式 海洋迷彩）
+## 第14弾（迷彩プリセット追加に伴う実測色: MultiCam / OCP）
+
+MultiCam 風（Issue #33）と OCP 風（Scorpion W2）のプリセット追加に合わせ、それぞれ既定色 7 色を追記した。
+
+### 方法
+
+- `std` は「MultiCam (実測)」「OCP / Scorpion W2 (実測)」、hex は `src/core/camo.js` の `PRESETS.multicam.colors` / `PRESETS.ocp.colors` と完全一致させている
+- `code` は Issue 調査で確認した Natick の 7 設計色に対応する呼称・番号。公式の sRGB 値は公開されていないため、hex は規格値でなく参照画像からの実測値である
+- 通常の k=7 では照明・生地の明度差だけでクラスタが割れ、緑とタンが灰色へ潰れた。原寸画像を `--blur=1.5 --core=2`、k=12 で測り、7 設計色に対応する色相のクラスタを採用した。コマンドと判断の詳細は `docs/01-tech-verification.md` v38
+- 用途タグは `camo-multicam` / `camo-ocp`。`src/data/palette.ts` の `USE_LABEL` にそれぞれ「MultiCam 系」「OCP / Scorpion W2」を登録した。国タグは既存の `us`
+- 参照は Wikimedia Commons の [Multicam pattern (cropped).jpg](https://commons.wikimedia.org/wiki/File:Multicam_pattern_(cropped).jpg)（Public domain / Chikumaya）と [OCP Swatch.jpg](https://commons.wikimedia.org/wiki/File:OCP_Swatch.jpg)（CC BY-SA 4.0 / Nvllola）。いずれも `refs/private/` に置き、画像・量子化ソースマップはリポジトリに含めない
+
+## 第15弾（迷彩プリセット追加に伴う実測色: 07 式 海洋迷彩）
 
 アプリに 07 式 海洋迷彩風（中国海軍陸戦隊、Issue #54）のプリセットを追加したのに合わせ、既定色 4 色を追記した。
 
@@ -477,7 +489,21 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `m84urban-pale` | M/84 アーバン (実測) m84urban-1 | #cac1b2 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m84urban.jpg 3 --core=2`。版と色の対応はドイツ配色版との画素単位の交差集計で決めた (docs/01-tech-verification.md v37)。参照画像は Wikimedia Commons [File:M84urban.jpg](https://commons.wikimedia.org/wiki/File:M84urban.jpg) CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない) |
 | `m84urban-grey` | M/84 アーバン (実測) m84urban-2 | #817873 | 同上 |
 | `m84urban-black` | M/84 アーバン (実測) m84urban-3 | #211d1a | 同上 |
-| `pla07ocean-blue` | 07 式 海洋 (実測) pla07ocean-1 | #5a7f95 | app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値。露出が飽和していない 2016 年の写真 Wikimedia Commons [File:Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg](https://commons.wikimedia.org/wiki/File:Multinational_VBSS_Exercise_at_RIMPAC_160714-N-MV764-001.jpg) パブリックドメイン (U.S. Navy photo) を採用。`docs/01-tech-verification.md` v38「色味の改定」) |
+| `multicam-cream` | MultiCam (実測) Cream 524 | #c5c7d2 | app プリセット実測値 (`node tools/extract-palette.mjs refs/private/multicam.jpg 12 --blur=1.5 --core=2 --max-edge=1280`。照明の明度差だけで割れるのを避け、Natick の 7 設計色に対応する色相の 7 クラスタを採用。参照画像は Wikimedia Commons [Multicam pattern (cropped).jpg](https://commons.wikimedia.org/wiki/File:Multicam_pattern_(cropped).jpg) Public domain / Chikumaya。画像はリポジトリに含めない) |
+| `multicam-palegreen` | MultiCam (実測) Pale Green 526 | #7b8f8b | 同上 |
+| `multicam-tan` | MultiCam (実測) Tan 525 | #938d88 | 同上 |
+| `multicam-olive` | MultiCam (実測) Olive 527 | #a5a1a0 | 同上 |
+| `multicam-darkgreen` | MultiCam (実測) Dark Green 528 | #6f807a | 同上 |
+| `multicam-brown` | MultiCam (実測) Brown 529 | #8c7f7b | 同上 |
+| `multicam-darkbrown` | MultiCam (実測) Dark Brown 530 | #5c4a51 | 同上 |
+| `ocp-darkcream` | OCP / Scorpion W2 (実測) Dark Cream 559 | #e0e1e3 | app プリセット実測値 (`node tools/extract-palette.mjs refs/private/ocp.jpg 12 --blur=1.5 --core=2 --max-edge=1280`。照明の明度差だけで割れるのを避け、Natick の 7 設計色に対応する色相の 7 クラスタを採用。参照画像は Wikimedia Commons [OCP Swatch.jpg](https://commons.wikimedia.org/wiki/File:OCP_Swatch.jpg) CC BY-SA 4.0 / Nvllola。画像はリポジトリに含めない) |
+| `ocp-lightsage` | OCP / Scorpion W2 (実測) Light Sage 560 | #939f9c | 同上 |
+| `ocp-tan` | OCP / Scorpion W2 (実測) Tan 525 | #a79c86 | 同上 |
+| `ocp-olive` | OCP / Scorpion W2 (実測) Olive 527 | #978975 | 同上 |
+| `ocp-brown` | OCP / Scorpion W2 (実測) Brown 529 | #857064 | 同上 |
+| `ocp-darkgreen` | OCP / Scorpion W2 (実測) Dark Green 528 | #57504b | 同上 |
+| `ocp-barkbrown` | OCP / Scorpion W2 (実測) Bark Brown 561 | #392c32 | 同上 |
+| `pla07ocean-blue` | 07 式 海洋 (実測) pla07ocean-1 | #5a7f95 | app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値。露出が飽和していない 2016 年の写真 Wikimedia Commons [File:Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg](https://commons.wikimedia.org/wiki/File:Multinational_VBSS_Exercise_at_RIMPAC_160714-N-MV764-001.jpg) パブリックドメイン (U.S. Navy photo) を採用。`docs/01-tech-verification.md` v39「色味の改定」) |
 | `pla07ocean-whitegrey` | 07 式 海洋 (実測) pla07ocean-2 | #cdd2d8 | 同上 |
 | `pla07ocean-olive` | 07 式 海洋 (実測) pla07ocean-3 | #707b6d | 同上 |
 | `pla07ocean-tan` | 07 式 海洋 (実測) pla07ocean-4 | #c3b388 | 同上 |
@@ -492,7 +518,7 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 4BO は 1941 年当時の塗料自体に大きな個体差があり、FS 34102 近似はあくまで通説の一つ (FS 34095 / 34082 説もある)。7K も同様。
 - 日本陸海軍機の色は現存塗膜・文献の再解釈が続いている分野であり、FS 近似は模型用途の慣例値に過ぎない。特に海軍暗緑色 D1 は実物のほうが青緑味が強いとの指摘がある。
 - 陸自 OD 色はマンセル値 7.5Y 3/1 のみが規格化されており、sRGB 換算は参考値。
-- MARPAT / AOR の実測値は参照写真の露出・布地の退色に依存するため、規格値ではない。
+- MARPAT / AOR / MultiCam / OCP の実測値は参照写真の露出・布地の退色に依存するため、規格値ではない。
 - ベリョースカ (KLMK) はソ連側の公的な色番号が確認できないため、参照写真からの実測値のみを収録している。参照が布地写真で織り目が乗るため、k-means の前に `--blur=2` で平坦化している (これをしないと版の色ではなく織りの明暗でクラスタが割れる)。
 - スプリンターの実測値は、実物スウォッチではなく図案を再描画した参照画像からの抽出である。版の色は平坦なので k-means は安定するが、実物の染色個体差・退色は反映していない。
 
@@ -506,6 +532,6 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 
 ### 商標・名称について
 
-- MARPAT、AOR1/AOR2 (NWU Type II/III)、UCP、Multicam は米軍またはメーカーの意匠・商標に関わる名称である。本ライブラリでは色の分類タグおよび説明文としてのみ用い、商標名を色エントリの主キー (`id` / `std`) に採用していない (実測値エントリは「MARPAT (実測)」等と規格ではないことを明示している)。
+- MARPAT、AOR1/AOR2 (NWU Type II/III)、UCP、MultiCam は米軍またはメーカーの意匠・商標に関わる名称である。本ライブラリでは実測元を識別する名称として用い、`std` の「(実測)」で公的な色規格ではないことを明示している。
 - Tamiya、Mr.Color の品番は各社の商標であり、`note` 内の参考情報 (「〜相当」) としてのみ記載する。
 - Coyote 476 / 498、Foliage Green 502、Urban Gray 501、Desert Sand 500 は米軍調達仕様上の色名で、FS 595C にも同名で収録されている公的名称である。

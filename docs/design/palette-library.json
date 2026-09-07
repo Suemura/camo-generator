@@ -3971,6 +3971,258 @@
     "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/m84urban.jpg 3 --core=2。版と色の対応はドイツ配色版 (Commons「Belgian Flecktarn.png」) との画素単位の交差集計で決めた。参照画像は Wikimedia Commons CC BY-SA 4.0 / Skjoldbro。画像はリポジトリに含めない)"
   },
   {
+    "id": "multicam-cream",
+    "name": "MultiCam クリーム",
+    "std": "MultiCam (実測)",
+    "code": "Cream 524",
+    "hex": "#c5c7d2",
+    "tags": {
+      "hue": "grey",
+      "use": [
+        "camo-multicam",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/multicam.jpg 12 --blur=1.5 --core=2 --max-edge=1280。照明の明度差だけでクラスタが割れるのを避け、Natick の 7 設計色に対応する色相の 7 クラスタを採用。参照画像は Wikimedia Commons「Multicam pattern (cropped).jpg」Public domain / Chikumaya。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "multicam-palegreen",
+    "name": "MultiCam ペールグリーン",
+    "std": "MultiCam (実測)",
+    "code": "Pale Green 526",
+    "hex": "#7b8f8b",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-multicam",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "multicam-tan",
+    "name": "MultiCam タン",
+    "std": "MultiCam (実測)",
+    "code": "Tan 525",
+    "hex": "#938d88",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-multicam",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "multicam-olive",
+    "name": "MultiCam オリーブ",
+    "std": "MultiCam (実測)",
+    "code": "Olive 527",
+    "hex": "#a5a1a0",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-multicam",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "multicam-darkgreen",
+    "name": "MultiCam ダークグリーン",
+    "std": "MultiCam (実測)",
+    "code": "Dark Green 528",
+    "hex": "#6f807a",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-multicam",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "multicam-brown",
+    "name": "MultiCam ブラウン",
+    "std": "MultiCam (実測)",
+    "code": "Brown 529",
+    "hex": "#8c7f7b",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-multicam",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "multicam-darkbrown",
+    "name": "MultiCam ダークブラウン",
+    "std": "MultiCam (実測)",
+    "code": "Dark Brown 530",
+    "hex": "#5c4a51",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-multicam",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "ocp-darkcream",
+    "name": "OCP ダーククリーム",
+    "std": "OCP / Scorpion W2 (実測)",
+    "code": "Dark Cream 559",
+    "hex": "#e0e1e3",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-ocp",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "app プリセット実測値 (src/core/camo.js、node tools/extract-palette.mjs refs/private/ocp.jpg 12 --blur=1.5 --core=2 --max-edge=1280。照明の明度差だけでクラスタが割れるのを避け、Natick の 7 設計色に対応する色相の 7 クラスタを採用。参照画像は Wikimedia Commons「OCP Swatch.jpg」CC BY-SA 4.0 / Nvllola。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "ocp-lightsage",
+    "name": "OCP ライトセージ",
+    "std": "OCP / Scorpion W2 (実測)",
+    "code": "Light Sage 560",
+    "hex": "#939f9c",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-ocp",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "ocp-tan",
+    "name": "OCP タン",
+    "std": "OCP / Scorpion W2 (実測)",
+    "code": "Tan 525",
+    "hex": "#a79c86",
+    "tags": {
+      "hue": "tan",
+      "use": [
+        "camo-ocp",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "ocp-olive",
+    "name": "OCP オリーブ",
+    "std": "OCP / Scorpion W2 (実測)",
+    "code": "Olive 527",
+    "hex": "#978975",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-ocp",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "ocp-brown",
+    "name": "OCP ブラウン",
+    "std": "OCP / Scorpion W2 (実測)",
+    "code": "Brown 529",
+    "hex": "#857064",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-ocp",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "ocp-darkgreen",
+    "name": "OCP ダークグリーン",
+    "std": "OCP / Scorpion W2 (実測)",
+    "code": "Dark Green 528",
+    "hex": "#57504b",
+    "tags": {
+      "hue": "green",
+      "use": [
+        "camo-ocp",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
+    "id": "ocp-barkbrown",
+    "name": "OCP バークブラウン",
+    "std": "OCP / Scorpion W2 (実測)",
+    "code": "Bark Brown 561",
+    "hex": "#392c32",
+    "tags": {
+      "hue": "brown",
+      "use": [
+        "camo-ocp",
+        "uniform"
+      ],
+      "country": [
+        "us"
+      ]
+    },
+    "source": "同上"
+  },
+  {
     "id": "pla07ocean-blue",
     "name": "07 式 海洋 ブルー",
     "std": "07 式 海洋 (実測)",
@@ -3982,7 +4234,7 @@
       "country": ["cn"]
     },
     "note": "07 式 海洋迷彩の地色 (約 49%)。4 色中最大面積",
-    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v38「色味の改定」)"
+    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v39「色味の改定」)"
   },
   {
     "id": "pla07ocean-whitegrey",
@@ -3996,7 +4248,7 @@
       "country": ["cn"]
     },
     "note": "大きな塊 (約 26%)",
-    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v38「色味の改定」)"
+    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v39「色味の改定」)"
   },
   {
     "id": "pla07ocean-olive",
@@ -4010,7 +4262,7 @@
       "country": ["cn"]
     },
     "note": "小さな塊が多数 (約 14%)",
-    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v38「色味の改定」)"
+    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v39「色味の改定」)"
   },
   {
     "id": "pla07ocean-tan",
@@ -4024,6 +4276,6 @@
       "country": ["cn"]
     },
     "note": "ホワイトグレーの縁に重なる中程度の塊 (約 11%)。最小面積",
-    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v38「色味の改定」)"
+    "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v39「色味の改定」)"
   }
 ]

@@ -34,11 +34,13 @@ export type PresetKey =
   | "t99dk"
   | "flectar_d"
   | "schneetarn"
-  | "m84urban";
+  | "m84urban"
+  | "multicam"
+  | "ocp";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth" | "spots" | "splinter";
+  kind: "quilt" | "growth" | "spots" | "splinter" | "layered";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;
@@ -67,6 +69,8 @@ export function registerSources(mod: {
 }): void;
 export function hasSources(key: PresetKey): boolean;
 export function generate(key: PresetKey, w: number, h: number, seed: number, scale: number, opt?: GenerateOptions): GenResult;
+/** MultiCam / OCP 系の多層生成。背景と各版は独立 salt を持つ。 */
+export function genLayered(w: number, h: number, seed: number, scale: number, preset: Preset, opt?: GenerateOptions): GenResult;
 export function toRGBA(res: GenResult, palette: string[]): Uint8ClampedArray<ArrayBuffer>;
 export function hexToRgb(hex: string): [number, number, number];
 export function hash2(ix: number, iy: number, seed: number): number;

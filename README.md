@@ -7,7 +7,7 @@
 
 ## 概要
 
-- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / DPM・デザート DPM（英国） / オーストラリア DPCU（Auscam） / フロッグスキン (M1942 ジャングル面・ビーチ面) / タイガーストライプ（南ベトナム） / ローデシアン・ブラッシュストローク / リザード TAP47（フランス） / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP / CADPAT TW（カナダ） / 07 式 通用迷彩・海洋迷彩（中国） / EMR（ロシア） / ベリョースカ (KLMK、ソ連) / NWU Type I（米海軍） / スプリンター（ドイツ WWII） / フレックターン・ヴュステンターン（ドイツ）とその配色替え（Tibetarn（中国）/ M/84・M/01・T/99（デンマーク）/ Flectar-D（ロシア）/ Schneetarn ほか） の迷彩に近い模様を計算で生成する
+- ウッドランド (M81) / CCE（フランス） / 3 カラーデザート (DCU) / 6 カラーデザート (DBDU) / 陸自迷彩 2 型（日本） / DPM・デザート DPM（英国） / オーストラリア DPCU（Auscam） / フロッグスキン (M1942 ジャングル面・ビーチ面) / タイガーストライプ（南ベトナム） / ローデシアン・ブラッシュストローク / リザード TAP47（フランス） / MARPAT (ウッドランド・デザート) / AOR1 / AOR2 / UCP / CADPAT TW（カナダ） / 07 式 通用迷彩・海洋迷彩（中国） / EMR（ロシア） / ベリョースカ (KLMK、ソ連) / NWU Type I（米海軍） / スプリンター（ドイツ WWII） / MultiCam・OCP (Scorpion W2) / フレックターン・ヴュステンターン（ドイツ）とその配色替え（Tibetarn（中国）/ M/84・M/01・T/99（デンマーク）/ Flectar-D（ロシア）/ Schneetarn ほか） の迷彩に近い模様を計算で生成する
 - シード値により、同じアルゴリズムから無数のバリエーションを決定的に再現できる
 - 各パターンのパレット（例: ウッドランドの緑・茶・サンド・黒）を自由な色にその場で差し替えられる
 - 生成結果を PNG / JPG / WebP / SVG（デジタル系のみ）で任意サイズ・実寸（mm / inch × DPI、PNG に DPI 埋込）でエクスポートできる
@@ -16,7 +16,7 @@
 
 ## 生成手法（フェーズ1 で確立）
 
-パターンごとに最適な手法が異なることが検証で判明し、5系統を実装している。
+パターンごとに最適な手法が異なることが検証で判明し、6系統を実装している。
 
 | 手法 | 対象 | 概要 |
 |------|------|------|
@@ -24,6 +24,7 @@
 | **クラスタ成長** | MARPAT (ウッドランド/デザート) / UCP / CADPAT TW / 07 式 通用迷彩・海洋迷彩 / EMR / ベリョースカ (KLMK) / NWU Type I | セルグリッド上で色ごとに面積予算つきシード成長。蛇行ドリフト・seedNear 連鎖・境界ディザ・スペックルで実物のクラスタ構造を再現。クラスタの異方性は `elongX` / `elongY`（UCP は横長、EMR は縦長） |
 | **斑点配置** | フロッグスキン (M1942 ジャングル面 / ビーチ面) / フレックターン / ヴュステンターン | 地色の上に、版（色）ごとに丸い斑点を刷り重ねる手続き生成。輪郭は極座標の低次高調波で作る解析形状で、Mitchell のベストキャンディデート法で間隔を均す。実物図案を使わないため、参照画像のライセンスが派生物に及ぶ迷彩でも実装できる。層に `halo` を指定すると、斑を刷る直前に同じ輪郭をひと回り大きく別の版で刷り、重ね刷りで下の版が縁として残る構造を再現する。`gap` を負にすると同じ版の斑が接触・融合して「円弧が連なった塊」になり（フレックターン系）、`clump` を指定すると斑の中心をトーラス周期の低周波ノイズで間引いて、版ごとの偏在（フレックターンの暗色域）を作る（塊の差し渡しは 512px・scale 1.0 基準の px で指定し、スケール変更に追従）。同一図案の配色替えは層定義を参照で共有し `colors` だけ差し替える。色数が減る派生（M/84 系はドイツ 5 版を 3 群に統合）は `remap` で写像する |
 | **幾何ハードエッジ** | スプリンター (Splittertarn) | 周期境界のパワー図（重み付きボロノイ）で平面を多角形セルに分割し、面積目標と確率 `merge` でセルへ色を割り当てる。輪郭が全て直線で三重点が多い実物の構造をそのまま作る。`P.rain` で縦の雨線（Regenmuster）を重ねる。ソース図案を持たない手続き生成 |
+| **多層遷移** | MultiCam / OCP (Scorpion W2) | 周期・異方ノイズの複数版を競合させた横流れの背景へ、軌道を共有する大小の前景版を合成する。MultiCam は疎な可変幅の縦要素、OCP は水平に群生する微小斑を独立層として持つ。7 色の離散 index を維持し、実物図案のソースマップは使わない |
 | **ノイズ閾値（従来手法）** | （選択肢からは退役） | シード付き値ノイズ + fBm + ドメインワープ + 分位点閾値。到達上限 ~75点。コードは保持し、フェーズ2 のカスタム迷彩生成の基盤候補 |
 
 技術詳細・検証履歴（v1〜v14 の全反復記録）は `docs/01-tech-verification.md` を参照。
@@ -55,7 +56,7 @@ docs/
   01-tech-verification.md  フェーズ1 検証記録 (手法変遷・自己改善ループ全履歴)
   02-spec.md               フェーズ2 仕様設計 (機能仕分け・画面・技術選定・Cloudflare・デザインシステム)
   03-deploy.md             自動デプロイの運用 (GitHub Actions / Cloudflare)
-  04-add-preset.md         迷彩プリセット追加ガイド (7 点セット・カラーライブラリ登録・検証・PR・マージまで)
+  04-add-preset.md         迷彩プリセット追加ガイド (8 点セット・カラーライブラリ登録・検証・PR・マージまで)
   design/                  spacious トークン原本 / パレットライブラリ (palette-library.json + 出典 palette-library-sources.md)
 AGENTS.md          Claude Code / Codex 共通の作業規約と参照先
 .agents/           共通スキル・役割・ワークフロー規則（デザインもここが正本）
@@ -145,7 +146,7 @@ bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検�
 
 - 3D プレビューの環境光 HDRI は Poly Haven「Kloofendal 48d Partly Cloudy (Pure Sky)」（Greg Zaal / Jarod Guest、CC0）、布地の normal / roughness マップは ambientCG「Fabric 036」「Fabric 062」（CC0）を 512px に縮小して `public/3d/` に同梱。3D 描画は three.js（MIT）
 - 実物リファレンス画像はリポジトリに含めない（`refs/private/`、gitignore）。アプリにも同梱していない
-- アプリに同梱するソースマップ（`src/core/*src.js`）のうち、下記 2 つは第三者のライセンス画像を 4 値インデックス化した派生データなので帰属を表示する。他のソースマップはパブリックドメイン図案由来、それ以外のプリセットは手続き生成（`genSpots` / `genGrowth`）でソースマップを持たない
+- アプリに同梱するソースマップ（`src/core/*src.js`）のうち、下記 2 つは第三者のライセンス画像を 4 値インデックス化した派生データなので帰属を表示する。他のソースマップはパブリックドメイン図案由来、それ以外のプリセットは手続き生成でソースマップを持たない
   - `src/core/jgsdf2src.js`（陸自迷彩 2 型） — [File:迷彩服2型の迷彩パターン.jpg](https://commons.wikimedia.org/wiki/File:%E8%BF%B7%E5%BD%A9%E6%9C%8D2%E5%9E%8B%E3%81%AE%E8%BF%B7%E5%BD%A9%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3.jpg)（Crescent moon 撮影、**CC BY 3.0**）に基づく
   - `src/core/dpmsrc.js`（DPM / DDPM） — [File:DPM Combat 95 Camouflage Material MOD 45149982.jpg](https://commons.wikimedia.org/wiki/File:DPM_Combat_95_Camouflage_Material_MOD_45149982.jpg)（Cpl Adrian Harlen RLC 撮影、UK MOD）に基づく。Contains public sector information licensed under the Open Government Licence v1.0
 - `experimental/` の一部は [camogen](https://github.com/glederrey/camogen) (MIT) のアルゴリズムを参考にした

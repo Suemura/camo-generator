@@ -27,13 +27,14 @@ export const PRESET_GROUPS: { key: PresetGroup; label: string }[] = [
 ];
 
 /** 想定する使用環境。実物が配備された地域・地形から付ける (色味の印象ではなく運用実態) */
-export type PresetEnv = "forest" | "jungle" | "arid" | "urban" | "transitional";
+export type PresetEnv = "forest" | "jungle" | "arid" | "urban" | "marine" | "transitional";
 
 export const ENV_LABEL: Record<PresetEnv, string> = {
   forest: "森林 / 温帯林",
   jungle: "ジャングル",
   arid: "砂漠 / 乾燥地",
   urban: "市街地",
+  marine: "海上 / 沿岸",
   transitional: "汎用 / 移行帯",
 };
 export const ALL_ENVS = Object.keys(ENV_LABEL) as PresetEnv[];
@@ -256,6 +257,15 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     country: "cn",
     group: "digital",
     env: ["forest", "transitional"],
+    era: "2000s",
+    svg: true,
+  },
+  pla07_ocean: {
+    label: "07 式 海洋迷彩風 (海軍陸戦隊)",
+    note: "2007〜 4 色。ブルー地の粗いピクセル",
+    country: "cn",
+    group: "digital",
+    env: ["marine"],
     era: "2000s",
     svg: true,
   },

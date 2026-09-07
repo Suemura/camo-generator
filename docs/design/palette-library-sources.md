@@ -191,7 +191,7 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - `std` は「NWU Type I (実測)」、hex は `src/core/camo.js` の `PRESETS.nwu1.colors` と完全一致させている
 - **公的な色番号は見つからなかった**。NWU の色は米海軍の被服調達仕様（NAVSUP / Natick）で規定されるが、4 色に対応する FS 595 番号や測色値の一次資料は公開されていない。したがって `code` は index 値の順に `nwu1-1`〜`nwu1-4` を振った（CADPAT / EMR と同じ扱い）
 - 参照画像はフラットなスウォッチなので `--flatten` は使わず、`node tools/extract-palette.mjs refs/private/nwu1.jpg 4 --core` の実測のみを行った。素の k-means 重心だと最小面積（約 4%）のダークネイビーが地色との混色に吸収されて #3d4a57 まで持ち上がるため、`--core`（領域内部の中央値）が必須
-- **`hue` タグに青が無い**（`green` / `brown` / `tan` / `grey` / `black` / `other` の 6 分類）。地色のネイビーブルー #4f5d77 は `other`、グレー #7f919a とライトブルー #c2d6dd は `grey`、ダークネイビー #333f46 は `black` に割り当てた。青系のプリセットが増えたら `hue` に `blue` を追加して振り直す
+- **`hue` タグに青が無い**（`green` / `brown` / `tan` / `grey` / `black` / `other` の 6 分類）。地色のネイビーブルー #4f5d77 は `other`、グレー #7f919a とライトブルー #c2d6dd は `grey`、ダークネイビー #333f46 は `black` に割り当てた。青系のプリセットが増えたら `hue` に `blue` を追加して振り直す（→ 第14弾で `blue` を追加し、ネイビーブルーとライトブルーを振り直した）
 - 用途タグ `camo-nwu1`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「NWU Type I」を追加した。国タグ `us` は既存
 - 近接する既存エントリ（RGB 距離で確認）: `nwu1-grey` #7f919a は `bs381c-637 Medium Sea Grey` #899194 と距離 11.7、`nwu1-darknavy` #333f46 は `fs35042 Sea Blue` #3d454a と距離 12.3、`nwu1-navy` #4f5d77 は `fs36118 Gunship Gray` #5a6269 と距離 18.5、`nwu1-lightblue` #c2d6dd は `pla07-lgray` #d8d7dc と距離 22.0。近い相手はいずれも航空機・艦艇の塗料色で、由来（被服の染色色）と用途タグが異なるため Auscam と同じく別エントリとして登録し、統合はしていない
 
@@ -249,6 +249,20 @@ MultiCam 風（Issue #33）と OCP 風（Scorpion W2）のプリセット追加�
 - 通常の k=7 では照明・生地の明度差だけでクラスタが割れ、緑とタンが灰色へ潰れた。原寸画像を `--blur=1.5 --core=2`、k=12 で測り、7 設計色に対応する色相のクラスタを採用した。コマンドと判断の詳細は `docs/01-tech-verification.md` v38
 - 用途タグは `camo-multicam` / `camo-ocp`。`src/data/palette.ts` の `USE_LABEL` にそれぞれ「MultiCam 系」「OCP / Scorpion W2」を登録した。国タグは既存の `us`
 - 参照は Wikimedia Commons の [Multicam pattern (cropped).jpg](https://commons.wikimedia.org/wiki/File:Multicam_pattern_(cropped).jpg)（Public domain / Chikumaya）と [OCP Swatch.jpg](https://commons.wikimedia.org/wiki/File:OCP_Swatch.jpg)（CC BY-SA 4.0 / Nvllola）。いずれも `refs/private/` に置き、画像・量子化ソースマップはリポジトリに含めない
+
+## 第15弾（迷彩プリセット追加に伴う実測色: 07 式 海洋迷彩）
+
+アプリに 07 式 海洋迷彩風（中国海軍陸戦隊、Issue #54）のプリセットを追加したのに合わせ、既定色 4 色を追記した。
+
+### 方法
+
+- `std` は「07 式 海洋 (実測)」、hex は `src/core/camo.js` の `PRESETS.pla07_ocean.colors` と完全一致させている
+- **公的な色番号は見つからなかった**ので `code` は index 値の順に `pla07ocean-1`〜`pla07ocean-4` を振った（07 式 通用迷彩と同じ扱い）
+- 参照画像はすべて Wikimedia Commons のパブリックドメイン（U.S. Navy photo）の制服写真。初版は [File:Type 07 Ocean camo.jpg](https://commons.wikimedia.org/wiki/File:Type_07_Ocean_camo.jpg)（2013 年、強い日光で白飛び気味）1 枚を `extract-palette.mjs` の k=6 で測り影クラスタを除いた値だったが、ブルーが明るく紫寄り（#6699bc）になった。改定版は 2013 / 2014 / 2016 年の 3 枚の順光部を**色相ゲート**（白: 低彩度高明度、青: b > r+30、タン: r > b+25、緑: g が最大）で版ごとに集めた中央値で比較し、露出が飽和していない 2016 年（RIMPAC、Hengshui 乗員）の値を採った。k-means は小面積の緑を青の影と混ぜるため使っていない。`--flatten` も襞のスケール（50〜100px）が図案のブロブ幅と同程度で照明成分と分離できないため使っていない
+- Issue の当初記述（ブルー / ライトブルー / ホワイトグレー / 濃紺）は参照と一致しない。実物はブルー地 / ホワイトグレー / オリーブグリーン / タンの 4 色で、Commons の Skjoldbro スウォッチ（CC BY-SA 4.0。色は様式化されているので実測には使わない）も同じ 4 色構成
+- **`hue` に `blue` を追加した**（第10弾の残課題）。ブルー #6699bc を `blue` とし、NWU Type I のネイビーブルー #4f5d77（`other` → `blue`）とライトブルー #c2d6dd（`grey` → `blue`）を振り直した。グレー #7f919a とダークネイビー #333f46 は据え置き
+- 用途タグ `camo-pla07-ocean`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「07 式 海洋」を追加した。国タグ `cn` は既存
+- 近接する既存エントリ（RGB 距離で確認）: ホワイトグレー #d7d4de は `pla07-lgray` #d8d7dc と距離 3.7 で最も近いが、林地型と海洋型は別の染色色として扱い統合していない
 
 ## 出典一覧
 
@@ -489,6 +503,10 @@ MultiCam 風（Issue #33）と OCP 風（Scorpion W2）のプリセット追加�
 | `ocp-brown` | OCP / Scorpion W2 (実測) Brown 529 | #857064 | 同上 |
 | `ocp-darkgreen` | OCP / Scorpion W2 (実測) Dark Green 528 | #57504b | 同上 |
 | `ocp-barkbrown` | OCP / Scorpion W2 (実測) Bark Brown 561 | #392c32 | 同上 |
+| `pla07ocean-blue` | 07 式 海洋 (実測) pla07ocean-1 | #5a7f95 | app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値。露出が飽和していない 2016 年の写真 Wikimedia Commons [File:Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg](https://commons.wikimedia.org/wiki/File:Multinational_VBSS_Exercise_at_RIMPAC_160714-N-MV764-001.jpg) パブリックドメイン (U.S. Navy photo) を採用。`docs/01-tech-verification.md` v39「色味の改定」) |
+| `pla07ocean-whitegrey` | 07 式 海洋 (実測) pla07ocean-2 | #cdd2d8 | 同上 |
+| `pla07ocean-olive` | 07 式 海洋 (実測) pla07ocean-3 | #707b6d | 同上 |
+| `pla07ocean-tan` | 07 式 海洋 (実測) pla07ocean-4 | #c3b388 | 同上 |
 
 ## 注意事項
 

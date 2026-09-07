@@ -2,8 +2,9 @@
 import type { MessageKey } from "./ja";
 
 export const en: Record<MessageKey, string> = {
-  "lang.switchTo": "日本語",
-  "lang.switchToAria": "Switch to Japanese",
+  "lang.label": "Language",
+  "lang.ja": "日本語",
+  "lang.en": "English",
 
   "common.close": "Close",
   "common.cancel": "Cancel",

@@ -189,7 +189,7 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 
 - UI 言語: 日本語 (`ja`) / 英語 (`en`) の 2 言語
 - 初期判定順: `localStorage("lang")` → `navigator.languages[0]`（ja 系なら ja、他は en）
-- 切替: ヘッダーの言語ボタン（デスクトップは切替先の言語名「日本語」「English」、モバイルは 2 文字コード「JA」「EN」）・About ページ上部バー
+- 切替: ヘッダーと About ページ上部バーのトグルスイッチ（`LangSwitch`。JA / EN の 2 択ラジオグループ、選択側にサムがスライド）
 - 保存: `localStorage("lang")`
 - `<html lang>` 属性は描画前に設定
 - URL クエリには含めない（テーマと同じ扱い。共有 URL は閲覧者の言語で表示）

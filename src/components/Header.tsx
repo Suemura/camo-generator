@@ -1,6 +1,7 @@
 import type { Theme } from "@/app/useTheme";
 import { useI18n } from "@/i18n";
 import styles from "./Header.module.scss";
+import { LangSwitch } from "./LangSwitch";
 
 interface Props {
   theme: Theme;
@@ -10,7 +11,7 @@ interface Props {
 }
 
 export function Header({ theme, onToggleTheme, onCopyLink, onShare }: Props) {
-  const { t, lang, toggleLang } = useI18n();
+  const { t } = useI18n();
   return (
     <header className={styles.header}>
       <a href="/" className={styles.brand}>
@@ -38,18 +39,7 @@ export function Header({ theme, onToggleTheme, onCopyLink, onShare }: Props) {
         >
           GitHub ↗
         </a>
-        <button
-          type="button"
-          className="btn ghost sm"
-          onClick={toggleLang}
-          aria-label={t("lang.switchToAria")}
-          lang={lang === "ja" ? "en" : "ja"}
-        >
-          <span className={styles.langFull}>{t("lang.switchTo")}</span>
-          <span className={styles.langShort} aria-hidden="true">
-            {lang === "ja" ? "EN" : "JA"}
-          </span>
-        </button>
+        <LangSwitch />
         <button
           type="button"
           className="btn ghost icon"

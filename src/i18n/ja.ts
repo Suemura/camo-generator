@@ -2,8 +2,9 @@
 // 補間は {name} 形式のみ。動的キーは使わない (tests/i18n.test.ts が参照キーを静的走査する)。
 // データ側のラベル (プリセット名・国名・用途名) はここではなく src/data/* の L10n 値。
 export const ja = {
-  "lang.switchTo": "English",
-  "lang.switchToAria": "英語表示に切替",
+  "lang.label": "表示言語",
+  "lang.ja": "日本語",
+  "lang.en": "English",
 
   "common.close": "閉じる",
   "common.cancel": "キャンセル",

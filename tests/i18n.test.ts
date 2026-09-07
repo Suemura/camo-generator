@@ -32,10 +32,10 @@ describe("i18n 辞書", () => {
     expect(placeholders(en[k])).toEqual(placeholders(ja[k]));
   });
 
-  it("en の文言に日本語が残っていない (言語切替ボタンの「日本語」だけ例外)", () => {
+  it("en の文言に日本語が残っていない (言語スイッチの選択肢名「日本語」だけ例外)", () => {
     const cjk = /[぀-ヿ一-鿿]/;
     for (const k of keys) {
-      if (k === "lang.switchTo") continue;
+      if (k === "lang.ja") continue;
       expect(en[k], k).not.toMatch(cjk);
     }
   });

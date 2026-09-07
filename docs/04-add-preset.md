@@ -32,7 +32,7 @@ Issue（#21 のサブ Issue）
 | # | 何を | どこに | 備考 |
 |---|------|--------|------|
 | 1 | 生成パラメータ | `src/core/camo.js` の `PRESETS[key]` | `kind` で生成関数にディスパッチ。`ref` は参照画像のキー（= `key`）。コメントには「実物のどの特徴を再現する意図か」を書く |
-| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（系統: `woodland`/`desert`/`digital`/`stroke`/`geometric`/`other`）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`snow`/`transitional` から選択）/ `era`（採用年代: `1930s`/`1940s`/`1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
+| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（系統: `woodland`/`desert`/`digital`/`stroke`/`geometric`/`other`）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`marine`/`transitional` から選択）/ `era`（採用年代: `1930s`/`1940s`/`1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
 | 3 | 参照画像 | `refs/private/<key>.<ext>`（手元のみ・非コミット） | ファイル名は `PRESETS` のキーに一致させる |
 | 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `docs/design/palette-library.json` + `src/data/palette.ts` + `docs/design/palette-library-sources.md` | §3 参照。**PR に含める**（後追いにしない） |
@@ -77,7 +77,7 @@ CCE の 4 色は 2026-09-04 時点で未登録（残課題、§9）。
 - `id`: `<presetKey>-<色名><番号>`。既存と重複しない
 - `std`: `"<迷彩名> (実測)"`。商標名を規格のように見せない（`palette-library-sources.md`「商標・名称について」）
 - `hex`: `PRESETS[key].colors` の値と**完全一致**させる（URL には hex しか無いので、`libraryByHex` の逆引きで名称を復元できるのはこの一致があるとき）
-- `tags.hue`: `green | brown | tan | grey | black | other`。`tags.country`: `COUNTRY_LABEL` のキー（無ければ `src/data/palette.ts` に追加）
+- `tags.hue`: `green | brown | tan | grey | blue | black | other`。`tags.country`: `COUNTRY_LABEL` のキー（無ければ `src/data/palette.ts` に追加）
 
 ### 3.3 変更するファイル（4 か所を同期する）
 

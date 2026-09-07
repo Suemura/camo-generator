@@ -2164,6 +2164,39 @@ export const PRESETS = {
       {name:'ブラック',    hex:'#292d30'},
     ],
   },
+  pla07_ocean: {
+    // 07 式 海洋迷彩 (中国海軍陸戦隊)。07 式ファミリーだが林地型 (pla07) の配色替えではない。
+    // 実物の特徴 (refs/private/pla07_ocean.jpg = 制服写真、面積比は Skjoldbro スウォッチの実測 49 / 26 / 14 / 11%):
+    //   - ブルーが地色 (約 半分) で、明色が地になっていない → NWU Type I と同じく index 0 を地色に割り当てる
+    //   - ホワイトグレーの大きな塊とオリーブグリーンの塊が互いに独立して地に散る。
+    //     林地型では黒が緑の内側に落ちるが、海洋型では緑は白の内側には現れない
+    //     → 白と緑を別々に eat: [0] で成長させ、seedNear で連鎖させない
+    //   - グリーンは塊の数が白の約 3 倍 (512px 換算で 283 vs 88 成分) で個々は小さい → min/max を白の 1/10〜1/7 に絞る
+    //   - タンは最小面積で数が少なく (25 成分) 中程度の塊。白の縁に重なって地へはみ出す
+    //     → eat: [0,1] / seedNear: 1 で白に寄せる
+    //   - ピクセル粒度は 07 式共通 → cell 5 (林地型と同じ)。スペックルも林地型と同等に留める
+    name: '07 式 海洋迷彩 (中国海軍)', kind: 'growth', ref: 'pla07_ocean',
+    cell: 5, growDither: 1,
+    layers: [
+      {color: 1, ratio: 0.33, eat: [0], min: 0.004, max: 0.02, compact: 1.2, drift: 2.4, jitter: 1.2, wander: 0.4, stratify: 5},
+      {color: 2, ratio: 0.16, eat: [0], min: 0.0004, max: 0.003, compact: 1.3, drift: 1.8, jitter: 1.1, wander: 0.3, stratify: 8},
+      {color: 3, ratio: 0.12, eat: [0,1], seedNear: 1, min: 0.003, max: 0.012, compact: 1.5, drift: 1.4, jitter: 1.0, wander: 0.25},
+    ],
+    growSpeckle: [
+      {on: 1, dot: 0, density: 0.09}, {on: 0, dot: 1, density: 0.06},
+      {on: 2, dot: 0, density: 0.04}, {on: 3, dot: 1, density: 0.08},
+    ],
+    // 実測: 制服写真 3 枚 (Commons PD、2013 Harbin / 2014 Haikou / 2016 Hengshui) の順光部を色相ゲートで版ごとに集め、
+    // 露出が飽和していない 2016 Hengshui (ヘルメットカバー + 胸ポケット) の中央値を採った。
+    // 初版は 2013 Harbin の白飛びした 1 枚から測っており、ブルーが明るく紫寄り (#6699bc)、タンが灰寄りになっていた
+    // (docs/01-tech-verification.md v38「色味の改定」)。k-means は小面積の緑を青の影と混ぜるため使わない
+    colors: [
+      {name:'ブルー',        hex:'#5a7f95'},
+      {name:'ホワイトグレー', hex:'#cdd2d8'},
+      {name:'オリーブグリーン', hex:'#707b6d'},
+      {name:'タン',          hex:'#c3b388'},
+    ],
+  },
   emr: {
     // EMR (デジタルフローラ、ロシア)。実物の特徴 (refs/emr.png 実測。面積比 43 / 42 / 10 / 6%):
     //   - カーキとダークグリーンがほぼ同面積で噛み合い、地色がどちらとも言えない

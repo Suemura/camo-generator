@@ -1977,6 +1977,82 @@ export function genSplinter(w, h, seed, scale, P, opt={}){
   return {type:'splinter', w, h, index: out};
 }
 
+/* ================= 雨線図案 (genRain、シュトリヒタルン系) ================= */
+// 東ドイツ Strichtarn / ポーランド Deszczyk などの「レインパターン」: 無地の地色の上に、
+// 細く短い縦ダッシュ (Strich) を 1 方向へ密に刷った 2 色図案。参照写真 (refs/private/strichtarn.jpg
+// を 512px 換算) で見える実物の特徴と、それを担う仕組み:
+//   - ダッシュは縦の「列 (レーン)」に緩く揃う。完全な格子ではなく列ごとに x が微妙にずれ、
+//     列内の縦位置も列ごとに位相が違う → 列レーン (laneJit) + 列位相 (phase) + ダッシュ個別の小ジッタ (dashJit)
+//   - 同じ列の上下のダッシュは接触せず、必ず隙間がある (実測 中央 18px) → セル高 = len + gap とし、
+//     長さを「セル高 − 最小隙間」以下に clamp して構造的に非重複にする
+//   - 長さは 0.6〜1.4 倍程度に散り、太さは ±20%。傾きは中央 −2.5° でほぼ平行 (q10〜q90 で 10° 幅)
+//     → 各値を hash2 で一様に散らす。tiltVar を大きくすると扇状に交差して別物になる
+//   - 端は角ばらず丸い (スクリーン刷りの丸端) → 線分から半径 th/2 のカプセルとして塗る
+// genSplinter の applyRain (1px 固定幅・傾きなし) の一般化だが、applyRain を置き換えると
+// splinter の出力ハッシュが変わるため別関数にしている (docs/01-tech-verification.md v40)。
+// 長さの単位は全て 512px・scale 1.0 基準 px。opt.baseMax は参照せず常に実寸で生成する
+// (計算量はダッシュの被覆画素数に線形で、縮小 → 拡大の経路を通らないので丸端が階段化しない)。
+export function genRain(w, h, seed, scale, P, opt={}){
+  const wrap = opt.tileable !== false;
+  const progress = typeof opt.progress === 'function' ? opt.progress : null;
+  const u = (w/512) / scale;
+  const th0 = Math.max(1, P.thick * u);
+  // 厳密割り切り格子 (トーラス上で閉じるので、タイル境界に継ぎ目も格子ずれも出ない)。
+  // 列間隔は太さの 3 倍を下限にし、u が小さいとき (scale 大 / 小キャンバス) に隣列と融合して
+  // 塗り潰しになるのを防ぐ (applyRain と同じ理由)
+  const nx = Math.max(1, Math.round(w / Math.max(P.spacing * u, 3 * th0)));
+  const cellH = (P.len + P.gap) * u;
+  const ny = Math.max(1, Math.round(h / cellH));
+  const cw = w / nx, ch = h / ny;
+  // ch * 0.5 を上限にするのは、極端なパラメータ (小さい ch や大きい P.minGap) で
+  // ch - minGap が負になり、下の len clamp が破綻する (負の長さ・負の起点範囲) のを防ぐため。
+  // 通常のパラメータ (ch ≈ len+gap の実寸、minGap は gap の数分の1) では ch*0.5 に届かず無効
+  const minGap = Math.min(Math.max(2, (P.minGap ?? P.gap * 0.4) * u), ch * 0.5);
+  const dens = P.density ?? 1;
+  const laneJit = P.laneJit ?? 0.3, dashJit = P.dashJit ?? 0.15;
+  const lenVar = P.lenVar ?? 0.4, thVar = P.thickVar ?? 0.2;
+  const tilt0 = (P.tilt ?? 0) * Math.PI / 180, tiltVar = (P.tiltVar ?? 0) * Math.PI / 180;
+  const color = P.color ?? 1;
+  const out = new Uint8Array(w*h);   // 0 = 地色
+  for(let gx=0; gx<nx; gx++){
+    // 列ごとの定数: レーンの x オフセットと縦位相。定数シフトなので周期境界は保たれる
+    const laneX = (gx + 0.5 + laneJit * (hash2(gx, 0, seed ^ 0x1e57) - 0.5)) * cw;
+    const phase = hash2(gx, 1, seed ^ 0x4b2d);
+    for(let gy=0; gy<ny; gy++){
+      if(hash2(gx, gy, seed ^ 0x2f83) > dens) continue;
+      const cx = laneX + dashJit * (hash2(gx, gy, seed ^ 0x6a19) - 0.5) * cw;
+      let len = P.len * u * (1 + lenVar * (2 * hash2(gx, gy, seed ^ 0x5c71) - 1));
+      // 下限は th0 ではなく 1: 「同じ列は接触しない」構造的保証を優先する。ch - minGap が th0 を
+      // 下回るほど極端なパラメータでは、ダッシュは太さより短い点に退化する (通常パラメータでは
+      // ch - minGap >> th0 なので、この下限変更で結果は変わらない)
+      len = Math.max(1, Math.min(len, ch - minGap));
+      const th = th0 * (1 + thVar * (2 * hash2(gx, gy, seed ^ 0x3e0b) - 1));
+      // 起点はセル内で「長さを引いた残り」に収める → 同一列のダッシュは接触しない
+      const y0 = (gy + phase) * ch + hash2(gx, gy, seed ^ 0x7d45) * (ch - len);
+      const a = tilt0 + tiltVar * (2 * hash2(gx, gy, seed ^ 0x0c97) - 1);
+      const dx = Math.sin(a), dy = Math.cos(a);
+      const r = th / 2, r2 = r * r;
+      const x1 = cx + dx * len, y1 = y0 + dy * len;
+      const bx0 = Math.floor(Math.min(cx, x1) - r), bx1 = Math.ceil(Math.max(cx, x1) + r);
+      const by0 = Math.floor(Math.min(y0, y1) - r), by1 = Math.ceil(Math.max(y0, y1) + r);
+      for(let y=by0; y<=by1; y++){
+        let yy = y; if(wrap) yy = wrapI(y, h); else if(y < 0 || y >= h) continue;
+        for(let x=bx0; x<=bx1; x++){
+          let xx = x; if(wrap) xx = wrapI(x, w); else if(x < 0 || x >= w) continue;
+          // 画素中心から線分への距離が r 以下ならカプセル内部
+          const px = x + 0.5 - cx, py = y + 0.5 - y0;
+          let t = px * dx + py * dy; if(t < 0) t = 0; else if(t > len) t = len;
+          const ex = px - dx * t, ey = py - dy * t;
+          if(ex*ex + ey*ey <= r2) out[yy*w + xx] = color;
+        }
+      }
+    }
+    if(progress && (gx & 7) === 7) progress(gx / nx);
+  }
+  if(progress) progress(1);
+  return {type:'rain', w, h, index: out};
+}
+
 /* ドイツ フレックターンの版構成。M/84 系・中国 Tibetarn・商用 Arid など多数の迷彩が
    「この図案の配色替え」なので、層定義を 1 か所に置いて参照で共有する。
    各層の意図は PRESETS.flecktarn のコメントを参照。配色違い側は colors (と必要なら remap) だけ差し替える。
@@ -2642,6 +2718,37 @@ export const PRESETS = {
       {name:'ブラウン',   hex:'#876246'},
     ],
   },
+  strichtarn: {
+    // 東ドイツ NVA シュトリヒタルン (Strichtarn、1965〜1990、通称レインパターン)。実物の特徴:
+    //   - 2 色のみ。グレーベージュの地に、赤茶の細く短い縦ダッシュを 1 方向へ密に刷る (暗色比 ≈ 19%)
+    //   - ダッシュは縦の列に緩く揃い、同じ列の上下は接触しない。傾きは僅かに左へ寄ってほぼ平行、端は丸い
+    // → kind: 'rain' (genRain) を選ぶ理由: 図案の要素が「無地 + 独立した短線」だけで、ブロブ系
+    //   (クイルト / 斑点) やセル分割 (成長 / スプリンター) の構造が無い。genSplinter の雨線 applyRain
+    //   に最も近いが、太さ・傾き・列内非重複・丸端が要るので専用の生成関数にした
+    // → ソース図案を作らない理由: 参照が CC BY-SA 3.0 の写真で、量子化マップの同梱は share-alike の
+    //   派生物になる (docs/04-add-preset.md §1)。参照は目視比較・寸法実測・パレット実測にのみ使う
+    // リファレンスは refs/private/strichtarn.jpg (Wikimedia Commons「Strichtarn.JPG」1024×768) と
+    // 傍証の refs/private/rain_pattern.jpg (同「Rain pattern.jpg」再描画スウォッチ。寸法根拠には使わない)
+    name: 'シュトリヒタルン風 (東ドイツ)', kind: 'rain', ref: 'strichtarn',
+    // 寸法は写真の清浄部 (皺・影・ポケットを除いた 700×430 の切り出し) を 2 値化して連結成分で実測し、
+    // render.mjs --compare と同じ「1024×768 を 512×512 に cover」の 0.667 倍で換算した値
+    // (tools/analyze-rain.mjs --flatten=150 --blur=1.5。皺で切れた短い成分は q50 以上で読む):
+    //   幅 中央 10.9px → thick 7、長さ 中央 ≈ 100px (q75 126) → len 67 / lenVar 0.5、
+    //   列中心間隔 中央 24px → spacing 16、同一列の縦隙間 中央 37px → gap 30 / minGap 12 (長い成分 q90 158px → 105 を出すためセル高を確保し、隙間の下限で非接触を保つ)、
+    //   傾き 中央 −2.5° (q10〜q90 で −7〜+3°) → tilt −2.5 / tiltVar 3
+    spacing: 16, len: 67, gap: 30, minGap: 12, thick: 7,
+    lenVar: 0.5, thickVar: 0.2, tilt: -2.5, tiltVar: 3,
+    // laneJit 0.3: 列の x ずれ。dashJit 0.15: 列内の個別ずれ (大きいと隣列と融合する)
+    laneJit: 0.3, dashJit: 0.15,
+    // density: セル採用率。ダッシュ成分の面積比 (参照 0.19〜0.20) に合わせて決める
+    density: 0.86,
+    // 実測: node tools/extract-palette.mjs refs/private/strichtarn_crop2.jpg 2 --max-edge=1024 --core=2
+    // (Rain pattern.jpg の k=2 実測 #a69887 / #735e4c とほぼ一致)
+    colors: [
+      {name:'グレーベージュ', hex:'#a69986'},
+      {name:'レッドブラウン', hex:'#755a45'},
+    ],
+  },
   berezka: {
     // ベリョースカ (白樺) / KLMK オーバーオール、ソ連 1957〜。実物の特徴:
     //   - 2 色のみ。中間色の緑が地 (実測 77%)、その上に淡色の「葉/小枝」状シルエットが散る (23%)。
@@ -2885,6 +2992,7 @@ export function generate(key, w, h, seed, scale, opt={}){
     case 'growth': return genGrowth(w, h, seed, scale, P, opt);
     case 'spots':  return genSpots(w, h, seed, scale, P, opt);
     case 'splinter': return genSplinter(w, h, seed, scale, P, opt);
+    case 'rain':   return genRain(w, h, seed, scale, P, opt);
     default: throw new Error('unknown kind: ' + P.kind);
   }
 }

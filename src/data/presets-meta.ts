@@ -280,6 +280,17 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     era: "1930s",
     svg: false,
   },
+  strichtarn: {
+    // NVA (東ドイツ国家人民軍) の Strichtarn。2 色の縦ダッシュのみの図案。
+    // ストロークで構成される図案なので group は stroke (ブラッシュストロークと同じ軸)
+    label: "シュトリヒタルン風 (東ドイツ)",
+    note: "1965〜1990 2 色。細い縦ダッシュ (レインパターン)",
+    country: "dd",
+    group: "stroke",
+    env: ["forest", "transitional"],
+    era: "1960s",
+    svg: false,
+  },
   berezka: {
     // 色で溶け込むのではなく明色の塊で人型シルエットを破断させる設計。
     // デジタル系ではなく粗いステンシル版由来の階段なので group は other

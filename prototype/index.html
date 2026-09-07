@@ -2205,7 +2205,10 @@ function genRain(w, h, seed, scale, P, opt={}){
   const cellH = (P.len + P.gap) * u;
   const ny = Math.max(1, Math.round(h / cellH));
   const cw = w / nx, ch = h / ny;
-  const minGap = Math.max(2, (P.minGap ?? P.gap * 0.4) * u);
+  // ch * 0.5 を上限にするのは、極端なパラメータ (小さい ch や大きい P.minGap) で
+  // ch - minGap が負になり、下の len clamp が破綻する (負の長さ・負の起点範囲) のを防ぐため。
+  // 通常のパラメータ (ch ≈ len+gap の実寸、minGap は gap の数分の1) では ch*0.5 に届かず無効
+  const minGap = Math.min(Math.max(2, (P.minGap ?? P.gap * 0.4) * u), ch * 0.5);
   const dens = P.density ?? 1;
   const laneJit = P.laneJit ?? 0.3, dashJit = P.dashJit ?? 0.15;
   const lenVar = P.lenVar ?? 0.4, thVar = P.thickVar ?? 0.2;
@@ -2220,7 +2223,10 @@ function genRain(w, h, seed, scale, P, opt={}){
       if(hash2(gx, gy, seed ^ 0x2f83) > dens) continue;
       const cx = laneX + dashJit * (hash2(gx, gy, seed ^ 0x6a19) - 0.5) * cw;
       let len = P.len * u * (1 + lenVar * (2 * hash2(gx, gy, seed ^ 0x5c71) - 1));
-      len = Math.max(th0, Math.min(len, ch - minGap));
+      // 下限は th0 ではなく 1: 「同じ列は接触しない」構造的保証を優先する。ch - minGap が th0 を
+      // 下回るほど極端なパラメータでは、ダッシュは太さより短い点に退化する (通常パラメータでは
+      // ch - minGap >> th0 なので、この下限変更で結果は変わらない)
+      len = Math.max(1, Math.min(len, ch - minGap));
       const th = th0 * (1 + thVar * (2 * hash2(gx, gy, seed ^ 0x3e0b) - 1));
       // 起点はセル内で「長さを引いた残り」に収める → 同一列のダッシュは接触しない
       const y0 = (gy + phase) * ch + hash2(gx, gy, seed ^ 0x7d45) * (ch - len);

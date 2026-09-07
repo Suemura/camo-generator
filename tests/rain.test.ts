@@ -89,7 +89,12 @@ describe("genRain", () => {
 
       it("同一列のダッシュが接触しない (連結成分数がセル数 × density の近傍)", () => {
         // 512px・scale 1.0 の格子は nx = round(512 / spacing)、ny = round(512 / (len + gap))。
-        // 列内非重複なら成分数 ≈ nx·ny·density。隣列との接触で多少減り、皺状の分断で多少増える
+        // 列内非重複なら成分数 ≈ nx·ny·density。隣列との接触で多少減り、皺状の分断で多少増える。
+        // 閾値 [0.6, 1.4] は expected を中心に対称だが、実測比 (strichtarn, 3 seed) は約 0.81 で
+        // 下限寄り: 隣列ジッタ (laneJit/dashJit) による接触が主な減少要因で、実物のような分断で
+        // 増える要因は生成上ほぼ無いため。下限を実測ぎりぎりまで詰めない (0.6 のまま) のは、
+        // これが「列内非重複」の回帰ガードであり、隣列接触の許容量そのものを固定するテストでは
+        // ないため (spacing/density を変えるプリセットが増えても崩れない余裕を残す)
         const spacing = P.spacing as number;
         const cells =
           Math.round(512 / spacing) * Math.round(512 / ((P.len as number) + (P.gap as number)));

@@ -12,6 +12,8 @@ import { ShareSection } from "@/components/ShareSection";
 import { ToastProvider, useToast } from "@/components/Toast";
 import { PRESETS } from "@/core/camo.js";
 import { PRESET_META } from "@/data/presets-meta";
+import { I18nProvider, useI18n } from "@/i18n";
+import { colorRole } from "@/i18n/color-roles";
 import { downloadBlob, exportFilename, exportRaster, type Format, gridToSvg } from "@/lib/export";
 import { generateAsync } from "@/lib/generate";
 import { canShareUrl, copyLink, shareImage } from "@/lib/share";
@@ -23,13 +25,20 @@ import { useTheme } from "./useTheme";
 import { useUrlState } from "./useUrlState";
 
 export function App() {
-  if (window.location.pathname.replace(/\/$/, "") === "/about") return <About />;
+  // 言語 Provider は About にも掛ける。ErrorBoundary は Provider の内側 (Provider 自体は状態 1 つで落ちない)
+  const about = window.location.pathname.replace(/\/$/, "") === "/about";
   return (
-    <ErrorBoundary>
-      <ToastProvider>
-        <Generator />
-      </ToastProvider>
-    </ErrorBoundary>
+    <I18nProvider>
+      {about ? (
+        <About />
+      ) : (
+        <ErrorBoundary>
+          <ToastProvider>
+            <Generator />
+          </ToastProvider>
+        </ErrorBoundary>
+      )}
+    </I18nProvider>
   );
 }
 
@@ -37,6 +46,7 @@ type Tab = "pattern" | "palette" | "export";
 
 function Generator() {
   const [state, update] = useUrlState();
+  const { t, lang, pick } = useI18n();
   const { theme, toggle } = useTheme();
   const toast = useToast();
   const [mode, setMode] = useState<ViewMode>("single");
@@ -56,11 +66,11 @@ function Generator() {
     },
     [update],
   );
-  const slotNames = PRESETS[state.preset].colors.map((c) => c.name);
+  const slotNames = PRESETS[state.preset].colors.map((c) => colorRole(c.name, lang));
 
   const renderFull = useCallback(async () => {
     const px = outputPx(state);
-    setBusy(`${px.w}×${px.h} px を生成中…`);
+    setBusy(t("app.busy.generating", { w: px.w, h: px.h }));
     setBusyProgress(0);
     try {
       return await generateAsync(
@@ -78,7 +88,7 @@ function Generator() {
       setBusy(null);
       setBusyProgress(null);
     }
-  }, [state]);
+  }, [state, t]);
 
   const onExport = useCallback(
     async (format: Format) => {
@@ -88,33 +98,35 @@ function Generator() {
         if (format === "svg") {
           downloadBlob(new Blob([gridToSvg(res, palette)], { type: "image/svg+xml" }), name);
         } else {
-          setBusy("エンコード中…");
+          setBusy(t("app.busy.encoding"));
           const dpi = state.unit !== "px" ? state.dpi : undefined;
           downloadBlob(await exportRaster(res, palette, format, dpi), name);
         }
-        toast(`${name} を書き出しました`, "success");
+        toast(t("app.toast.exported", { name }), "success");
       } catch (e) {
-        toast(`書き出しに失敗: ${(e as Error).message}`, "error");
+        toast(t("app.toast.exportFailed", { message: (e as Error).message }), "error");
       } finally {
         setBusy(null);
       }
     },
-    [renderFull, state, palette, toast],
+    [renderFull, state, palette, toast, t],
   );
 
   const onCopyLink = useCallback(async () => {
     toast(
-      (await copyLink(window.location.href)) ? "リンクをコピーしました" : "コピーできませんでした",
+      (await copyLink(window.location.href))
+        ? t("app.toast.linkCopied")
+        : t("app.toast.copyFailed"),
       "success",
     );
-  }, [toast]);
+  }, [toast, t]);
 
   const onShare = useCallback(async () => {
     try {
       // 共有用画像は長辺 2048px 上限
       const px = outputPx(state);
       const k = Math.min(1, 2048 / Math.max(px.w, px.h));
-      setBusy("共有用画像を生成中…");
+      setBusy(t("app.busy.shareImage"));
       const res = await generateAsync({
         preset: state.preset,
         w: Math.round(px.w * k),
@@ -129,15 +141,15 @@ function Generator() {
         blob,
         exportFilename(state.preset, state.seed, res.w, res.h, "png"),
         window.location.href,
-        `Camo Generator – ${PRESET_META[state.preset].label}`,
+        `Camo Generator – ${pick(PRESET_META[state.preset].label)}`,
       );
-      if (!ok) toast("この環境では共有できません。リンクをコピーしてください", "error");
+      if (!ok) toast(t("app.toast.shareUnavailable"), "error");
     } catch (e) {
-      toast(`共有に失敗: ${(e as Error).message}`, "error");
+      toast(t("app.toast.shareFailed", { message: (e as Error).message }), "error");
     } finally {
       setBusy(null);
     }
-  }, [state, palette, toast]);
+  }, [state, palette, toast, t, pick]);
 
   const shareAvailable = canShareUrl();
 
@@ -150,8 +162,8 @@ function Generator() {
         onShare={shareAvailable ? onShare : undefined}
       />
       <Preview state={state} mode={mode} onMode={setMode} busy={busy} busyProgress={busyProgress} />
-      <aside className={styles.panel} aria-label="設定">
-        <div className={`${styles.tabs} seg`} role="tablist" aria-label="設定カテゴリ">
+      <aside className={styles.panel} aria-label={t("app.settings")}>
+        <div className={`${styles.tabs} seg`} role="tablist" aria-label={t("app.settingsTabs")}>
           <button
             type="button"
             role="tab"
@@ -159,7 +171,7 @@ function Generator() {
             aria-pressed={tab === "pattern"}
             onClick={() => setTab("pattern")}
           >
-            パターン
+            {t("app.tab.pattern")}
           </button>
           <button
             type="button"
@@ -168,7 +180,7 @@ function Generator() {
             aria-pressed={tab === "palette"}
             onClick={() => setTab("palette")}
           >
-            色
+            {t("app.tab.palette")}
           </button>
           <button
             type="button"
@@ -177,7 +189,7 @@ function Generator() {
             aria-pressed={tab === "export"}
             onClick={() => setTab("export")}
           >
-            出力 / 共有
+            {t("app.tab.export")}
           </button>
         </div>
         <div className={styles.sections} data-tab={tab}>
@@ -239,7 +251,7 @@ function Generator() {
           setSlotIds([]);
           update({ palette: colors.map((c) => c.toLowerCase()) });
           setExtractOpen(false);
-          toast("抽出したパレットを適用しました", "success");
+          toast(t("app.toast.extractApplied"), "success");
         }}
       />
     </div>

@@ -1,4 +1,5 @@
 import type { Theme } from "@/app/useTheme";
+import { useI18n } from "@/i18n";
 import styles from "./Header.module.scss";
 
 interface Props {
@@ -9,19 +10,20 @@ interface Props {
 }
 
 export function Header({ theme, onToggleTheme, onCopyLink, onShare }: Props) {
+  const { t, lang, toggleLang } = useI18n();
   return (
     <header className={styles.header}>
       <a href="/" className={styles.brand}>
         <span className={styles.logo} aria-hidden="true" />
         <span className={styles.title}>Camo Generator</span>
       </a>
-      <nav className={styles.actions} aria-label="グローバル操作">
-        <button type="button" className="btn ghost sm" onClick={onCopyLink}>
-          リンクをコピー
+      <nav className={styles.actions} aria-label={t("header.actions")}>
+        <button type="button" className={`btn ghost sm ${styles.copyLink}`} onClick={onCopyLink}>
+          {t("header.copyLink")}
         </button>
         {onShare && (
           <button type="button" className="btn ghost sm" onClick={onShare}>
-            共有
+            {t("header.share")}
           </button>
         )}
         <a href="/about" className="btn ghost sm">
@@ -32,16 +34,28 @@ export function Header({ theme, onToggleTheme, onCopyLink, onShare }: Props) {
           className="btn ghost sm"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="GitHub リポジトリ"
+          aria-label={t("header.github")}
         >
           GitHub ↗
         </a>
         <button
           type="button"
+          className="btn ghost sm"
+          onClick={toggleLang}
+          aria-label={t("lang.switchToAria")}
+          lang={lang === "ja" ? "en" : "ja"}
+        >
+          <span className={styles.langFull}>{t("lang.switchTo")}</span>
+          <span className={styles.langShort} aria-hidden="true">
+            {lang === "ja" ? "EN" : "JA"}
+          </span>
+        </button>
+        <button
+          type="button"
           className="btn ghost icon"
           onClick={onToggleTheme}
-          aria-label={theme === "dark" ? "ライトテーマに切替" : "ダークテーマに切替"}
-          title="テーマ切替"
+          aria-label={theme === "dark" ? t("header.themeToLight") : t("header.themeToDark")}
+          title={t("header.themeToggle")}
         >
           {theme === "dark" ? "☀" : "☾"}
         </button>

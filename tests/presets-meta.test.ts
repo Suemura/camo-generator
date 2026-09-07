@@ -12,6 +12,7 @@ import {
   PRESET_KEYS,
   PRESET_META,
 } from "../src/data/presets-meta";
+import { LANGS } from "../src/i18n/types";
 
 const THUMB_DIR = path.resolve(import.meta.dirname, "../public/thumbs");
 
@@ -25,8 +26,20 @@ describe("PRESET_META", () => {
     expect(m.env.length).toBeGreaterThan(0);
     for (const e of m.env) expect(ALL_ENVS).toContain(e);
     expect(ALL_ERAS).toContain(m.era);
-    expect(COUNTRY_LABEL[m.country]).toBeTruthy();
+    expect(COUNTRY_LABEL[m.country]?.ja).toBeTruthy();
+    expect(COUNTRY_LABEL[m.country]?.en).toBeTruthy();
     expect(PRESET_GROUPS.map((g) => g.key)).toContain(m.group);
+  });
+
+  it.each(PRESET_KEYS)("%s の label / note が ja / en とも埋まっている", (key) => {
+    const m = PRESET_META[key];
+    for (const lang of LANGS) {
+      expect(m.label[lang].trim()).not.toBe("");
+      expect(m.note[lang].trim()).not.toBe("");
+    }
+    // 「〜風」規約 (商標・公式図案の複製ではない) は英語では "-inspired"
+    expect(m.label.ja).toMatch(/風/);
+    expect(m.label.en).toMatch(/inspired/);
   });
 });
 

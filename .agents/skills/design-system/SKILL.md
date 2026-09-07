@@ -94,5 +94,6 @@ When generating design-system guidance, use this structure:
 - Dark theme: spacious defines light only. Dark values live in the same semantic map under `dark`. Both themes must pass WCAG 2.2 AA.
 - Preview surroundings (canvas frame, preview background, color slot borders) must be neutral (no chroma) so camouflage colors are judged accurately.
 - Pattern names in UI/docs use "〜風" / "inspired by" wording (MARPAT etc. are trademarks). Never claim exact replication.
+- English preset labels use the `"<Name>-inspired (<designation>)"` form (e.g. `Woodland-inspired (M81)`); Japanese labels keep "〜風". Both are enforced by tests/presets-meta.test.ts.
 - Numeric readouts (seed, px, mm, dpi) use the mono font token.
 - Rationale and full spec: `docs/02-spec.md` §6.

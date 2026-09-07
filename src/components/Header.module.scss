@@ -3,4 +3,11 @@
 .logo { width: 20px; height: 20px; border-radius: 5px; background: repeating-conic-gradient(var(--color-fg) 0 25%, var(--color-fg-subtle) 0 50%) 0 0 / 10px 10px; }
 .title { font-family: var(--font-display); font-weight: 700; font-size: var(--text-md); }
 .actions { display: flex; align-items: center; gap: var(--space-0_5); }
-@media (max-width: 1023px) { .actions > a { display: none; } }
+// 言語切替: 幅が足りるときは切替先の言語名、モバイルは 2 文字コード (390px でヘッダーが横にあふれないため)
+.langShort { display: none; }
+// モバイルはリンク類と「リンクをコピー」を隠す (同じ操作は出力 / 共有タブにある)。共有ボタンは残す (docs/02-spec.md §2.2)
+@media (max-width: 1023px) {
+  .actions > a, .actions > .copyLink { display: none; }
+  .langFull { display: none; }
+  .langShort { display: inline; }
+}

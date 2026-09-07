@@ -32,7 +32,7 @@ Issue（#21 のサブ Issue）
 | # | 何を | どこに | 備考 |
 |---|------|--------|------|
 | 1 | 生成パラメータ | `src/core/camo.js` の `PRESETS[key]` | `kind` で生成関数にディスパッチ。`ref` は参照画像のキー（= `key`）。コメントには「実物のどの特徴を再現する意図か」を書く |
-| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（「〜風」表記）/ `note`（年代・色数・形状）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（系統: `woodland`/`desert`/`digital`/`stroke`/`geometric`/`other`）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`marine`/`transitional` から選択）/ `era`（採用年代: `1930s`/`1940s`/`1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
+| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（`{ ja, en }` 型。ja は「〜風」表記、en は `"<Name>-inspired (<designation>)"`）/ `note`（`{ ja, en }` 型。年代・色数・形状など）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（系統: `woodland`/`desert`/`digital`/`stroke`/`geometric`/`other`）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`marine`/`transitional` から選択）/ `era`（採用年代: `1930s`/`1940s`/`1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
 | 3 | 参照画像 | `refs/private/<key>.<ext>`（手元のみ・非コミット） | ファイル名は `PRESETS` のキーに一致させる |
 | 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `docs/design/palette-library.json` + `src/data/palette.ts` + `docs/design/palette-library-sources.md` | §3 参照。**PR に含める**（後追いにしない） |
@@ -43,6 +43,7 @@ Issue（#21 のサブ Issue）
 必要に応じて:
 
 - **ソース図案**（クイルト系で実物図案を使う場合）: `node tools/gen-src.mjs refs/private/<key>.<ext> src/core/<key>src.js <k> <PREFIX>`。`k` は値数（2..8）で、RLE ビット幅は自動選択（k≤4 なら 2bit、k>4 なら 3bit）。サイズが大きければ `digsrc.js` と同じく動的 import + `registerSources()` にする（目安: 数十 KB なら静的 import、100KB 超なら動的）。既存図案の流用（CCE は M81 を `srcAspect: 1.5` で横伸長、DBDU は DCU 図案を `src: 'dcu'` で共有）も選択肢
+- **色役割名**: 新しい色役割名（`PRESETS[key].colors` のインデックスに対応する名称）を `src/core/camo.js` で定義したら、`src/i18n/color-roles.ts` にも `ja → en` 対応を追加（テストが検出する）
 - **専用テスト**: 新しい層や後処理を足したら、既存プリセットに波及しないことをテストで固定する（DBDU の `tests/chips.test.ts` は「`chips` を持つのは `dbdu` だけ」を検証している）
 - **README**: 冒頭の対応迷彩一覧、「生成手法」表の対象列（同梱する派生データが出る場合はクレジット節も）
 
@@ -65,11 +66,15 @@ CCE の 4 色は 2026-09-04 時点で未登録（残課題、§9）。
 {
   "id": "dcu-tan492",
   "name": "DCU タン (Tan 492)",
+  "nameEn": "DCU Tan (Tan 492)",
   "std": "DCU (実測)",
+  "stdEn": "DCU (measured)",
   "code": "492",
+  "codeEn": "492",
   "hex": "#e9d1ae",
   "tags": { "hue": "tan", "use": ["camo-3color-desert"], "country": ["us"] },
   "note": "3 色デザート (DCU) の地色。最大面積",
+  "noteEn": "Ground color of 3-color desert (DCU). Largest area",
   "source": "app プリセット実測値 (src/core/camo.js、Wikimedia Commons 参照画像から k-means 抽出)。色番号は 3 色デザートの陸軍色呼称 (https://ciehub.info/glossary/ThreeColorDesertCamouflagePattern.html)"
 }
 ```
@@ -78,12 +83,13 @@ CCE の 4 色は 2026-09-04 時点で未登録（残課題、§9）。
 - `std`: `"<迷彩名> (実測)"`。商標名を規格のように見せない（`palette-library-sources.md`「商標・名称について」）
 - `hex`: `PRESETS[key].colors` の値と**完全一致**させる（URL には hex しか無いので、`libraryByHex` の逆引きで名称を復元できるのはこの一致があるとき）
 - `tags.hue`: `green | brown | tan | grey | blue | black | other`。`tags.country`: `COUNTRY_LABEL` のキー（無ければ `src/data/palette.ts` に追加）
+- `*En` フィールド（`nameEn`, `stdEn`, `codeEn`, `noteEn`）: `name`, `std`, `code`, `note` に日本語が含まれるときだけ追加。日本語なしフィールド（`id`, `hex`, `tags`, `source`）には付けない
 
 ### 3.3 変更するファイル（4 か所を同期する）
 
 1. `src/data/palette-library.json` にエントリを追加（末尾追記。既存エントリの順序は変えない）
-2. `docs/design/palette-library.json` を同じ内容にする（`src/data` 側のコピー元。`src/data` 側は Biome が整形するため byte 一致はしない。JSON としてパースして等価かを確認する）
-3. `src/data/palette.ts` の `USE_LABEL` に `camo-<key>` のラベルを追加（用途タブの見出しになる。無いとタグ名がそのまま表示される）
+2. `docs/design/palette-library.json` を同じ内容にする（2 ファイルは byte 一致を保つ）
+3. `src/data/palette.ts` の `USE_LABEL` に `camo-<key>` の `{ ja, en }` ラベルを追加（用途タブの見出しになる。無いとタグ名がそのまま表示される）
 4. `docs/design/palette-library-sources.md` の「出典一覧」表に行を追加（**総数は書かない**。「100 色以上」で足りる。数値を書くと追加のたびに 4 箇所を直す羽目になり、直し漏れで嘘になる）
 
 総数（「132 色」等）はどこにも書かない。README・規約・仕様・`palette-library-sources.md` に散り、色を 1 つ足すたびに全部を直す羽目になる（実際に直し漏れて食い違った）。「100 色以上」で必要な情報は伝わる。
@@ -216,9 +222,9 @@ PR を作ったら終わりではない。ユーザーがローカル Camo Lab�
 
 ```
 - [ ] リファレンス画像を refs/private/ に用意し（コミットしない）、同梱する派生データのライセンスを判断した
-- [ ] PRESETS / PRESET_META を追加し、env / era / country（国コード）を付与、名称は「〜風」表記
+- [ ] PRESETS / PRESET_META を追加し、env / era / country（国コード）を付与、label / note は `{ ja, en }`（ja は「〜風」、en は「-inspired」表記）。新しい色役割名は src/i18n/color-roles.ts にも追加
 - [ ] colors は extract-palette.mjs の実測値
-- [ ] カラーライブラリに登録した（palette-library.json ×2 / USE_LABEL / palette-library-sources.md の出典表）
+- [ ] カラーライブラリに登録した（palette-library.json ×2。日本語を含む name / std / code / note には *En を付ける / USE_LABEL / palette-library-sources.md の出典表）
 - [ ] node tools/gen-thumbs.mjs でサムネイルを生成（public/thumbs/<key>.jpg）
 - [ ] render.mjs: 3 シード × 4 スケール / --compare / --tile / --size=2048 --crop=512 を目視、既知アーティファクトなし
 - [ ] 既存プリセットのスナップショットが不変（差分は新プリセットの 1 行のみ）。共通ロジックを変えた場合はその旨を明記

@@ -1,5 +1,6 @@
 // 画像からパレット抽出: ドロップ → k-means (Worker) → スロット対応をドラッグで並べ替え → 適用
 import { type DragEvent, useEffect, useRef, useState } from "react";
+import { useI18n } from "@/i18n";
 import { extractPalette } from "@/lib/extract";
 import styles from "./ExtractDialog.module.scss";
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ExtractDialog({ open, slotNames, onApply, onClose }: Props) {
+  const { t } = useI18n();
   const [preview, setPreview] = useState<string | null>(null);
   const [colors, setColors] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -60,16 +62,26 @@ export function ExtractDialog({ open, slotNames, onApply, onClose }: Props) {
   if (!open) return null;
   return (
     <>
-      <button type="button" className={styles.backdrop} aria-label="閉じる" onClick={onClose} />
+      <button
+        type="button"
+        className={styles.backdrop}
+        aria-label={t("common.close")}
+        onClick={onClose}
+      />
       <div
         className={styles.dialog}
         role="dialog"
         aria-modal="true"
-        aria-label="画像からパレットを抽出"
+        aria-label={t("extract.title")}
       >
         <header className={styles.head}>
-          <h2 className="sectionTitle">画像からパレットを抽出</h2>
-          <button type="button" className="btn ghost icon" onClick={onClose} aria-label="閉じる">
+          <h2 className="sectionTitle">{t("extract.title")}</h2>
+          <button
+            type="button"
+            className="btn ghost icon"
+            onClick={onClose}
+            aria-label={t("common.close")}
+          >
             ✕
           </button>
         </header>
@@ -81,9 +93,9 @@ export function ExtractDialog({ open, slotNames, onApply, onClose }: Props) {
           onClick={() => fileInput.current?.click()}
         >
           {preview ? (
-            <img src={preview} alt="抽出元" className={styles.previewImg} />
+            <img src={preview} alt={t("extract.sourceAlt")} className={styles.previewImg} />
           ) : (
-            <span>ここに画像をドロップ、またはクリックして選択</span>
+            <span>{t("extract.drop")}</span>
           )}
           <input
             ref={fileInput}
@@ -93,12 +105,9 @@ export function ExtractDialog({ open, slotNames, onApply, onClose }: Props) {
             onChange={(e) => load(e.target.files?.[0])}
           />
         </button>
-        <p className="hint">
-          画像はブラウザ内だけで処理され、サーバーへは送信されません。{slotNames.length}{" "}
-          色を明度順に抽出し、既定色の明度順に対応づけます。ドラッグで入れ替え可。
-        </p>
+        <p className="hint">{t("extract.hint", { n: slotNames.length })}</p>
         {err && <p className={`hint ${styles.err}`}>{err}</p>}
-        {busy && <p className="hint">抽出中…</p>}
+        {busy && <p className="hint">{t("extract.busy")}</p>}
         {colors && (
           <ul className={styles.map}>
             {colors.map((hex, i) => (
@@ -127,7 +136,7 @@ export function ExtractDialog({ open, slotNames, onApply, onClose }: Props) {
         )}
         <footer className={styles.foot}>
           <button type="button" className="btn" onClick={onClose}>
-            キャンセル
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -135,7 +144,7 @@ export function ExtractDialog({ open, slotNames, onApply, onClose }: Props) {
             disabled={!colors}
             onClick={() => colors && onApply(colors)}
           >
-            パレットに適用
+            {t("extract.apply")}
           </button>
         </footer>
       </div>

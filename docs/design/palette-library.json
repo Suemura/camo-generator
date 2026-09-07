@@ -4025,5 +4025,33 @@
     },
     "note": "ホワイトグレーの縁に重なる中程度の塊 (約 11%)。最小面積",
     "source": "app プリセット実測値 (src/core/camo.js。制服写真 3 枚の順光部を色相ゲートで版ごとに集めた中央値で、露出が飽和していない 2016 年の写真を採用。参照画像は Wikimedia Commons 「Multinational VBSS Exercise at RIMPAC 160714-N-MV764-001.jpg」ほか、いずれもパブリックドメイン (U.S. Navy photo)。画像はリポジトリに含めない。詳細は docs/01-tech-verification.md v38「色味の改定」)"
+  },
+  {
+    "id": "strichtarn-greybeige",
+    "name": "シュトリヒタルン グレーベージュ",
+    "std": "シュトリヒタルン (実測)",
+    "code": "strichtarn-1",
+    "hex": "#a69986",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-strichtarn", "uniform"],
+      "country": ["dd"]
+    },
+    "note": "地色 (約 81%)。退色で緑味が抜けた個体ではベージュ寄りになる",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/strichtarn_crop2.jpg 2 --max-edge=1024 --core=2`。参照画像は Wikimedia Commons「Strichtarn.JPG」CC BY-SA 3.0 (Joan Rocaguinard) の制服写真から皺・影・ポケットを除いた切り出し。同「Rain pattern.jpg」CC BY-SA 3.0 の k=2 実測 #a69887 / #735e4c とほぼ一致。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "strichtarn-redbrown",
+    "name": "シュトリヒタルン レッドブラウン",
+    "std": "シュトリヒタルン (実測)",
+    "code": "strichtarn-2",
+    "hex": "#755a45",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-strichtarn", "uniform"],
+      "country": ["dd"]
+    },
+    "note": "縦ダッシュ (約 19%)",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/strichtarn_crop2.jpg 2 --max-edge=1024 --core=2`。参照画像は Wikimedia Commons「Strichtarn.JPG」CC BY-SA 3.0 (Joan Rocaguinard) の制服写真から皺・影・ポケットを除いた切り出し。同「Rain pattern.jpg」CC BY-SA 3.0 の k=2 実測 #a69887 / #735e4c とほぼ一致。画像はリポジトリに含めない)"
   }
 ]

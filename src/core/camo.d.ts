@@ -25,6 +25,7 @@ export type PresetKey =
   | "lizard"
   | "berezka"
   | "splinter"
+  | "strichtarn"
   | "flecktarn"
   | "wuestentarn"
   | "tibetarn"
@@ -38,7 +39,7 @@ export type PresetKey =
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth" | "spots" | "splinter";
+  kind: "quilt" | "growth" | "spots" | "splinter" | "rain";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;

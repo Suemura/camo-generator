@@ -481,6 +481,8 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `pla07ocean-whitegrey` | 07 式 海洋 (実測) pla07ocean-2 | #cdd2d8 | 同上 |
 | `pla07ocean-olive` | 07 式 海洋 (実測) pla07ocean-3 | #707b6d | 同上 |
 | `pla07ocean-tan` | 07 式 海洋 (実測) pla07ocean-4 | #c3b388 | 同上 |
+| `strichtarn-greybeige` | シュトリヒタルン (実測) strichtarn-1 | #a69986 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/strichtarn_crop2.jpg 2 --max-edge=1024 --core=2`。参照画像は Wikimedia Commons [File:Strichtarn.JPG](https://commons.wikimedia.org/wiki/File:Strichtarn.JPG) CC BY-SA 3.0 の制服写真から皺・影・ポケットを除いた切り出し。[File:Rain pattern.jpg](https://commons.wikimedia.org/wiki/File:Rain_pattern.jpg) CC BY-SA 3.0 の k=2 実測ともほぼ一致。画像はリポジトリに含めない) |
+| `strichtarn-redbrown` | シュトリヒタルン (実測) strichtarn-2 | #755a45 | 同上 |
 
 ## 注意事項
 

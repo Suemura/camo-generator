@@ -1,7 +1,7 @@
 // パレットライブラリ (docs/design/palette-library.json のコピー)。規格名ベース、模型塗料品番は note のみ。
 import raw from "./palette-library.json";
 
-export type Hue = "green" | "brown" | "tan" | "grey" | "black" | "other";
+export type Hue = "green" | "brown" | "tan" | "grey" | "blue" | "black" | "other";
 
 export interface LibraryColor {
   id: string;
@@ -21,6 +21,7 @@ export const HUE_LABEL: Record<Hue, string> = {
   brown: "ブラウン",
   tan: "タン / サンド",
   grey: "グレー",
+  blue: "ブルー",
   black: "ブラック",
   other: "その他",
 };
@@ -49,6 +50,7 @@ export const USE_LABEL: Record<string, string> = {
   "camo-auscam": "オーストラリア DPCU",
   "camo-cadpat": "CADPAT",
   "camo-pla07": "07 式",
+  "camo-pla07-ocean": "07 式 海洋",
   "camo-emr": "EMR",
   "camo-frogskin": "フロッグスキン (M1942)",
   "camo-tigerstripe": "タイガーストライプ",

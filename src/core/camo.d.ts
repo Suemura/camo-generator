@@ -9,6 +9,7 @@ export type PresetKey =
   | "ucp"
   | "cadpat"
   | "pla07"
+  | "pla07_ocean"
   | "emr"
   | "nwu1"
   | "dcu"

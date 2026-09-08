@@ -3681,5 +3681,73 @@
     "note": "縦ダッシュ (約 19%)",
     "noteEn": "Vertical dashes (about 19%)",
     "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/strichtarn_crop2.jpg 2 --max-edge=1024 --core=2`。参照画像は Wikimedia Commons「Strichtarn.JPG」CC BY-SA 3.0 (Joan Rocaguinard) の制服写真から皺・影・ポケットを除いた切り出し。同「Rain pattern.jpg」CC BY-SA 3.0 の k=2 実測 #a69887 / #735e4c とほぼ一致。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "mm14-olive",
+    "name": "MM-14 オリーブ",
+    "nameEn": "MM-14 Olive",
+    "std": "MM-14 (実測)",
+    "stdEn": "MM-14 (measured)",
+    "code": "mm14-1",
+    "hex": "#6a7053",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-mm14", "uniform"],
+      "country": ["ua"]
+    },
+    "note": "MM-14 の地色 (約 34%)。中間色が地になり、他の 3 色を繋ぐ",
+    "noteEn": "Ground color of MM-14 (about 34%). A mid tone serves as the ground and links the other three colors",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 4 --max-edge=992 --core=2`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--flatten=300 を足しても各色の差は 3 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "mm14-lkhaki",
+    "name": "MM-14 ライトカーキ",
+    "nameEn": "MM-14 Light Khaki",
+    "std": "MM-14 (実測)",
+    "stdEn": "MM-14 (measured)",
+    "code": "mm14-2",
+    "hex": "#aead8d",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-mm14", "uniform"],
+      "country": ["ua"]
+    },
+    "note": "最明色 (約 22%)。数十セルの大きな塊で地に散る",
+    "noteEn": "Lightest color (about 22%). Scattered on the ground as large clusters of tens of cells",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 4 --max-edge=992 --core=2`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--flatten=300 を足しても各色の差は 3 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "mm14-greygreen",
+    "name": "MM-14 グレーグリーン",
+    "nameEn": "MM-14 Grey Green",
+    "std": "MM-14 (実測)",
+    "stdEn": "MM-14 (measured)",
+    "code": "mm14-3",
+    "hex": "#8b9072",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-mm14", "uniform"],
+      "country": ["ua"]
+    },
+    "note": "中間の明色 (約 27%)。ライトカーキの塊の縁に接して地へ広がる",
+    "noteEn": "Mid-light color (about 27%). Spreads onto the ground along the edges of the light khaki clusters",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 4 --max-edge=992 --core=2`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--flatten=300 を足しても各色の差は 3 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "mm14-dolive",
+    "name": "MM-14 ダークオリーブ",
+    "nameEn": "MM-14 Dark Olive",
+    "std": "MM-14 (実測)",
+    "stdEn": "MM-14 (measured)",
+    "code": "mm14-4",
+    "hex": "#53583d",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-mm14", "uniform"],
+      "country": ["ua"]
+    },
+    "note": "最暗色 (約 12〜17%)。小さな塊と、対角方向に階段状に連なる鎖。Issue の「黒褐色」は写真上では褐色味のないダークオリーブ",
+    "noteEn": "Darkest color (about 12–17%). Small clusters and diagonal staircase chains. The 'black-brown' named in the Issue reads as a dark olive with no brown tint in the photo",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 4 --max-edge=992 --core=2`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--flatten=300 を足しても各色の差は 3 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。画像はリポジトリに含めない)"
   }
 ]

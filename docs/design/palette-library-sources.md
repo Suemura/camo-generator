@@ -252,6 +252,19 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 - 用途タグ `camo-pla07-ocean`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「07 式 海洋」を追加した。国タグ `cn` は既存
 - 近接する既存エントリ（RGB 距離で確認）: ホワイトグレー #d7d4de は `pla07-lgray` #d8d7dc と距離 3.7 で最も近いが、林地型と海洋型は別の染色色として扱い統合していない
 
+## 第15弾（迷彩プリセット追加に伴う実測色: MM-14）
+
+アプリに MM-14 風（ウクライナ、Issue #61）のプリセットを追加したのに合わせ、既定色 4 色を追記した。
+
+### 方法
+
+- `std` は「MM-14 (実測)」、hex は `src/core/camo.js` の `PRESETS.mm14.colors` と完全一致させている
+- **公的な色番号は見つからなかった**ので `code` は index 値の順に `mm14-1`〜`mm14-4` を振った（EMR / NWU Type I と同じ扱い）
+- 参照画像は Wikimedia Commons [File:MM14.jpg](https://commons.wikimedia.org/wiki/File:MM14.jpg)（CC BY-SA 4.0）の布地写真 1 枚。左端に衣服の折り目の影帯があるため、sharp で左端 70px を除いた 630×992 の切り出しに対し `extract-palette.mjs` の `--core=2`（領域内部の中央値）を原寸（`--max-edge=992`）で測った。`--flatten=300` を足しても各色の差は 3 以内で、切り出しだけで照明ムラは十分落ちている。k=4 の量子化画像は実物の 4 版と一致する（k=5 にするとグレーグリーンが 2 つに割れるだけで新しい版は出ない）
+- Issue の記述「緑 3 段 + 黒褐色」のうち最暗色は、写真上では褐色味のないダークオリーブ #53583d に写る。JPEG の布地写真なので実物の染料色とは差があり得るが、実測を優先し名称もダークオリーブとした
+- 用途タグ `camo-mm14`（新規）を付け、`src/data/palette.ts` の `USE_LABEL` にラベル「MM-14 (ウクライナ)」を追加した。国タグ `ua` は新規なので `src/data/countries.ts` の `COUNTRY_LABEL` に追加した
+- 近接する既存エントリ（RGB 距離で確認）: オリーブ #6a7053 は `emr-khaki` #7d7d50 と、ダークオリーブ #53583d は `cadpat-mgreen` #525d3c と近いが、別の染色色として扱い統合していない
+
 ## 出典一覧
 
 | id | 規格・コード | hex | 出典 |
@@ -483,6 +496,10 @@ hex が既存エントリと各チャネル 6 以内に入った組。いずれ�
 | `pla07ocean-tan` | 07 式 海洋 (実測) pla07ocean-4 | #c3b388 | 同上 |
 | `strichtarn-greybeige` | シュトリヒタルン (実測) strichtarn-1 | #a69986 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/strichtarn_crop2.jpg 2 --max-edge=1024 --core=2`。参照画像は Wikimedia Commons [File:Strichtarn.JPG](https://commons.wikimedia.org/wiki/File:Strichtarn.JPG) CC BY-SA 3.0 の制服写真から皺・影・ポケットを除いた切り出し。[File:Rain pattern.jpg](https://commons.wikimedia.org/wiki/File:Rain_pattern.jpg) CC BY-SA 3.0 の k=2 実測ともほぼ一致。画像はリポジトリに含めない) |
 | `strichtarn-redbrown` | シュトリヒタルン (実測) strichtarn-2 | #755a45 | 同上 |
+| `mm14-olive` | MM-14 (実測) mm14-1 | #6a7053 | app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 4 --max-edge=992 --core=2`。`<crop.png>` は参照画像の左端 70px の影帯を除いた切り出し。参照画像は Wikimedia Commons [File:MM14.jpg](https://commons.wikimedia.org/wiki/File:MM14.jpg) CC BY-SA 4.0 の布地写真。画像はリポジトリに含めない) |
+| `mm14-lkhaki` | MM-14 (実測) mm14-2 | #aead8d | 同上 |
+| `mm14-greygreen` | MM-14 (実測) mm14-3 | #8b9072 | 同上 |
+| `mm14-dolive` | MM-14 (実測) mm14-4 | #53583d | 同上 |
 
 ## 注意事項
 

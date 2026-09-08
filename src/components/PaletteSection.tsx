@@ -1,5 +1,7 @@
 import { PRESETS } from "@/core/camo.js";
-import { type LibraryColor, libraryByHex, libraryById } from "@/data/palette";
+import { type LibraryColor, libraryByHex, libraryById, libraryLabel } from "@/data/palette";
+import { useI18n } from "@/i18n";
+import { colorRole } from "@/i18n/color-roles";
 import { type AppState, defaultPalette, effectivePalette } from "@/lib/state";
 import styles from "./PaletteSection.module.scss";
 
@@ -27,22 +29,23 @@ export function PaletteSection({
   onOpenLibrary,
   onOpenExtract,
 }: Props) {
+  const { t, lang } = useI18n();
   const pal = effectivePalette(state);
-  const roles = PRESETS[state.preset].colors.map((c) => c.name);
+  const roles = PRESETS[state.preset].colors.map((c) => colorRole(c.name, lang));
   const isDefault = pal.every(
     (c, i) => c.toLowerCase() === defaultPalette(state.preset)[i].toLowerCase(),
   );
   return (
     <div className="section">
       <h2 className="sectionTitle">
-        パレット
+        {t("palette.title")}
         <button
           type="button"
           className="btn ghost sm"
           disabled={isDefault}
           onClick={() => onChange({ palette: null })}
         >
-          既定色に戻す
+          {t("palette.reset")}
         </button>
       </h2>
       <ul className={styles.slots}>
@@ -50,45 +53,46 @@ export function PaletteSection({
           const lib = resolveSlot(hex, slotIds[i]);
           const isDefaultSlot = hex.toLowerCase() === defaultPalette(state.preset)[i].toLowerCase();
           // 表示名: ライブラリ色ならその名称、既定色なら役割名、カスタム色なら「カスタム」
-          const name = lib ? lib.name : isDefaultSlot ? roles[i] : "カスタム";
+          const l = lib ? libraryLabel(lib, lang) : undefined;
+          const name = l ? l.name : isDefaultSlot ? roles[i] : t("palette.custom");
           return (
             <li key={`${i}-${roles[i]}`} className={styles.slot}>
-              <label className={styles.picker} title="クリックで色を選択">
+              <label className={styles.picker} title={t("palette.pickColor")}>
                 <span className={styles.swatch} style={{ background: hex }} />
                 <input
                   type="color"
                   value={hex}
                   onChange={(e) => onPickerChange(i, e.target.value)}
-                  aria-label={`${roles[i]} の色`}
+                  aria-label={t("palette.slotColor", { role: roles[i] })}
                   className="srOnly"
                 />
               </label>
               <div className={styles.meta} tabIndex={lib ? 0 : -1}>
                 <span className={styles.name}>{name}</span>
                 <span className={`${styles.hex} mono`}>
-                  {lib ? `${lib.std} ${lib.code} · ` : ""}
+                  {l ? `${l.std} ${l.code} · ` : ""}
                   {hex}
                 </span>
-                {lib && (
+                {l && (
                   <div className={styles.detail} role="tooltip">
-                    <strong>{lib.name}</strong>{" "}
+                    <strong>{l.name}</strong>{" "}
                     <span className="mono">
-                      {lib.std} {lib.code}
+                      {l.std} {l.code}
                     </span>
-                    {lib.note && <p>{lib.note}</p>}
-                    <p className={styles.role}>役割: {roles[i]}</p>
+                    {l.note && <p>{l.note}</p>}
+                    <p className={styles.role}>{t("palette.role", { role: roles[i] })}</p>
                   </div>
                 )}
               </div>
               <button type="button" className="btn sm" onClick={() => onOpenLibrary(i)}>
-                ライブラリ
+                {t("palette.library")}
               </button>
             </li>
           );
         })}
       </ul>
       <button type="button" className="btn block" onClick={onOpenExtract}>
-        画像から抽出…
+        {t("palette.extract")}
       </button>
     </div>
   );

@@ -3,11 +3,11 @@
 // カラーライブラリ (PaletteLibraryDrawer) と同じ操作体系。プリセットが増えても縦に伸び続けない。
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PresetKey } from "@/core/camo.js";
+import { COUNTRY_LABEL } from "@/data/countries";
 import {
   ALL_ENVS,
   ALL_ERAS,
   ALL_PRESET_COUNTRIES,
-  countryLabel,
   ENV_LABEL,
   ERA_LABEL,
   PRESET_GROUPS,
@@ -15,6 +15,7 @@ import {
   PRESET_META,
   type PresetMeta,
 } from "@/data/presets-meta";
+import { type L10n, type Lang, type MessageKey, pickOr, useI18n } from "@/i18n";
 import styles from "./PresetPickerDrawer.module.scss";
 
 interface Props {
@@ -25,17 +26,20 @@ interface Props {
 }
 
 type Axis = "all" | "env" | "country" | "group" | "era";
-const AXIS_LABEL: Record<Axis, string> = {
-  all: "すべて",
-  env: "用途ごと",
-  country: "国ごと",
-  group: "系統ごと",
-  era: "年代ごと",
+const AXES: Axis[] = ["all", "env", "country", "group", "era"];
+const AXIS_KEY: Record<Axis, MessageKey> = {
+  all: "common.all",
+  env: "axis.env",
+  country: "axis.country",
+  group: "axis.group",
+  era: "axis.era",
 };
 
-const TAGS: Record<Exclude<Axis, "all">, { key: string; label: string }[]> = {
+const country = (code: string): L10n => COUNTRY_LABEL[code] ?? { ja: code, en: code };
+
+const TAGS: Record<Exclude<Axis, "all">, { key: string; label: L10n }[]> = {
   env: ALL_ENVS.map((k) => ({ key: k, label: ENV_LABEL[k] })),
-  country: ALL_PRESET_COUNTRIES.map((k) => ({ key: k, label: countryLabel(k) })),
+  country: ALL_PRESET_COUNTRIES.map((k) => ({ key: k, label: country(k) })),
   group: PRESET_GROUPS.map((g) => ({ key: g.key, label: g.label })),
   era: ALL_ERAS.map((k) => ({ key: k, label: ERA_LABEL[k] })),
 };
@@ -47,21 +51,23 @@ function hasTag(m: PresetMeta, axis: Exclude<Axis, "all">, key: string) {
   return m.era === key;
 }
 
-/** 検索対象: 表示名・補足・国名・全タグのラベル (「砂漠」「ロシア」「デジタル」等で引ける) */
+/** 検索対象: 表示名・補足・国名・全タグのラベル。両言語を常に含める (ja UI で "woodland"、en UI で「砂漠」も引ける) */
 function haystack(m: PresetMeta) {
+  const both = (l: L10n) => `${l.ja} ${l.en}`;
   return [
-    m.label,
-    m.note,
-    countryLabel(m.country),
-    ...m.env.map((e) => ENV_LABEL[e]),
-    ERA_LABEL[m.era],
-    PRESET_GROUPS.find((g) => g.key === m.group)?.label ?? "",
+    both(m.label),
+    both(m.note),
+    both(country(m.country)),
+    ...m.env.map((e) => both(ENV_LABEL[e])),
+    both(ERA_LABEL[m.era]),
+    both(PRESET_GROUPS.find((g) => g.key === m.group)?.label ?? { ja: "", en: "" }),
   ]
     .join(" ")
     .toLowerCase();
 }
 
 export function PresetPickerDrawer({ open, current, onPick, onClose }: Props) {
+  const { t, lang, pick } = useI18n();
   const [q, setQ] = useState("");
   const [axis, setAxis] = useState<Axis>("all");
   const [tag, setTag] = useState<string | null>(null);
@@ -84,36 +90,51 @@ export function PresetPickerDrawer({ open, current, onPick, onClose }: Props) {
         { key: tag, label: null, items: base.filter((k) => hasTag(PRESET_META[k], axis, tag)) },
       ];
     return TAGS[axis]
-      .map((t) => ({
-        key: t.key,
-        label: t.label,
-        items: base.filter((k) => hasTag(PRESET_META[k], axis, t.key)),
+      .map((tg) => ({
+        key: tg.key,
+        label: tg.label[lang],
+        items: base.filter((k) => hasTag(PRESET_META[k], axis, tg.key)),
       }))
       .filter((g) => g.items.length);
-  }, [axis, tag, needle]);
+  }, [axis, tag, needle, lang]);
   // 用途は複数タグを持てるので、グループの合計ではなく実プリセット数を数える
   const total = new Set(groups.flatMap((g) => g.items)).size;
 
   if (!open) return null;
   return (
     <>
-      <button type="button" className={styles.backdrop} aria-label="閉じる" onClick={onClose} />
-      <aside className={styles.drawer} role="dialog" aria-modal="true" aria-label="迷彩プリセット">
+      <button
+        type="button"
+        className={styles.backdrop}
+        aria-label={t("common.close")}
+        onClick={onClose}
+      />
+      <aside
+        className={styles.drawer}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("picker.title")}
+      >
         <header className={styles.head}>
-          <h2 className="sectionTitle">迷彩プリセット</h2>
-          <button type="button" className="btn ghost icon" onClick={onClose} aria-label="閉じる">
+          <h2 className="sectionTitle">{t("picker.title")}</h2>
+          <button
+            type="button"
+            className="btn ghost icon"
+            onClick={onClose}
+            aria-label={t("common.close")}
+          >
             ✕
           </button>
         </header>
         <input
           ref={first}
           className="input"
-          placeholder="検索 (名称 / 国 / 用途…)"
+          placeholder={t("picker.search")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        <div className={`seg ${styles.axis}`} role="tablist" aria-label="大カテゴリ">
-          {(Object.keys(AXIS_LABEL) as Axis[]).map((a) => (
+        <div className={`seg ${styles.axis}`} role="tablist" aria-label={t("axis.aria")}>
+          {AXES.map((a) => (
             <button
               type="button"
               key={a}
@@ -125,34 +146,34 @@ export function PresetPickerDrawer({ open, current, onPick, onClose }: Props) {
                 setTag(null);
               }}
             >
-              {AXIS_LABEL[a]}
+              {t(AXIS_KEY[a])}
             </button>
           ))}
         </div>
         {axis !== "all" && (
-          <div className={styles.chips} aria-label={AXIS_LABEL[axis]}>
+          <div className={styles.chips} aria-label={t(AXIS_KEY[axis])}>
             <button
               type="button"
               className="chip"
               aria-pressed={tag === null}
               onClick={() => setTag(null)}
             >
-              すべて
+              {t("common.all")}
             </button>
-            {TAGS[axis].map((t) => (
+            {TAGS[axis].map((tg) => (
               <button
                 type="button"
-                key={t.key}
+                key={tg.key}
                 className="chip"
-                aria-pressed={tag === t.key}
-                onClick={() => setTag(tag === t.key ? null : t.key)}
+                aria-pressed={tag === tg.key}
+                onClick={() => setTag(tag === tg.key ? null : tg.key)}
               >
-                {t.label}
+                {pick(tg.label)}
               </button>
             ))}
           </div>
         )}
-        <p className="hint">{total} 種</p>
+        <p className="hint">{t("picker.count", { n: total })}</p>
         <div className={styles.list}>
           {groups.map((g) => {
             const headingId = `preset-tag-${g.key}`;
@@ -167,7 +188,7 @@ export function PresetPickerDrawer({ open, current, onPick, onClose }: Props) {
                   className={styles.grid}
                   role="radiogroup"
                   aria-labelledby={g.label ? headingId : undefined}
-                  aria-label={g.label ? undefined : "迷彩プリセット"}
+                  aria-label={g.label ? undefined : t("picker.title")}
                 >
                   {g.items.map((k) => {
                     const m = PRESET_META[k];
@@ -189,9 +210,10 @@ export function PresetPickerDrawer({ open, current, onPick, onClose }: Props) {
                           loading="lazy"
                           decoding="async"
                         />
-                        <span className={styles.cardName}>{m.label}</span>
+                        <span className={styles.cardName}>{pick(m.label)}</span>
                         <span className={styles.cardNote}>
-                          {countryLabel(m.country)} · {m.note}
+                          {pickOr(COUNTRY_LABEL[m.country], lang as Lang, m.country)} ·{" "}
+                          {pick(m.note)}
                         </span>
                       </button>
                     );

@@ -46,7 +46,7 @@ GitHub Issues が正本。実装済み / 未着手の状態はここに写さな
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ ヘッダー: ロゴ / テーマ切替 / 共有 / About                      │
+│ ヘッダー: ロゴ / 言語切替 / テーマ切替 / 共有 / About           │
 ├──────────────┬──────────────────────────────────────────────┤
 │ コントロール  │  プレビュー                                    │
 │ パネル       │  ┌────────────────────────────────────────┐   │
@@ -123,7 +123,7 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 
 - 不正値は既定値にフォールバックし、URL を正規化して書き戻す
 - プリセット ID は将来も不変とする（過去に共有された URL を壊さない）。パレット ID 同様
-- 表示モード（タイル / 3D）・3D モデル選択・テーマは URL に含めない。表示モード・3D モデルの `localStorage` 保持は未実装（別 Issue）
+- 表示モード（タイル / 3D）・3D モデル選択・テーマ・言語は URL に含めない。表示モード・3D モデルの `localStorage` 保持は未実装（別 Issue）。言語・テーマは `localStorage` に保存（初期判定順は `localStorage` → `navigator.languages` / `prefers-color-scheme`）
 
 ---
 
@@ -183,7 +183,19 @@ URL クエリが正本。状態変更は `history.replaceState` で即時反映�
 - `data-theme="light" | "dark"` を `<html>` に付与。初期値は `prefers-color-scheme`、切替は `localStorage` に保存
 - 生成キャンバス周辺（プレビュー背景）はテーマに追従させる。ただしキャンバス自体の色は当然テーマ非依存
 
-### 3.7 パフォーマンス目標
+### 3.7 言語（UI 国際化）
+
+- UI 言語: 日本語 (`ja`) / 英語 (`en`) の 2 言語
+- 初期判定順: `localStorage("lang")` → `navigator.languages[0]`（ja 系なら ja、他は en）
+- 切替: ヘッダーと About ページ上部バーのトグルスイッチ（`LangSwitch`。JA / EN の 2 択ラジオグループ、選択側にサムがスライド）
+- 保存: `localStorage("lang")`
+- `<html lang>` 属性は描画前に設定
+- URL クエリには含めない（テーマと同じ扱い。共有 URL は閲覧者の言語で表示）
+- データ側ラベル（プリセット名・国・色・用途・年代等）は二言語同居 `{ ja, en }` 形式で定義し、UI は `pick(l10n)` で選ぶ
+- Error 文言（エクスポート関連の技術エラー）は英語の技術用語に統一し、翻訳しない（UI 側 toast が包む）
+- `src/core/camo.js` の色役割名（日本語）は `src/i18n/color-roles.ts` の対応表で英語化する。camo.js 自体は変更しない（新しい色役割名を追加したら対応表にも追加。欠落はテストが検出）
+
+### 3.8 パフォーマンス目標
 
 - 1024px 生成: 300ms 以内（現状同等）
 - 4096px: 進捗表示付きで約 10 秒以内に完了（多段解像度）。生成は Web Worker で UI をブロックしない。プレビューは粗い結果を先に出す
@@ -215,6 +227,7 @@ src/
   lib/             url-state.ts, png-phys.ts, share.ts, kmeans.ts, scene3d.ts, preview3d-math.ts, webgl.ts
   components/      ControlPanel/, Preview/, Preview3D/, PaletteLibrary/, ExportPanel/ ...
   data/            palette-library.json, presets-meta.ts (サムネ・表記名)
+  i18n/            types.ts, ja.ts, en.ts, t.ts, index.tsx, color-roles.ts (UI 国際化)
   styles/          tokens/ (§6), base/, themes/
   app/             App.tsx, About.tsx
 tools/             render.mjs (検証ハーネス、prototype から移動), gen-tokens.mjs, gen-src.mjs

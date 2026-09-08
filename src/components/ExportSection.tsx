@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PRESET_META } from "@/data/presets-meta";
+import { useI18n } from "@/i18n";
 import type { Format } from "@/lib/export";
 import { type AppState, LIMITS, type Unit } from "@/lib/state";
 import { fromPx, outputPx, PAPER_PRESETS, PX_PRESETS, toPx } from "@/lib/units";
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function ExportSection({ state, onChange, onExport, busy }: Props) {
+  const { t, pick } = useI18n();
   const [lock, setLock] = useState(true);
   const out = outputPx(state);
   const svgOk = PRESET_META[state.preset].svg;
@@ -30,11 +32,11 @@ export function ExportSection({ state, onChange, onExport, busy }: Props) {
 
   return (
     <div className="section">
-      <h2 className="sectionTitle">出力</h2>
+      <h2 className="sectionTitle">{t("export.title")}</h2>
       <div className="row">
-        <div className="seg" role="group" aria-label="サイズ指定">
+        <div className="seg" role="group" aria-label={t("export.sizeMode")}>
           <button type="button" aria-pressed={state.unit === "px"} onClick={() => switchUnit("px")}>
-            ピクセル
+            {t("export.px")}
           </button>
           <button type="button" aria-pressed={state.unit === "mm"} onClick={() => switchUnit("mm")}>
             mm
@@ -47,7 +49,7 @@ export function ExportSection({ state, onChange, onExport, busy }: Props) {
       <div className={styles.size}>
         <div className="field">
           <label className="label" htmlFor="outW">
-            幅 ({state.unit})
+            {t("export.width", { unit: state.unit })}
           </label>
           <input
             id="outW"
@@ -63,13 +65,13 @@ export function ExportSection({ state, onChange, onExport, busy }: Props) {
           className={`btn icon ${styles.lock}`}
           aria-pressed={lock}
           onClick={() => setLock(!lock)}
-          title="比率を固定"
+          title={t("export.lockRatio")}
         >
           {lock ? "🔒" : "🔓"}
         </button>
         <div className="field">
           <label className="label" htmlFor="outH">
-            高さ ({state.unit})
+            {t("export.height", { unit: state.unit })}
           </label>
           <input
             id="outH"
@@ -133,7 +135,7 @@ export function ExportSection({ state, onChange, onExport, busy }: Props) {
           </div>
           <div className="field">
             <label className="label" htmlFor="paper">
-              用紙 / 生地
+              {t("export.paper")}
             </label>
             <select
               id="paper"
@@ -152,32 +154,28 @@ export function ExportSection({ state, onChange, onExport, busy }: Props) {
                 );
               }}
             >
-              <option value="">選択…</option>
+              <option value="">{t("export.select")}</option>
               {PAPER_PRESETS.map((p, i) => (
-                <option key={p.label} value={i}>
-                  {p.label}
+                <option key={p.label.en} value={i}>
+                  {pick(p.label)}
                 </option>
               ))}
             </select>
           </div>
           <p className="hint">
-            出力{" "}
+            {t("export.outputPrefix")}{" "}
             <span className="mono">
               {out.w}×{out.h} px
             </span>
-            。PNG には DPI を埋め込みます (Photoshop 等で実寸として開けます)。
+            {t("export.outputSuffix")}
           </p>
         </>
       )}
       {out.over && (
-        <p className={`hint ${styles.warn}`}>
-          長辺が {LIMITS.px.max}px を超えています。サイズか DPI を下げてください。
-        </p>
+        <p className={`hint ${styles.warn}`}>{t("export.overMax", { max: LIMITS.px.max })}</p>
       )}
       {Math.min(out.w, out.h) < LIMITS.px.min && (
-        <p className={`hint ${styles.warn}`}>
-          短辺が {LIMITS.px.min}px 未満です。小さすぎると模様が破綻します。
-        </p>
+        <p className={`hint ${styles.warn}`}>{t("export.underMin", { min: LIMITS.px.min })}</p>
       )}
       <div className={styles.formats}>
         <button
@@ -209,16 +207,12 @@ export function ExportSection({ state, onChange, onExport, busy }: Props) {
           className="btn"
           disabled={busy || out.over || !svgOk}
           onClick={() => onExport("svg")}
-          title={
-            svgOk ? "セル矩形を結合した SVG" : "SVG はセルグリッド系 (デジタル) プリセットのみ"
-          }
+          title={svgOk ? t("export.svgOk") : t("export.svgOnlyGrid")}
         >
           SVG
         </button>
       </div>
-      {!svgOk && (
-        <p className="hint">SVG は有機形状プリセットでは未対応 (ベクタ化は今後の課題)。</p>
-      )}
+      {!svgOk && <p className="hint">{t("export.svgHint")}</p>}
     </div>
   );
 }

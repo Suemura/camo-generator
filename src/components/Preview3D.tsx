@@ -1,6 +1,7 @@
 // 3D プレビュー: 生成結果を実寸相当のモデルに貼って表示。three.js は選択時に動的ロードする
 import { useEffect, useRef, useState } from "react";
 import type { GenResult } from "@/core/camo.js";
+import { useI18n } from "@/i18n";
 import { drawToCanvas } from "@/lib/export";
 import type { Model3D } from "@/lib/preview3d-math";
 import type { Scene3D } from "@/lib/scene3d";
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function Preview3D({ res, palette, model, repeat }: Props) {
+  const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<Scene3D | null>(null);
   // テクスチャ元。DOM に挿入しない作業用 canvas
@@ -99,29 +101,29 @@ export function Preview3D({ res, palette, model, repeat }: Props) {
       <canvas
         ref={canvasRef}
         className={styles.canvas3d}
-        aria-label="生成された迷彩の 3D プレビュー"
+        aria-label={t("preview3d.aria")}
         hidden={status === "unsupported" || status === "error"}
       />
       {status === "loading" && (
         <div className={styles.badge} role="status" aria-live="polite">
           <span className={styles.spinner} aria-hidden="true" />
-          <span>3D を読み込み中…</span>
+          <span>{t("preview3d.loading")}</span>
         </div>
       )}
       {status === "ready" && envFailed && (
         <p className={`${styles.badge} hint`} role="status">
-          環境光の読み込みに失敗したため簡易ライティングで表示しています
+          {t("preview3d.envFailed")}
         </p>
       )}
       {(status === "unsupported" || status === "error") && (
         <div className={styles.fallback} role="status">
           <p>
-            3D プレビューはこの環境では利用できません
-            {status === "unsupported" ? "（WebGL 非対応）" : "（3D ライブラリの読み込みに失敗）"}
+            {t("preview3d.unavailable")}
+            {status === "unsupported" ? t("preview3d.noWebgl") : t("preview3d.loadFailed")}
           </p>
           {status === "error" && (
             <button type="button" className="btn ghost sm" onClick={() => setAttempt((n) => n + 1)}>
-              再試行
+              {t("preview3d.retry")}
             </button>
           )}
         </div>

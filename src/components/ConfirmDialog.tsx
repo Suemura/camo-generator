@@ -1,5 +1,6 @@
 // 汎用の確認モーダル。開いたら「続ける」にフォーカスし、Escape / 背景クリックはキャンセル扱い
 import { type ReactNode, useEffect, useRef } from "react";
+import { useI18n } from "@/i18n";
 import styles from "./ConfirmDialog.module.scss";
 
 interface Props {
@@ -16,11 +17,12 @@ export function ConfirmDialog({
   open,
   title,
   children,
-  confirmLabel = "続ける",
-  cancelLabel = "キャンセル",
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
 }: Props) {
+  const { t } = useI18n();
   const confirmBtn = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -33,7 +35,12 @@ export function ConfirmDialog({
   if (!open) return null;
   return (
     <>
-      <button type="button" className={styles.backdrop} aria-label="閉じる" onClick={onCancel} />
+      <button
+        type="button"
+        className={styles.backdrop}
+        aria-label={t("common.close")}
+        onClick={onCancel}
+      />
       <div
         className={styles.dialog}
         role="alertdialog"
@@ -49,10 +56,10 @@ export function ConfirmDialog({
         </div>
         <div className={styles.foot}>
           <button type="button" className="btn" onClick={onCancel}>
-            {cancelLabel}
+            {cancelLabel ?? t("common.cancel")}
           </button>
           <button ref={confirmBtn} type="button" className="btn primary" onClick={onConfirm}>
-            {confirmLabel}
+            {confirmLabel ?? t("confirm.continue")}
           </button>
         </div>
       </div>

@@ -2,6 +2,7 @@
 // 実物リファレンスとの比較はアプリ外 (tools/render.mjs --compare、refs/README.md)。
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type GenResult, PRESETS } from "@/core/camo.js";
+import { useI18n } from "@/i18n";
 import { drawToCanvas } from "@/lib/export";
 import { generateAsync, previewSize } from "@/lib/generate";
 import { type Model3D, textureRepeat, tileSizeMm } from "@/lib/preview3d-math";
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
+  const { t } = useI18n();
   const canvas = useRef<HTMLCanvasElement>(null);
   const [res, setRes] = useState<(GenResult & { preset: string; colors: number }) | null>(null);
   const [ms, setMs] = useState(0);
@@ -38,7 +40,7 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
   // 形状生成 (パレット変更では再生成しない: 形状と色の分離)
   useEffect(() => {
     let alive = true;
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         setGenerating(true);
         setProgress(0);
@@ -76,7 +78,7 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
     }, 120);
     return () => {
       alive = false;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
   }, [state.preset, state.seed, state.scale, state.tileable, out.w, out.h]);
 
@@ -114,49 +116,50 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
     state.unit !== "px" ? `${state.w}×${state.h} ${state.unit} @ ${state.dpi} dpi → ` : "";
 
   return (
-    <section className={styles.preview} aria-label="プレビュー">
+    <section className={styles.preview} aria-label={t("preview.aria")}>
       <div className={styles.toolbar}>
-        <div className="seg" role="group" aria-label="表示モード">
+        <div className="seg" role="group" aria-label={t("preview.viewMode")}>
           <button type="button" aria-pressed={mode === "single"} onClick={() => onMode("single")}>
-            単一
+            {t("preview.single")}
           </button>
           <button type="button" aria-pressed={mode === "tile"} onClick={() => onMode("tile")}>
-            タイル 2×2
+            {t("preview.tile")}
           </button>
           <button type="button" aria-pressed={mode === "3d"} onClick={() => onMode("3d")}>
             3D
           </button>
         </div>
         {mode === "3d" && (
-          <div className="seg" role="group" aria-label="3D モデル">
+          <div className="seg" role="group" aria-label={t("preview.model")}>
             <button
               type="button"
               aria-pressed={model === "sphere"}
               onClick={() => setModel("sphere")}
             >
-              球
+              {t("preview.sphere")}
             </button>
             <button
               type="button"
               aria-pressed={model === "cloth"}
               onClick={() => setModel("cloth")}
             >
-              布
+              {t("preview.cloth")}
             </button>
             <button
               type="button"
               aria-pressed={model === "pouch"}
               onClick={() => setModel("pouch")}
             >
-              ポーチ
+              {t("preview.pouch")}
             </button>
           </div>
         )}
         <p className={`${styles.status} mono`}>
           {physical}
-          {out.w}×{out.h} px{out.over && <span className="warn"> (上限超過)</span>} · プレビュー{" "}
-          {res?.w ?? "–"}×{res?.h ?? "–"} · {ms} ms
-          {mode === "3d" && ` · リピート ${repeat.x.toFixed(2)}×${repeat.y.toFixed(2)}`}
+          {out.w}×{out.h} px{out.over && <span className="warn"> {t("preview.over")}</span>} ·{" "}
+          {t("preview.label")} {res?.w ?? "–"}×{res?.h ?? "–"} · {ms} ms
+          {mode === "3d" &&
+            ` · ${t("preview.repeat")} ${repeat.x.toFixed(2)}×${repeat.y.toFixed(2)}`}
         </p>
       </div>
       <div className={styles.stage}>
@@ -167,7 +170,7 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
           {mode === "3d" ? (
             <Preview3D res={texRes} palette={pal} model={model} repeat={repeat} />
           ) : (
-            <canvas ref={canvas} className={styles.canvas} aria-label="生成された迷彩" />
+            <canvas ref={canvas} className={styles.canvas} aria-label={t("preview.canvas")} />
           )}
           {busy && (
             <div className={styles.overlay} role="status" aria-live="polite">
@@ -183,7 +186,7 @@ export function Preview({ state, mode, onMode, busy, busyProgress }: Props) {
           {!busy && generating && (
             <div className={styles.badge} role="status" aria-live="polite">
               <span className={styles.spinner} aria-hidden="true" />
-              <span>{coarse ? "高解像度を生成中" : "生成中…"}</span>
+              <span>{coarse ? t("preview.generatingHi") : t("preview.generating")}</span>
               {coarse && (
                 <span className="mono" aria-hidden="true">
                   {Math.round(progress * 100)}%

@@ -9,8 +9,10 @@ import {
   type Hue,
   LIBRARY,
   type LibraryColor,
+  libraryLabel,
   USE_LABEL,
 } from "@/data/palette";
+import { type L10n, type MessageKey, useI18n } from "@/i18n";
 import styles from "./PaletteLibraryDrawer.module.scss";
 
 interface Props {
@@ -22,17 +24,19 @@ interface Props {
 }
 
 type Axis = "all" | "hue" | "country" | "use";
-const AXIS_LABEL: Record<Axis, string> = {
-  all: "すべて",
-  hue: "色味ごと",
-  country: "国ごと",
-  use: "用途ごと",
+const AXES: Axis[] = ["all", "hue", "country", "use"];
+const AXIS_KEY: Record<Axis, MessageKey> = {
+  all: "common.all",
+  hue: "axis.hue",
+  country: "axis.country",
+  use: "axis.use",
 };
 
-const TAGS: Record<Exclude<Axis, "all">, { key: string; label: string }[]> = {
+const asIs = (k: string): L10n => ({ ja: k, en: k });
+const TAGS: Record<Exclude<Axis, "all">, { key: string; label: L10n }[]> = {
   hue: (Object.keys(HUE_LABEL) as Hue[]).map((k) => ({ key: k, label: HUE_LABEL[k] })),
-  country: ALL_COUNTRIES.map((k) => ({ key: k, label: COUNTRY_LABEL[k] ?? k })),
-  use: ALL_USES.map((k) => ({ key: k, label: USE_LABEL[k] ?? k })),
+  country: ALL_COUNTRIES.map((k) => ({ key: k, label: COUNTRY_LABEL[k] ?? asIs(k) })),
+  use: ALL_USES.map((k) => ({ key: k, label: USE_LABEL[k] ?? asIs(k) })),
 };
 
 function hasTag(c: LibraryColor, axis: Exclude<Axis, "all">, key: string) {
@@ -42,6 +46,7 @@ function hasTag(c: LibraryColor, axis: Exclude<Axis, "all">, key: string) {
 }
 
 export function PaletteLibraryDrawer({ open, slotName, currentId, onPick, onClose }: Props) {
+  const { t, lang, pick } = useI18n();
   const [q, setQ] = useState("");
   const [axis, setAxis] = useState<Axis>("all");
   const [tag, setTag] = useState<string | null>(null);
@@ -56,9 +61,23 @@ export function PaletteLibraryDrawer({ open, slotName, currentId, onPick, onClos
   }, [open, onClose]);
 
   const needle = q.trim().toLowerCase();
+  // 検索は両言語の name / std / code / note を常に含める
   const matchesQ = (c: LibraryColor) =>
     !needle ||
-    [c.name, c.std, c.code, c.note ?? "", c.hex].join(" ").toLowerCase().includes(needle);
+    [
+      c.name,
+      c.nameEn ?? "",
+      c.std,
+      c.stdEn ?? "",
+      c.code,
+      c.codeEn ?? "",
+      c.note ?? "",
+      c.noteEn ?? "",
+      c.hex,
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(needle);
 
   // グループ: 軸 + タグ未選択 → タグごと。それ以外は単一グループ
   const groups = useMemo((): { key: string; label: string | null; items: LibraryColor[] }[] => {
@@ -66,42 +85,52 @@ export function PaletteLibraryDrawer({ open, slotName, currentId, onPick, onClos
     if (axis === "all") return [{ key: "all", label: null, items: base }];
     if (tag) return [{ key: tag, label: null, items: base.filter((c) => hasTag(c, axis, tag)) }];
     return TAGS[axis]
-      .map((t) => ({
-        key: t.key,
-        label: t.label,
-        items: base.filter((c) => hasTag(c, axis, t.key)),
+      .map((tg) => ({
+        key: tg.key,
+        label: tg.label[lang],
+        items: base.filter((c) => hasTag(c, axis, tg.key)),
       }))
       .filter((g) => g.items.length);
-  }, [axis, tag, needle]);
+  }, [axis, tag, needle, lang]);
   const total = groups.reduce((n, g) => n + g.items.length, 0);
 
   if (!open) return null;
   return (
     <>
-      <button type="button" className={styles.backdrop} aria-label="閉じる" onClick={onClose} />
+      <button
+        type="button"
+        className={styles.backdrop}
+        aria-label={t("common.close")}
+        onClick={onClose}
+      />
       <aside
         className={styles.drawer}
         role="dialog"
         aria-modal="true"
-        aria-label="カラーライブラリ"
+        aria-label={t("library.title")}
       >
         <header className={styles.head}>
           <h2 className="sectionTitle">
-            カラーライブラリ <span className={styles.target}>→ {slotName}</span>
+            {t("library.title")} <span className={styles.target}>→ {slotName}</span>
           </h2>
-          <button type="button" className="btn ghost icon" onClick={onClose} aria-label="閉じる">
+          <button
+            type="button"
+            className="btn ghost icon"
+            onClick={onClose}
+            aria-label={t("common.close")}
+          >
             ✕
           </button>
         </header>
         <input
           ref={first}
           className="input"
-          placeholder="検索 (名称 / FS / RAL / 用途…)"
+          placeholder={t("library.search")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        <div className={`seg ${styles.axis}`} role="tablist" aria-label="大カテゴリ">
-          {(Object.keys(AXIS_LABEL) as Axis[]).map((a) => (
+        <div className={`seg ${styles.axis}`} role="tablist" aria-label={t("axis.aria")}>
+          {AXES.map((a) => (
             <button
               type="button"
               key={a}
@@ -113,34 +142,34 @@ export function PaletteLibraryDrawer({ open, slotName, currentId, onPick, onClos
                 setTag(null);
               }}
             >
-              {AXIS_LABEL[a]}
+              {t(AXIS_KEY[a])}
             </button>
           ))}
         </div>
         {axis !== "all" && (
-          <div className={styles.chips} aria-label={AXIS_LABEL[axis]}>
+          <div className={styles.chips} aria-label={t(AXIS_KEY[axis])}>
             <button
               type="button"
               className="chip"
               aria-pressed={tag === null}
               onClick={() => setTag(null)}
             >
-              すべて
+              {t("common.all")}
             </button>
-            {TAGS[axis].map((t) => (
+            {TAGS[axis].map((tg) => (
               <button
                 type="button"
-                key={t.key}
+                key={tg.key}
                 className="chip"
-                aria-pressed={tag === t.key}
-                onClick={() => setTag(tag === t.key ? null : t.key)}
+                aria-pressed={tag === tg.key}
+                onClick={() => setTag(tag === tg.key ? null : tg.key)}
               >
-                {t.label}
+                {pick(tg.label)}
               </button>
             ))}
           </div>
         )}
-        <p className="hint">{total} 色</p>
+        <p className="hint">{t("library.count", { n: total })}</p>
         <div className={styles.list}>
           {groups.map((g) => (
             <section key={g.key} className={styles.group}>
@@ -150,25 +179,28 @@ export function PaletteLibraryDrawer({ open, slotName, currentId, onPick, onClos
                 </h3>
               )}
               <ul className={styles.items}>
-                {g.items.map((c) => (
-                  <li key={c.id}>
-                    <button
-                      type="button"
-                      className={`${styles.item} ${c.id === currentId ? styles.current : ""}`}
-                      onClick={() => onPick(c)}
-                      aria-current={c.id === currentId || undefined}
-                    >
-                      <span className={styles.big} style={{ background: c.hex }} />
-                      <span className={styles.itemMeta}>
-                        <span className={styles.itemName}>{c.name}</span>
-                        <span className={`${styles.itemCode} mono`}>
-                          {c.std} {c.code} · {c.hex}
+                {g.items.map((c) => {
+                  const l = libraryLabel(c, lang);
+                  return (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        className={`${styles.item} ${c.id === currentId ? styles.current : ""}`}
+                        onClick={() => onPick(c)}
+                        aria-current={c.id === currentId || undefined}
+                      >
+                        <span className={styles.big} style={{ background: c.hex }} />
+                        <span className={styles.itemMeta}>
+                          <span className={styles.itemName}>{l.name}</span>
+                          <span className={`${styles.itemCode} mono`}>
+                            {l.std} {l.code} · {c.hex}
+                          </span>
+                          {l.note && <span className={styles.itemNote}>{l.note}</span>}
                         </span>
-                        {c.note && <span className={styles.itemNote}>{c.note}</span>}
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           ))}

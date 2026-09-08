@@ -1,6 +1,6 @@
 // prototype/index.html は src/core/* のインライン展開ビルドで、精度検証用 Artifact の実体でもある。
 // 再ビルドを忘れると古い生成コアが焼き付いたまま残り、検証環境とアプリの出力がずれる
-// （実際に v18 より前の pasteBlob が残っていたことがある）。
+// （実際に古い pasteBlob が残っていたことがある）。
 // 生成コアを変えたら `node prototype/build.mjs` → Artifact 再デプロイまでを必ず行う。
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";

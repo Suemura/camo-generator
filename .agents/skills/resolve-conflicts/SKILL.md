@@ -11,7 +11,7 @@ description: PR 作業ブランチへ origin/main を merge して競合を解�
 2. worktree の依存とマージドライバを `pnpm install --frozen-lockfile` で準備し、`git fetch origin` 後に `git merge origin/main`。rebase／force push は使用しない。失敗した場合は状態を調べ、残っている競合を正確に把握する。
 3. 双方の変更意図を履歴と仕様から理解して統合する。
    - `.gitattributes` の union は正しさを保証しない。スナップショットを検証し、`prototype/refs.js` は空を保つ。`prototype/index.html` は ours で残っても `node prototype/build.mjs` で再生成する。
-   - 文書は重複を統合し、`docs/01-tech-verification.md` の検証履歴は両側を時系列で残す。
+   - 文書は重複を統合する。`docs/01-tech-verification.md` は同じ節の箇条書きを両側残し、重複する知見は 1 つにまとめる。
    - `package.json` の双方の変更を統合し、lockfile は手編集しない。origin/main 側の lockfile を基点に、統合した依存関係が異なる場合だけ `pnpm install` で再解決し、無関係な更新がないか確認する。その後は frozen install で整合性を確認する。
    - 生成器・URL 状態・トークンは両方の意図を保つ。URL の往復テストも残す。生成トークンは `pnpm tokens` で再生成する。
    - スナップショットは手で期待値を捏造しない。出力変更が意図された統合結果と確認できる場合だけ、`docs/04-add-preset.md` の目視・記録・承認手順を満たして更新する。同じプリセットに双方が触れた場合は統合後の実物比較が必要。

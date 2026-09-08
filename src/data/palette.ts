@@ -1,4 +1,4 @@
-// パレットライブラリ (docs/design/palette-library.json のコピー)。規格名ベース、模型塗料品番は note のみ。
+// パレットライブラリ。規格名ベース、模型塗料品番は note のみ。出典は各エントリの source と docs/design/palette-library-sources.md。
 import type { L10n, Lang } from "@/i18n/types";
 import raw from "./palette-library.json";
 
@@ -80,6 +80,7 @@ export const USE_LABEL: Record<string, L10n> = {
   "camo-lizard": { ja: "リザード (TAP47)", en: "Lizard (TAP47)" },
   "camo-splinter": { ja: "スプリンター (Splittertarn)", en: "Splinter (Splittertarn)" },
   "camo-strichtarn": { ja: "シュトリヒタルン (Strichtarn)", en: "Strichtarn" },
+  "camo-cce": { ja: "CCE (フランス)", en: "CCE (France)" },
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

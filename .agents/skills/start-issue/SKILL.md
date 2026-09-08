@@ -18,9 +18,9 @@ description: GitHub Issue の着手依頼から専用 worktree、計画、実装
 ## 実装と検証
 
 - 共通 workflow 規則に従って planner に計画と Sprint Contract（完了条件）を依頼する。既知の関連ファイル、Issue 要旨、仕様を渡す。些細な変更は同規則の基準で省略可能。計画を提示し、追加承認が必要な操作以外は続行する。
-- 生成器を変更する場合は過去の判断を `docs/01-tech-verification.md` で読む。新プリセット・生成品質変更の要件と検証は `docs/04-add-preset.md` を読み、チェックリストを完了条件へ組み込む。生成・UI・URL 状態の制約は `AGENTS.md` に従う。UI 変更では `.agents/skills/design-system/SKILL.md` を読む。
+- 生成器を変更する場合は `docs/01-tech-verification.md` で手法の選び方・既知アーティファクト・捨てた案を読む。新プリセット・生成品質変更の要件と検証は `docs/04-add-preset.md` を読み、チェックリストを完了条件へ組み込む。生成・UI・URL 状態の制約は `AGENTS.md` に従う。UI 変更では `.agents/skills/design-system/SKILL.md` を読む。
 - 実装後に `pnpm check`、`pnpm typecheck`、`pnpm test` をすべて成功させる。フックの実行予定を検証済みと数えない。生成結果が意図せず変化した場合は原因を直し、スナップショット更新で隠さない。UI の実画面確認も `AGENTS.md` に従う。
-- Sprint Contract を確認し、`.agents/rules/self-review.md` の起動条件に該当するとき docs-sync を実行する。差分概要・変更意図・変更ファイル一覧を渡す。変更ログ専用文書は追加しない（生成手法の検証記録は例外）。PR 前の reviewer は起動せず、独立レビューは PR 後に行う。
+- Sprint Contract を確認し、`.agents/rules/self-review.md` の起動条件に該当するとき docs-sync を実行する。差分概要・変更意図・変更ファイル一覧を渡す。変更ログ専用文書・時系列の節は追加しない（`AGENTS.md`「ドキュメントの方針」）。PR 前の reviewer は起動せず、独立レビューは PR 後に行う。
 
 ## PR とレビュー
 

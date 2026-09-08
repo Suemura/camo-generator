@@ -3683,6 +3683,74 @@
     "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/strichtarn_crop2.jpg 2 --max-edge=1024 --core=2`。参照画像は Wikimedia Commons「Strichtarn.JPG」CC BY-SA 3.0 (Joan Rocaguinard) の制服写真から皺・影・ポケットを除いた切り出し。同「Rain pattern.jpg」CC BY-SA 3.0 の k=2 実測 #a69887 / #735e4c とほぼ一致。画像はリポジトリに含めない)"
   },
   {
+    "id": "cce-lightkhaki",
+    "name": "CCE ライトカーキ",
+    "nameEn": "CCE Light Khaki",
+    "std": "CCE (実測)",
+    "stdEn": "CCE (measured)",
+    "code": "cce-1",
+    "hex": "#a29275",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-cce", "uniform"],
+      "country": ["fr"]
+    },
+    "note": "地色に相当するライトカーキ (実測 30.5%)。M81 のサンドより灰味が強い",
+    "noteEn": "Light khaki ground (measured 30.5%). Greyer than the M81 sand",
+    "source": "app プリセット実測値 (src/core/camo.js。参照画像 Wikimedia Commons 「Bariolage Centre-Europe.png」CC0 / Youri BRIAND はフラットな 4 色のみ（一意色 4 個）なので k-means ではなく画素数の直接集計で確定。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "cce-green",
+    "name": "CCE グリーン",
+    "nameEn": "CCE Green",
+    "std": "CCE (実測)",
+    "stdEn": "CCE (measured)",
+    "code": "cce-2",
+    "hex": "#4f5c40",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-cce", "uniform"],
+      "country": ["fr"]
+    },
+    "note": "グリーン (実測 25.4%)。M81 の緑より明るい",
+    "noteEn": "Green (measured 25.4%). Lighter than the M81 green",
+    "source": "同上"
+  },
+  {
+    "id": "cce-brown",
+    "name": "CCE ブラウン",
+    "nameEn": "CCE Brown",
+    "std": "CCE (実測)",
+    "stdEn": "CCE (measured)",
+    "code": "cce-3",
+    "hex": "#614f3d",
+    "tags": {
+      "hue": "brown",
+      "use": ["camo-cce", "uniform"],
+      "country": ["fr"]
+    },
+    "note": "ブラウン (実測 27.7%)",
+    "noteEn": "Brown (measured 27.7%)",
+    "source": "同上"
+  },
+  {
+    "id": "cce-black",
+    "name": "CCE ブラック",
+    "nameEn": "CCE Black",
+    "std": "CCE (実測)",
+    "stdEn": "CCE (measured)",
+    "code": "cce-4",
+    "hex": "#2d2d2d",
+    "tags": {
+      "hue": "black",
+      "use": ["camo-cce", "uniform"],
+      "country": ["fr"]
+    },
+    "note": "最後に刷る版のブラック (実測 16.5%)。M81 と同じく他色の上に丸ごと乗る",
+    "noteEn": "Black, the last-printed plate (measured 16.5%). Sits whole on top of the other colours like M81",
+    "source": "同上"
+  },
+  {
     "id": "mm14-olive",
     "name": "MM-14 オリーブ",
     "nameEn": "MM-14 Olive",

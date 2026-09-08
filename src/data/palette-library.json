@@ -3763,8 +3763,8 @@
       "use": ["camo-m05", "uniform"],
       "country": ["fi"]
     },
-    "note": "森林型の地布の色 (可視面積 約 36%)。3 版はこの上に刷られる",
-    "noteEn": "Ground fabric of the woodland pattern (about 36% visible). The 3 plates are printed over it",
+    "note": "森林型の地布の色 (量産布地の可視面積 約 25%)。3 版はこの上に刷られる",
+    "noteEn": "Ground fabric of the woodland pattern (about 25% visible on production fabric). The 3 plates are printed over it",
     "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05.jpg 4 --core=2 --max-edge=918 --blur=1.5`。参照画像は Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。織り目を --blur で落とし、領域内部の中央値を採った。画像はリポジトリに含めない)"
   },
   {
@@ -3780,8 +3780,8 @@
       "use": ["camo-m05", "uniform"],
       "country": ["fi"]
     },
-    "note": "1 版目 (約 10%)。明度が最も高く、固まって現れる",
-    "noteEn": "1st plate (about 10%). Brightest color, appears in clusters",
+    "note": "小〜中の斑 (約 12%)。明度が最も高く、グリーン域の中に点々と現れる",
+    "noteEn": "Small to medium blotches (about 12%). Brightest color, dotted inside the green areas",
     "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05.jpg 4 --core=2 --max-edge=918 --blur=1.5`。参照画像は Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。織り目を --blur で落とし、領域内部の中央値を採った。画像はリポジトリに含めない)"
   },
   {
@@ -3797,8 +3797,8 @@
       "use": ["camo-m05", "uniform"],
       "country": ["fi"]
     },
-    "note": "2 版目 (約 25%)。ダークグリーンの塊の外縁を囲む",
-    "noteEn": "2nd plate (about 25%). Rims the dark green masses",
+    "note": "最大面積の版 (約 45%)。量産布地では地色より広い",
+    "noteEn": "Largest plate (about 45%). Covers more than the ground on production fabric",
     "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05.jpg 4 --core=2 --max-edge=918 --blur=1.5`。参照画像は Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。織り目を --blur で落とし、領域内部の中央値を採った。画像はリポジトリに含めない)"
   },
   {
@@ -3808,15 +3808,15 @@
     "std": "M05 (実測)",
     "stdEn": "M05 (measured)",
     "code": "m05-4",
-    "hex": "#2a2932",
+    "hex": "#26262b",
     "tags": {
       "hue": "grey",
       "use": ["camo-m05", "uniform"],
       "country": ["fi"]
     },
-    "note": "3 版目 (約 28%)。最も暗く、最大の塊を作る。青紫寄りのグレー",
-    "noteEn": "3rd plate (about 28%). Darkest color, forms the largest masses. Blue-violet tinted grey",
-    "source": "app プリセット実測値 (src/core/camo.js)。Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の k-means 値 #273126 は意匠登録図面の Uncalibrated スキャンで緑寄りに転んでおり、実物布地の写真 (joint-forces.com の M05 記事の日光下着用写真 2 枚 #43444e / #40444e、同スタジオ接写、camopedia.org の Finland5 スウォッチ) では最暗版はいずれも青〜青紫のグレー。明度はスキャン基準 (V 50) に揃え、色相 245 / 彩度 0.18 を日光写真の暗色中央値から採った。画像はリポジトリに含めない"
+    "note": "3 版目 (約 18%)。最も暗い版。わずかに寒色の近黒グレー",
+    "noteEn": "3rd plate (about 18%). Darkest plate. Near-black grey with a slight cool tint",
+    "source": "app プリセット実測値 (src/core/camo.js)。Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の k-means 値 #273126 は意匠登録図面の Uncalibrated スキャンで緑寄りに転んでおり、実物布地の写真 (joint-forces.com の M05 記事の日光下着用写真 2 枚 #43444e / #40444e、同スタジオ接写、camopedia.org の Finland5 スウォッチ) では最暗版はいずれも青〜青紫のグレー。明度はスキャン基準 (V 43) に揃え、実物写真で近黒に見えることから彩度 0.12 の寒色寄りグレーにした。画像はリポジトリに含めない"
   },
   {
     "id": "m05snow-white",

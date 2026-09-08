@@ -51,6 +51,7 @@ export const COLOR_ROLE_EN: Record<string, string> = {
   ホワイト: "White",
   ミッドグレー: "Mid Grey",
   ダークグレー: "Dark Grey",
+  チャコールグレー: "Charcoal Grey",
 };
 
 /** 色役割名の表示。en で未定義なら ja 名をそのまま返す (URL 由来のカスタム名など) */

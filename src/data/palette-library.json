@@ -3802,21 +3802,21 @@
     "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05.jpg 4 --core=2 --max-edge=918 --blur=1.5`。参照画像は Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。織り目を --blur で落とし、領域内部の中央値を採った。画像はリポジトリに含めない)"
   },
   {
-    "id": "m05-darkgreen",
-    "name": "M05 ダークグリーン",
-    "nameEn": "M05 Dark Green",
+    "id": "m05-charcoal",
+    "name": "M05 チャコールグレー",
+    "nameEn": "M05 Charcoal Grey",
     "std": "M05 (実測)",
     "stdEn": "M05 (measured)",
     "code": "m05-4",
-    "hex": "#273126",
+    "hex": "#2a2932",
     "tags": {
-      "hue": "green",
+      "hue": "grey",
       "use": ["camo-m05", "uniform"],
       "country": ["fi"]
     },
-    "note": "3 版目 (約 28%)。最も暗く、最大の塊を作る",
-    "noteEn": "3rd plate (about 28%). Darkest color, forms the largest masses",
-    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05.jpg 4 --core=2 --max-edge=918 --blur=1.5`。参照画像は Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。織り目を --blur で落とし、領域内部の中央値を採った。画像はリポジトリに含めない)"
+    "note": "3 版目 (約 28%)。最も暗く、最大の塊を作る。青紫寄りのグレー",
+    "noteEn": "3rd plate (about 28%). Darkest color, forms the largest masses. Blue-violet tinted grey",
+    "source": "app プリセット実測値 (src/core/camo.js)。Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の k-means 値 #273126 は意匠登録図面の Uncalibrated スキャンで緑寄りに転んでおり、実物布地の写真 (joint-forces.com の M05 記事の日光下着用写真 2 枚 #43444e / #40444e、同スタジオ接写、camopedia.org の Finland5 スウォッチ) では最暗版はいずれも青〜青紫のグレー。明度はスキャン基準 (V 50) に揃え、色相 245 / 彩度 0.18 を日光写真の暗色中央値から採った。画像はリポジトリに含めない"
   },
   {
     "id": "m05snow-white",

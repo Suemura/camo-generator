@@ -80,6 +80,7 @@ export const USE_LABEL: Record<string, L10n> = {
   "camo-lizard": { ja: "リザード (TAP47)", en: "Lizard (TAP47)" },
   "camo-splinter": { ja: "スプリンター (Splittertarn)", en: "Splinter (Splittertarn)" },
   "camo-strichtarn": { ja: "シュトリヒタルン (Strichtarn)", en: "Strichtarn" },
+  "camo-m05": { ja: "M05 (フィンランド)", en: "M05 (Finland)" },
   "camo-cce": { ja: "CCE (フランス)", en: "CCE (France)" },
 };
 

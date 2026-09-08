@@ -7,7 +7,7 @@
 //   - 重ね刷りで挟まれた薄片・微小片が残らない (P.minFrag による欠片除去の回帰ガード)
 //   - tileable:false でも完走する (トーラス前提のコードが非タイル時に落ちない)
 import { describe, expect, it } from "vitest";
-import { generate, PRESETS, type PresetKey } from "../src/core/camo.js";
+import { generate, genSpots, PRESETS, type PresetKey } from "../src/core/camo.js";
 
 const SEEDS = [1234, 777, 211025];
 const KEYS = (Object.keys(PRESETS) as PresetKey[]).filter((k) => PRESETS[k].kind === "spots");
@@ -84,8 +84,9 @@ describe("genSpots", () => {
           for (const c of cnt) expect(c).toBeGreaterThan(0);
           // 地色が 15% 以上残る = 斑を刷り重ねても地が見えている
           expect(cnt[0] / n).toBeGreaterThanOrEqual(0.15);
-          // どの色も 60% を超えない = 1 版が図案を塗り潰していない
-          expect(Math.max(...cnt) / n).toBeLessThan(0.6);
+          // どの色も 70% を超えない = 1 版が図案を塗り潰していない
+          // (当初 60%。M05 雪型は実物の白地が 0.636 で、生成も 0.60〜0.62 になるため 70% に緩めた)
+          expect(Math.max(...cnt) / n).toBeLessThan(0.7);
         });
         it(`seed ${seed}: minFrag 未満の欠片が残らない`, () => {
           const r = generate(key, 512, 512, seed, 1.0);
@@ -101,4 +102,28 @@ describe("genSpots", () => {
       });
     });
   }
+});
+
+// 六方格子ドット量子化 (P.dots、M05 系) の回帰ガード。
+// dots は層スタンプ後・remap / 欠片除去前に掛かる後処理で、rng を消費しない。
+// 「dots を持つプリセットが増えていないか」と「後処理が実際に出力を変えているか」を固定する
+describe("P.dots (六方格子ドット量子化)", () => {
+  const DOTTED: PresetKey[] = ["m05", "m05_snow"];
+  it("dots を持つのは M05 系だけ", () => {
+    const keys = (Object.keys(PRESETS) as PresetKey[]).filter(
+      (k) => (PRESETS[k] as { dots?: unknown }).dots,
+    );
+    expect(keys.sort()).toEqual([...DOTTED].sort());
+  });
+  it.each(DOTTED)("%s: dots を外すと同じ seed の出力が変わる", (key) => {
+    const P = PRESETS[key];
+    const { dots: _dots, ...noDots } = P as typeof P & { dots: unknown };
+    const a = genSpots(256, 256, 1234, 1.0, P);
+    const b = genSpots(256, 256, 1234, 1.0, noDots);
+    expect(a.index).not.toEqual(b.index);
+  });
+  it.each(DOTTED)("%s: 小キャンバス × 高 scale (ピッチ下限 3px) でも全色が出現する", (key) => {
+    const r = generate(key, 128, 128, 1234, 2.0);
+    expect(new Set(r.index).size).toBe(PRESETS[key].colors.length);
+  });
 });

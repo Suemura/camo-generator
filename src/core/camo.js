@@ -1685,6 +1685,56 @@ function clumpAccept(cx, cy, w, h, u, C, seed){
   if(p <= 0) return false;
   return hash2(cx|0, cy|0, seed ^ 0x51ed) < p;
 }
+/* ドット格子量子化 (P.dots)。
+   フィンランド M05 は図案を「六方格子上に並んだ円形ドットの集合」で描く点描様式で、斑の輪郭が円弧の
+   連なりに階段化し、孤立した 1〜3 ドットの小片が散る。ドットは格子ピッチより大きい (半径 ≈ 0.65 ピッチ、
+   六角セルの外接半径 0.577 ピッチを超える) ので内部は塗り潰され、輪郭だけがドットの形を残す。
+   → 層スタンプ後の index マップを格子点でサンプリングし、格子点ごとに半径 r の円板を **layers の刷り順**
+     (後の版が優先) で描き直す。後刷りの色が前刷りの色へ半ドットぶん膨らむのは実物の重ね刷りそのもの。
+   rng を消費しないので、dots を持たない既存プリセットの出力は 1 bit も変わらない。 */
+function applyDots(out, w, h, u, P, wrap){
+  const D = P.dots;
+  // ピッチは 512px・scale 1 基準 px。下限 3px は u が小さいとき (高 scale・小キャンバス) に点描が
+  // 画素ノイズになるのを防ぐ (genRain の列間隔下限と同じ扱い)
+  const pitch = Math.max(3, (D.pitch ?? 6.6) * u);
+  const nx = Math.max(1, Math.round(w / pitch));
+  // 行ピッチは pitch·√3/2 (正三角格子)。行数を偶数にして奇数行の半ピッチずれがトーラスで閉じるようにする。
+  // 実ピッチは w/nx・h/ny (キャンバスを厳密に割り切り、タイル境界に格子ずれを出さない)
+  const rowPitch = pitch * Math.sqrt(3) / 2;
+  const ny = Math.max(2, 2 * Math.round(h / (2 * rowPitch)));
+  const px = w / nx, py = h / ny;
+  const r = (D.r ?? 0.65) * pitch, r2 = r * r;
+  // 版の優先順 = layers の刷り順 (地色 0 と層を持たない色は最下位)
+  const prio = new Uint8Array(256);
+  for(let li=0; li<P.layers.length; li++) prio[P.layers[li].color] = li + 1;
+  const res = new Uint8Array(w*h).fill(255);   // 255 = 未塗布 (どの円板にも覆われない画素の番兵)
+  for(let j=0;j<ny;j++){
+    const sy = (j + 0.5) * py;
+    const iy = wrap ? wrapI(Math.floor(sy), h) : Math.min(h-1, Math.floor(sy));
+    for(let i=0;i<nx;i++){
+      const sx = (i + 0.5 + 0.5 * (j & 1)) * px;
+      const ix = wrap ? wrapI(Math.floor(sx), w) : Math.min(w-1, Math.floor(sx));
+      const c = out[iy*w + ix], pc = prio[c];
+      const y0 = Math.floor(sy - r), y1 = Math.ceil(sy + r);
+      const x0 = Math.floor(sx - r), x1 = Math.ceil(sx + r);
+      for(let y=y0;y<=y1;y++){
+        const yy = wrap ? wrapI(y, h) : y;
+        if(yy < 0 || yy >= h) continue;
+        const dy = y + 0.5 - sy;
+        for(let x=x0;x<=x1;x++){
+          const xx = wrap ? wrapI(x, w) : x;
+          if(xx < 0 || xx >= w) continue;
+          const dx = x + 0.5 - sx;
+          if(dx*dx + dy*dy > r2) continue;
+          const k = yy*w + xx, cur = res[k];
+          if(cur === 255 || pc > prio[cur]) res[k] = c;
+        }
+      }
+    }
+  }
+  // r が六角セルの外接半径より小さいときだけ残る未塗布画素は元の値で埋める
+  for(let i=0;i<res.length;i++) out[i] = res[i] === 255 ? out[i] : res[i];
+}
 // P.layers を版の順に処理する。各層: color (index 値) / frac (塗る面積比。後の版に覆われる分を含む) /
 // r [min,max] (平均半径、512px・scale 1 基準 px) / elong / lobe (高調波振幅の範囲) /
 // gap (同層の中心間距離の下限 = (R1+R2)·(1+gap)。負なら重なって融合する) /
@@ -1695,7 +1745,8 @@ function clumpAccept(cx, cy, w, h, u, C, seed){
 //   ブラウン斑をグリーンが縁取る、など)。層間の相関を独立配置のまま表現する最小の手段 /
 // clump {cells, thr, soft, field} なら斑の中心を低周波の密度場で間引く (上記 clumpField 参照)。
 //   field を同じ値にした層は同一の密度場を共有する (フレックターンの黒とダークグリーンが
-//   同じ暗色域に固まる構造)。省略時は層 index ごとに独立した場になる
+//   同じ暗色域に固まる構造)。省略時は層 index ごとに独立した場になる /
+// P.dots {pitch, r} なら全層のスタンプ後に六方格子のドットで描き直す (M05 の点描輪郭。上記 applyDots 参照)
 export function genSpots(w, h, seed, scale, P, opt={}){
   const wrap = opt.tileable !== false;
   const progress = typeof opt.progress === 'function' ? opt.progress : null;
@@ -1763,6 +1814,10 @@ export function genSpots(w, h, seed, scale, P, opt={}){
   // の 3 群にまとめた色替えで、群の切り方は 6 種の配色すべてで共通だった (画素単位の交差集計で確認)。
   // 欠片除去より「前」に写像するのは、統合で消える境界 (同じ群どうしの接触) を欠片と誤判定させないため。
   // 写像後は色数が減るので cleanupFragments の色数も写像後の値で数える
+  // ドット格子量子化 (P.dots) は remap・欠片除去より前。格子点のサンプリングは元図案の版構成で行い、
+  // 円板の重ね順も層の刷り順で決めるため。円板化で新たに生じる欠片 (高優先の円板に囲まれて削られた
+  // 低優先の孤立ドット) は後段の minFrag で併合する
+  if(P.dots) applyDots(out, w, h, u, P, wrap);
   if(P.remap) for(let i=0;i<out.length;i++) out[i] = P.remap[out[i]];
   if(P.minFrag){
     const minArea = P.minFrag * u * u;
@@ -2978,6 +3033,71 @@ export const PRESETS = {
       {name:'ペールグレー',   hex:'#cac1b2'},
       {name:'ミッドグレー',   hex:'#817873'},
       {name:'ブラック',      hex:'#211d1a'},
+    ],
+  },
+
+  /* ---- フィンランド M05 (2005〜)。点描様式の斑点配置 ---- */
+  m05: {
+    // フィンランド国防軍 M05 森林型。実物の特徴:
+    //   - 4 色。カーキの地布に、ライトグリーン / グリーン / ダークグリーンの 3 版。可視面積比の実測は
+    //     0.363 / 0.098 / 0.255 / 0.284 (refs/private/m05.jpg、k=4)
+    //   - **輪郭が六方格子上の円形ドットの集合で階段化する** (点描)。境界画素の自己相関で格子ベクトル
+    //     (0,8)・(±7,±4)・2 次 (14,0) [画像原寸 px] を実測し、ピッチ ≈ 8px の正三角格子、ドット直径 ≈ 10〜11px。
+    //     ピクセル系 (genGrowth の直交階段) ともブロブ系 (滑らかな輪郭) とも違う識別点で、これが無いと
+    //     M05 に見えない → P.dots (applyDots) で層スタンプ後に格子ドットで描き直す
+    //   - 暗色 2 版 (グリーン・ダークグリーン) は同じ塊に隣接して現れ、塊の外は地色が広く残る。
+    //     グリーンは塊の外縁側、ダークグリーンは芯側 (フレックターンの暗色 2 版と同じ構造 → clump の field 共有)
+    //   - ライトグリーンも一様に散らず固まる (参照の塊り比 窓 128px: ライトグリーン 59.3 / 地 47.9 /
+    //     グリーン 53.1 / ダークグリーン 61.4)。独立した密度場 (field: 1) で偏在させる
+    //   - 斑は融合して枝のある塊になり、孤立した 1〜3 ドットの小片も散る → gap 負 + r の下限を 1 ドット強に
+    // → 参照はパブリックドメイン (Commons、Pekka Vilhunen) だが、実物図案の複製ではなく特徴の再現に
+    //   とどめる方針 (docs/04-add-preset.md §1 商標・意匠) に従い、ソース図案は作らず手続き生成する
+    name: 'M05 風 (フィンランド 森林型)', kind: 'spots', ref: 'm05',
+    // r は「512px・scale 1.0」基準の平均半径 px。frac は「その版が塗る面積比」(後の版に覆われる分を含む)。
+    // 参照の可視面積比 0.363 / 0.098 / 0.255 / 0.284 に対し、生成結果 (512px・scale 1.0・3 シード平均) は
+    // 0.334 / 0.107 / 0.268 / 0.290 (塊が 512px に対して大きいため 1 シードでは ±0.1 振れる)。tools/analyze-spots.mjs の塊り比 (窓 128px) も参照と同じ順位 (ダークグリーン > ライトグリーン > 地 > グリーン)
+    layers: [
+      {color: 1, frac: 0.20, r: [7, 28], elong: [0.22, 0.55], lobe: [0.12, 0.32], wobble: 0.12, gap: -0.36, over: 0.8,
+       clump: {cell: 200, thr: 0.48, soft: 0.22, field: 1}},
+      // グリーンはダークグリーンより先に刷り、同じ密度場で thr を低く取る → ダークグリーンの塊を
+      // ひと回り大きく囲む「外縁」として残る (参照でグリーンの r50 が 3.5 と断片的なのはこのため)
+      {color: 2, frac: 0.46, r: [7, 30], elong: [0.22, 0.55], lobe: [0.12, 0.32], wobble: 0.12, gap: -0.40, over: 0.8,
+       clump: {cell: 200, thr: 0.30, soft: 0.30, field: 0}},
+      {color: 3, frac: 0.30, r: [7, 34], elong: [0.22, 0.55], lobe: [0.12, 0.32], wobble: 0.12, gap: -0.40, over: 0.8,
+       clump: {cell: 200, thr: 0.42, soft: 0.22, field: 0}},
+    ],
+    // 格子ピッチ 6.6 = 参照 2 枚のピッチ (8〜8.5px) を render.mjs --compare の cover 縮小率 (0.766 / 0.813) で
+    // 512px 基準に換算した値。r 0.65 はドット直径 10〜11px ÷ ピッチ 8px の半分
+    dots: {pitch: 6.6, r: 0.65},
+    // 円板化で削られた孤立ドット (10〜15px²) だけ併合し、1 ドット (≈ 55px²) は残す
+    minFrag: 12,
+    // 実測: node tools/extract-palette.mjs refs/private/m05.jpg 4 --core=2 --max-edge=918 --blur=1.5
+    // (布地の写真。織り目を --blur で落とす。k=6 に上げても増えるのはカーキの明部 / 暗部で、版は 4 のまま)
+    colors: [
+      {name:'カーキ',        hex:'#635a29'},
+      {name:'ライトグリーン', hex:'#586916'},
+      {name:'グリーン',      hex:'#313d11'},
+      {name:'ダークグリーン', hex:'#273126'},
+    ],
+  },
+  m05_snow: {
+    // M05 雪型。森林型と同じ点描様式・同じ格子ピッチで、白地にダークグレー 1 版だけを刷る。
+    //   - 参照 (refs/private/m05_snow.jpg) は k=4 で量子化しても中間グレーの内部画素が 0 で、版は 1 つ。
+    //     Issue #60 の「白 / ライトグレー / ダークグレー」は参照と食い違うため実測の 2 色にした
+    //   - 森林型の layers を remap で 2 色に写す案は面積比が合わない ([0,0,0,1] → グレー 0.30、[0,0,1,1] → 0.56。
+    //     参照 0.364) うえ、塊り比も森林型のダークグリーン (61.9) を引き継いで参照 (47.4) より強く偏る
+    //     → 別 layers にして frac と clump を参照に合わせた。dots・r の分布は森林型と共有する
+    name: 'M05 風 (フィンランド 雪型)', kind: 'spots', ref: 'm05_snow',
+    layers: [
+      {color: 1, frac: 0.37, r: [7, 38], elong: [0.22, 0.55], lobe: [0.12, 0.32], wobble: 0.12, gap: -0.42, over: 0.8,
+       clump: {cell: 200, thr: 0.30, soft: 0.34, field: 0}},
+    ],
+    dots: {pitch: 6.6, r: 0.65},
+    minFrag: 12,
+    // 実測: node tools/extract-palette.mjs refs/private/m05_snow.jpg 2 --core=2 --max-edge=913 --blur=1.5
+    colors: [
+      {name:'ホワイト',    hex:'#fcfeec'},
+      {name:'ダークグレー', hex:'#585b53'},
     ],
   },
 };

@@ -60,6 +60,7 @@ export const USE_LABEL: Record<string, string> = {
   "camo-lizard": "リザード (TAP47)",
   "camo-splinter": "スプリンター (Splittertarn)",
   "camo-strichtarn": "シュトリヒタルン (Strichtarn)",
+  "camo-cce": "CCE (フランス)",
 };
 
 const uniq = (xs: string[]) => Array.from(new Set(xs));

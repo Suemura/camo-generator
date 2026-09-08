@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { PresetKey } from "@/core/camo.js";
-import { countryLabel, PRESET_META } from "@/data/presets-meta";
+import { COUNTRY_LABEL } from "@/data/countries";
+import { PRESET_META } from "@/data/presets-meta";
+import { pickOr, useI18n } from "@/i18n";
 import { type AppState, LIMITS } from "@/lib/state";
 import { ConfirmDialog } from "./ConfirmDialog";
 import styles from "./PatternSection.module.scss";
@@ -12,6 +14,7 @@ interface Props {
 }
 
 export function PatternSection({ state, onChange }: Props) {
+  const { t, lang, pick } = useI18n();
   const setSeed = (n: number) =>
     onChange({ seed: Math.min(LIMITS.seed.max, Math.max(0, Math.round(n))) });
   // プリセット一覧はドロワーに追い出し、ここには選択中の 1 枚だけを出す
@@ -19,7 +22,7 @@ export function PatternSection({ state, onChange }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const meta = PRESET_META[state.preset];
-  const pick = (k: PresetKey) => {
+  const choose = (k: PresetKey) => {
     onChange({ preset: k, palette: null });
     setPickerOpen(false);
     trigger.current?.focus();
@@ -43,10 +46,10 @@ export function PatternSection({ state, onChange }: Props) {
   };
   return (
     <div className="section">
-      <h2 className="sectionTitle">パターン</h2>
+      <h2 className="sectionTitle">{t("pattern.title")}</h2>
       <div className="field">
         <span className="label" id="preset-label">
-          迷彩
+          {t("pattern.preset")}
         </span>
         <button
           ref={trigger}
@@ -66,20 +69,20 @@ export function PatternSection({ state, onChange }: Props) {
             decoding="async"
           />
           <span className={styles.currentMeta}>
-            <span className={styles.cardName}>{meta.label}</span>
+            <span className={styles.cardName}>{pick(meta.label)}</span>
             <span className={styles.cardNote}>
-              {countryLabel(meta.country)} · {meta.note}
+              {pickOr(COUNTRY_LABEL[meta.country], lang, meta.country)} · {pick(meta.note)}
             </span>
           </span>
           <span className={styles.currentAction} aria-hidden="true">
-            変更
+            {t("pattern.change")}
           </span>
         </button>
       </div>
       <PresetPickerDrawer
         open={pickerOpen}
         current={state.preset}
-        onPick={pick}
+        onPick={choose}
         onClose={() => {
           setPickerOpen(false);
           trigger.current?.focus();
@@ -87,13 +90,13 @@ export function PatternSection({ state, onChange }: Props) {
       />
       <div className="field">
         <label className="label" htmlFor="seed">
-          シード
+          {t("pattern.seed")}
         </label>
         <div className="row">
           <button
             type="button"
             className="btn icon"
-            aria-label="前のシード"
+            aria-label={t("pattern.prevSeed")}
             onClick={() => setSeed(state.seed - 1)}
           >
             −
@@ -110,7 +113,7 @@ export function PatternSection({ state, onChange }: Props) {
           <button
             type="button"
             className="btn icon"
-            aria-label="次のシード"
+            aria-label={t("pattern.nextSeed")}
             onClick={() => setSeed(state.seed + 1)}
           >
             +
@@ -119,7 +122,7 @@ export function PatternSection({ state, onChange }: Props) {
             type="button"
             className="btn"
             onClick={() => setSeed(Math.floor(Math.random() * 1_000_000))}
-            title="ランダム"
+            title={t("pattern.random")}
           >
             🎲
           </button>
@@ -127,7 +130,7 @@ export function PatternSection({ state, onChange }: Props) {
       </div>
       <div className="field">
         <label className="label" htmlFor="scale">
-          模様スケール <span className="mono">×{scaleDraft.toFixed(2)}</span>
+          {t("pattern.scale")} <span className="mono">×{scaleDraft.toFixed(2)}</span>
         </label>
         <input
           id="scale"
@@ -142,13 +145,11 @@ export function PatternSection({ state, onChange }: Props) {
           onKeyUp={commitScale}
           onBlur={commitScale}
         />
-        <p className="hint">
-          ×{LIMITS.scale.heavy} 以上は生成に時間がかかります (細かさの 2 乗で増加。数十秒〜数分)
-        </p>
+        <p className="hint">{t("pattern.scaleHint", { heavy: LIMITS.scale.heavy })}</p>
       </div>
       <ConfirmDialog
         open={heavyPending !== null}
-        title="生成に時間がかかります"
+        title={t("pattern.heavyTitle")}
         onConfirm={() => {
           if (heavyPending !== null) onChange({ scale: heavyPending });
           setHeavyPending(null);
@@ -158,11 +159,8 @@ export function PatternSection({ state, onChange }: Props) {
           setScaleDraft(state.scale);
         }}
       >
-        <p>
-          模様スケール ×{heavyPending?.toFixed(2)} はプレビューと書き出しの計算量が大きく、PC
-          に負荷がかかります。生成が終わるまで数十秒〜数分かかることがあります。
-        </p>
-        <p>このまま進めますか?</p>
+        <p>{t("pattern.heavyBody", { scale: heavyPending?.toFixed(2) ?? "" })}</p>
+        <p>{t("pattern.heavyConfirm")}</p>
       </ConfirmDialog>
       <label className="toggle">
         <input
@@ -170,7 +168,7 @@ export function PatternSection({ state, onChange }: Props) {
           checked={state.tileable}
           onChange={(e) => onChange({ tileable: e.target.checked })}
         />
-        シームレス (タイル可能)
+        {t("pattern.tileable")}
       </label>
     </div>
   );

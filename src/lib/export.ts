@@ -44,7 +44,7 @@ export async function exportRaster(
 /** セルグリッド系のみ: 水平ランを結合した rect で出力 (プロトタイプ由来) */
 export function gridToSvg(res: GenResult, palette: string[]): string {
   const g = res.grid;
-  if (!g) throw new Error("SVG はセルグリッド系プリセットのみ対応");
+  if (!g) throw new Error("SVG export is available for cell-grid presets only");
   const { gw, gh, cellColor } = g;
   const cw = res.w / gw;
   const ch = res.h / gh;

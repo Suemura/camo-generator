@@ -3751,71 +3751,88 @@
     "source": "同上"
   },
   {
-    "id": "mm14-olive",
-    "name": "MM-14 オリーブ",
-    "nameEn": "MM-14 Olive",
-    "std": "MM-14 (実測)",
-    "stdEn": "MM-14 (measured)",
-    "code": "mm14-1",
-    "hex": "#6a7053",
+    "id": "mm14-greygreen",
+    "name": "MM-14 グレーグリーン (Nutria)",
+    "nameEn": "MM-14 Grey Green (Nutria)",
+    "std": "MM-14 (Pantone TCX 仕様)",
+    "stdEn": "MM-14 (Pantone TCX specification)",
+    "code": "18-0825 TCX",
+    "hex": "#75663e",
     "tags": {
-      "hue": "green",
+      "hue": "brown",
       "use": ["camo-mm14", "uniform"],
       "country": ["ua"]
     },
-    "note": "MM-14 の地色 (約 34%)。中間色が地になり、他の 3 色を繋ぐ",
-    "noteEn": "Ground color of MM-14 (about 34%). A mid tone serves as the ground and links the other three colors",
-    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 4 --max-edge=992 --core=2`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--flatten=300 を足しても各色の差は 3 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。画像はリポジトリに含めない)"
+    "note": "製造元呼称はグレーグリーン (Pantone 名 Nutria)。地色 (約 32%)。写真では褐色寄りのオリーブに写る",
+    "noteEn": "Called grey-green by the maker (Pantone name Nutria). Ground color (about 32%). Reads as a brownish olive in photos",
+    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 18-0825 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
   },
   {
-    "id": "mm14-lkhaki",
-    "name": "MM-14 ライトカーキ",
-    "nameEn": "MM-14 Light Khaki",
-    "std": "MM-14 (実測)",
-    "stdEn": "MM-14 (measured)",
-    "code": "mm14-2",
-    "hex": "#aead8d",
+    "id": "mm14-lightbeige",
+    "name": "MM-14 ライトベージュ (Pale Khaki)",
+    "nameEn": "MM-14 Light Beige (Pale Khaki)",
+    "std": "MM-14 (Pantone TCX 仕様)",
+    "stdEn": "MM-14 (Pantone TCX specification)",
+    "code": "15-1216 TCX",
+    "hex": "#bfaf92",
     "tags": {
       "hue": "tan",
       "use": ["camo-mm14", "uniform"],
       "country": ["ua"]
     },
-    "note": "最明色 (約 22%)。数十セルの大きな塊で地に散る",
-    "noteEn": "Lightest color (about 22%). Scattered on the ground as large clusters of tens of cells",
-    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 4 --max-edge=992 --core=2`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--flatten=300 を足しても各色の差は 3 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。画像はリポジトリに含めない)"
+    "note": "最明色 (約 21%)。ライトグリーンの内側だけに現れる大きな塊",
+    "noteEn": "Lightest color (about 21%). Large clusters that appear only inside the light green",
+    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 15-1216 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
   },
   {
-    "id": "mm14-greygreen",
-    "name": "MM-14 グレーグリーン",
-    "nameEn": "MM-14 Grey Green",
-    "std": "MM-14 (実測)",
-    "stdEn": "MM-14 (measured)",
-    "code": "mm14-3",
-    "hex": "#8b9072",
+    "id": "mm14-lightgreen",
+    "name": "MM-14 ライトグリーン (Silver Sage)",
+    "nameEn": "MM-14 Light Green (Silver Sage)",
+    "std": "MM-14 (Pantone TCX 仕様)",
+    "stdEn": "MM-14 (Pantone TCX specification)",
+    "code": "17-0510 TCX",
+    "hex": "#938b78",
+    "tags": {
+      "hue": "grey",
+      "use": ["camo-mm14", "uniform"],
+      "country": ["ua"]
+    },
+    "note": "2 番目の明色 (約 19%)。ライトベージュを縁取り、スワンプグリーンの内側に収まる",
+    "noteEn": "Second-lightest color (about 19%). Rims the light beige and sits inside the swamp green",
+    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 17-0510 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
+  },
+  {
+    "id": "mm14-swampgreen",
+    "name": "MM-14 スワンプグリーン (Aloe)",
+    "nameEn": "MM-14 Swamp Green (Aloe)",
+    "std": "MM-14 (Pantone TCX 仕様)",
+    "stdEn": "MM-14 (Pantone TCX specification)",
+    "code": "17-0620 TCX",
+    "hex": "#817a60",
     "tags": {
       "hue": "green",
       "use": ["camo-mm14", "uniform"],
       "country": ["ua"]
     },
-    "note": "中間の明色 (約 27%)。ライトカーキの塊の縁に接して地へ広がる",
-    "noteEn": "Mid-light color (about 27%). Spreads onto the ground along the edges of the light khaki clusters",
-    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 4 --max-edge=992 --core=2`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--flatten=300 を足しても各色の差は 3 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。画像はリポジトリに含めない)"
+    "note": "中間色 (約 16%)。地の上に広がり、明色 2 色を内側に抱く",
+    "noteEn": "Mid tone (about 16%). Spreads on the ground and encloses the two light colors",
+    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 17-0620 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
   },
   {
-    "id": "mm14-dolive",
-    "name": "MM-14 ダークオリーブ",
-    "nameEn": "MM-14 Dark Olive",
-    "std": "MM-14 (実測)",
-    "stdEn": "MM-14 (measured)",
-    "code": "mm14-4",
-    "hex": "#53583d",
+    "id": "mm14-darkgrey",
+    "name": "MM-14 ダークグレー (Forest Night)",
+    "nameEn": "MM-14 Dark Grey (Forest Night)",
+    "std": "MM-14 (Pantone TCX 仕様)",
+    "stdEn": "MM-14 (Pantone TCX specification)",
+    "code": "19-0414 TCX",
+    "hex": "#434237",
     "tags": {
-      "hue": "green",
+      "hue": "black",
       "use": ["camo-mm14", "uniform"],
       "country": ["ua"]
     },
-    "note": "最暗色 (約 12〜17%)。小さな塊と、対角方向に階段状に連なる鎖。Issue の「黒褐色」は写真上では褐色味のないダークオリーブ",
-    "noteEn": "Darkest color (about 12–17%). Small clusters and diagonal staircase chains. The 'black-brown' named in the Issue reads as a dark olive with no brown tint in the photo",
-    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 4 --max-edge=992 --core=2`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--flatten=300 を足しても各色の差は 3 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。画像はリポジトリに含めない)"
+    "note": "最暗色 (約 12%)。地の上だけに出る小塊と対角方向の階段状の鎖",
+    "noteEn": "Darkest color (about 12%). Small clusters and diagonal staircase chains that appear only on the ground",
+    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 19-0414 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
   }
 ]

@@ -365,12 +365,12 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
   mm14: {
     label: { ja: "MM-14 風 (ウクライナ)", en: "MM-14-inspired (Ukraine)" },
     note: {
-      ja: "2014〜 4 色。緑 3 段 + 濃色の粗いピクセル",
-      en: "2014– 4 colors. Coarse pixels, 3 greens plus a dark tone",
+      ja: "2014〜 5 色。明度順に入れ子になる粗いピクセル",
+      en: "2014– 5 colors. Coarse pixels nested in luminance order",
     },
     country: "ua",
     group: "digital",
-    env: ["forest", "transitional"],
+    env: ["transitional", "arid"],
     era: "2010s",
     svg: true,
   },

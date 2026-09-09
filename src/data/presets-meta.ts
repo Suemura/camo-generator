@@ -328,6 +328,20 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     era: "1960s",
     svg: false,
   },
+  desert_night: {
+    // 米陸軍 Desert Night Camouflage。正方形格子 + 欠落暗斑の 2 色図案。
+    // 直線・格子で構成される図案なので group は geometric (スプリンターと同じ軸)
+    label: { ja: "デザートナイト迷彩風 (米国)", en: "Desert Night Camouflage-inspired (US)" },
+    note: {
+      ja: "1980 年代 2 色。格子状の明色正方形と、格子が欠落する暗斑",
+      en: "1980s 2 colors. Grid of light squares with blotches where the grid drops out",
+    },
+    country: "us",
+    group: "geometric",
+    env: ["arid"],
+    era: "1980s",
+    svg: true,
+  },
   berezka: {
     // 色で溶け込むのではなく明色の塊で人型シルエットを破断させる設計。
     // デジタル系ではなく粗いステンシル版由来の階段なので group は other

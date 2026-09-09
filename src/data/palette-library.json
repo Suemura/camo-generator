@@ -3851,5 +3851,39 @@
     "note": "雪型の唯一の版 (約 36%)。森林型と同じ点描で刷られる",
     "noteEn": "The only plate of the snow pattern (about 36%). Printed with the same stippling as the woodland pattern",
     "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05_snow.jpg 2 --core=2 --max-edge=913 --blur=1.5`。参照画像は Wikimedia Commons「M05 snow pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。k=4 でも中間グレーの内部画素は 0 で版は 1 つ。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "desert_night-darkolive",
+    "name": "デザートナイト ダークオリーブ",
+    "nameEn": "Desert Night Dark Olive",
+    "std": "デザートナイト (実測)",
+    "stdEn": "Desert Night (measured)",
+    "code": "desert_night-1",
+    "hex": "#383726",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-desert_night", "uniform"],
+      "country": ["us"]
+    },
+    "note": "地色 = 格子線と暗斑 (約 74%)",
+    "noteEn": "Ground = grid lines and blotches (about 74%)",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/desert_night.jpg 2 --max-edge=1500 --core=2`。参照画像は Wikimedia Commons「Desert Night Camouflage.jpg」CC BY-SA 4.0 (Qirille) の布地写真。皺の陰影を含む写真なので k=3 では地色が明部 / 暗部に割れ、設計色は k=2 で読む。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "desert_night-khaki",
+    "name": "デザートナイト カーキ",
+    "nameEn": "Desert Night Khaki",
+    "std": "デザートナイト (実測)",
+    "stdEn": "Desert Night (measured)",
+    "code": "desert_night-2",
+    "hex": "#887a4e",
+    "tags": {
+      "hue": "tan",
+      "use": ["camo-desert_night", "uniform"],
+      "country": ["us"]
+    },
+    "note": "格子状に並ぶ明の正方形 (約 26%)",
+    "noteEn": "Light squares arranged on the grid (about 26%)",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/desert_night.jpg 2 --max-edge=1500 --core=2`。参照画像は Wikimedia Commons「Desert Night Camouflage.jpg」CC BY-SA 4.0 (Qirille) の布地写真。皺の陰影を含む写真なので k=3 では地色が明部 / 暗部に割れ、設計色は k=2 で読む。画像はリポジトリに含めない)"
   }
 ]

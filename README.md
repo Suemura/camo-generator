@@ -41,6 +41,7 @@ tools/
   gen-src.mjs       参照画像 → クイルト用インデックスマップ (RLE + base64) を生成 (src/core/*src.js)
   analyze-spots.mjs  斑点配置系の色の空間分布 (面積比 / 等価半径 / 塊り比) を参照と突き合わせる
   analyze-rain.mjs  雨線図案系の縦ダッシュ幾何を参照と突き合わせる
+  analyze-adjacency.mjs  版どうしの隣接行列 (鎖 / 入れ子 / 独立) を参照と生成で突き合わせる
   image.mjs         Node 側の画像読込 (sharp を動的 import。refs/private/ の探索)
   check-private-refs.sh  refs/private/ がリポジトリに混入していないか検査 (pre-push / CI / Claude フックから呼ぶ)
   gen-tokens.mjs    docs/design/spacious-DESIGN.md → _primitives.scss
@@ -80,7 +81,8 @@ pnpm deploy       # 手動デプロイ (wrangler login 済み前提)。通常は
 node tools/render.mjs <出力dir> <seed> [scale]   # 全プリセットを PNG レンダ (目視検証用)
 node tools/render.mjs <出力dir> <seed> --compare  # 左=生成 / 右=実物リファレンス (refs/private/) を並べた PNG。精度改善の基本ループ
 node tools/extract-palette.mjs refs/private/<key>.png 4    # 参照画像からパレット既定値を実測 (PRESETS.colors 用スニペットを出力)
-#   オプション: --core[=R] (領域内部の中央値で測る。輪郭の混色を除く) / --flatten=SIGMA (周辺減光の平坦化)
+#   オプション: --core[=R] (領域内部の中央値で測る。輪郭の混色を除く) / --spread (内部画素の輝度分位別の値。影の混入を見る)
+#             / --crop=L,T,W,H (影帯・写り込みを切る) / --flatten=SIGMA (周辺減光の平坦化) / --blur=SIGMA (織り目を落とす)
 node tools/gen-src.mjs refs/private/<key>.png src/core/<key>src.js <k> <PREFIX>   # 参照画像 → クイルト用インデックスマップ (新プリセットの図案化)
 #   オプション: --resize=N (長辺を縮小) / --blur=SIGMA (織り目を落とす) / --flatten=SIGMA (周辺減光の平坦化)
 #             / --thin=N (皺の稜線・影が残す幅 2N px 未満の細帯をオープニングで除去)
@@ -93,6 +95,9 @@ node tools/analyze-spots.mjs gen <key> 0.7 1.0 2.0            # 版ごとの面�
 node tools/analyze-rain.mjs ref refs/private/<key>.jpg        # 雨線図案系の「ダッシュ幾何」を参照と突き合わせる
 node tools/analyze-rain.mjs gen <key> 0.7 1.0 2.0             # 版ごとの縦ダッシュの密度・傾き・長さ分布を測定
 #   kind: 'rain' のプリセットでは推奨。目視では列位相・列内非重複・統計的ばらつきを検出できない
+node tools/analyze-adjacency.mjs ref refs/private/<key>.jpg <k> --minrun=8   # 版どうしの隣接行列 (どの版がどの版に接するか)
+node tools/analyze-adjacency.mjs gen <key> 1.0                         # 生成側の同じ行列。鎖 / 入れ子 / 独立の構造を参照と比べる
+#   4 色以上の図案で推奨。面積比と色が合っていても隣接関係が違うと別の図案に見え、目視では分からない (MM-14 の明度順の鎖)
 bash tools/check-private-refs.sh [rev-range]      # refs/private/ の混入検査 (CI と pre-push が自動実行)
 ```
 

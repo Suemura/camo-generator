@@ -1,14 +1,23 @@
 // リファレンス画像からパレット既定値を実測する (規約: 既定色は感覚で決めず参照画像から抽出)。
 // UI の「画像から抽出」と同じ k-means (src/core/kmeans.js) を Node から呼ぶので結果が一致する。
-// usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--max-edge=N] [--flatten=SIGMA] [--blur=SIGMA]
+// usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--spread] [--crop=L,T,W,H] [--max-edge=N] [--flatten=SIGMA] [--blur=SIGMA]
 //   例: node tools/extract-palette.mjs refs/private/woodland.png 4
 //       node tools/extract-palette.mjs refs/private/jgsdf2.jpg 4 --core
+//       node tools/extract-palette.mjs refs/private/mm14.jpg 5 --crop=70,0,630,992 --max-edge=992 --core=6 --spread
 // 出力: 暗→明の hex 一覧と、PRESETS.colors にそのまま貼れるスニペット
 //
 // --core[=R] (既定 R=3): 各クラスタの「領域内部」だけで代表色 (中央値) を測り直す。
 //   輪郭のアンチエイリアス画素はクラスタ重心を隣接色へ引っ張るため、小さい図形が多い迷彩
 //   (斑点の多い陸自 2 型など) では黒が周囲の緑側へ寄って measured なのに実物と合わなくなる。
 //   半径 R の近傍が全て同ラベルの画素だけを集計するとこの混色が落ちる。
+//   ピクセル迷彩ではセル幅の 1/3 程度 (MM-14 は 15px セルで R=5〜6) まで上げると JPEG のセル境界のにじみも外れる。
+// --spread: --core の内部画素をクラスタごとに輝度で並べ、下位 10〜30% / 40〜60% / 70〜90% の中央値を併記する。
+//   最暗クラスタに「折り目の影に沈んだ地色」が混入すると中央値が持ち上がるが、下位 10〜30% の値は
+//   本当の最暗版に留まる (MM-14: 中央値 #4d5339 に対し下位 #434930)。3 つの値が 6 以上離れるクラスタは
+//   単一の版ではない疑いがあるので、k を増やすか下位 / 上位側を採る判断を PRESETS のコメントに書く。
+// --crop=L,T,W,H: 原寸座標で切り出してから処理する。衣服の折り目の影帯や別の生地が写り込んだ部分を除くために使う。
+//   --flatten で影帯を消そうとすると影帯を含めた平均へ正規化されて最明色が沈む (MM-14: #aead8d → #a7a786) ので、
+//   影帯は切り落とすのが正しい。
 // --flatten=SIGMA: フラットフィールド補正 (周辺減光・照明ムラの平坦化) を先にかける。
 //   布地の写真をリファレンスにする場合、ソースマップ生成 (tools/gen-src.mjs) と同じ値を渡して
 //   量子化とパレットの前提を揃える。
@@ -16,8 +25,8 @@
 //   強い布地写真では、k-means が 1 つの版の色を「筋の明部 / 暗部」に割ってしまい設計色が出ない。
 //   ぼかして織り目を落とすと版の色に収束する (フロッグスキンのブラウンはこれが無いと 3 分裂する)。
 
-import { kmeans, rgbToHex } from "../src/core/kmeans.js";
-import { loadRgba } from "./image.mjs";
+import { kmeans, lum, rgbToHex } from "../src/core/kmeans.js";
+import { loadRgba, parseCrop } from "./image.mjs";
 
 const DEFAULT_MAX_EDGE = 256; // src/lib/extract.ts と同じ縮小上限 (UI の抽出結果と揃える)
 
@@ -27,21 +36,26 @@ const [file, kArg] = argv.filter((a) => !a.startsWith("--"));
 const k = Number(kArg || 4);
 if (!file) {
   console.error(
-    "usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--max-edge=N] [--flatten=SIGMA] [--blur=SIGMA]",
+    "usage: node tools/extract-palette.mjs <image> [k=4] [--core[=R]] [--spread] [--crop=L,T,W,H] [--max-edge=N] [--flatten=SIGMA] [--blur=SIGMA]",
   );
   process.exit(1);
 }
 const coreArg = flags.find((a) => a === "--core" || a.startsWith("--core="));
-const coreR = coreArg ? Number(coreArg.split("=")[1] ?? 3) : 0;
+const spread = flags.includes("--spread");
+// --spread は内部画素が要るので --core 省略時は既定半径で有効にする
+const coreR = coreArg ? Number(coreArg.split("=")[1] ?? 3) : spread ? 3 : 0;
 const edgeArg = flags.find((a) => a.startsWith("--max-edge="));
 const maxEdge = edgeArg ? Number(edgeArg.slice(11)) : DEFAULT_MAX_EDGE;
 const flattenArg = flags.find((a) => a.startsWith("--flatten="));
 const flattenSigma = flattenArg ? Number(flattenArg.slice(10)) : undefined;
 const blurArg = flags.find((a) => a.startsWith("--blur="));
 const blurSigma = blurArg ? Number(blurArg.slice(7)) : undefined;
+const cropArg = flags.find((a) => a.startsWith("--crop="));
+const crop = cropArg ? parseCrop(cropArg.slice(7)) : undefined;
 
 const { data, w, h } = await loadRgba(file, {
   maxEdge,
+  ...(crop ? { crop } : {}),
   ...(flattenSigma ? { flatten: flattenSigma } : {}),
   ...(blurSigma ? { blur: blurSigma } : {}),
 });
@@ -68,12 +82,12 @@ function labelPixels() {
 }
 
 /**
- * 領域内部 (半径 R の近傍が全て同ラベル) の画素だけを集めてクラスタごとの中央値を返す。
+ * 領域内部 (半径 R の近傍が全て同ラベル) の画素インデックス (RGBA の先頭オフセット) をクラスタごとに集める。
  * 各画素で (2R+1)^2 の窓を総当たりするため計算量は O((w-2R)*(h-2R)*(2R+1)^2)。
  * --core の R や --max-edge (w, h) を大きくすると R^2 で急増するので、
  * 実測用途では既定値程度 (R は数px、max-edge は数百px) に留めること。
  */
-function coreMedians(R) {
+function coreBuckets(R) {
   const lab = labelPixels();
   const buckets = Array.from({ length: k }, () => []);
   for (let y = R; y < h - R; y++) {
@@ -91,25 +105,62 @@ function coreMedians(R) {
       if (inner) buckets[c].push((y * w + x) * 4);
     }
   }
-  return centers.map((c, i) => {
-    const b = buckets[i];
-    if (b.length === 0) return { rgb: c, n: 0 };
-    const med = [0, 1, 2].map((ch) => {
-      const v = b.map((p) => data[p + ch]).sort((a, z) => a - z);
-      return v[v.length >> 1];
-    });
-    return { rgb: med, n: b.length };
+  return buckets;
+}
+
+/** 画素オフセット配列のチャネル別中央値 */
+function medianRgb(offsets) {
+  return [0, 1, 2].map((ch) => {
+    const v = offsets.map((p) => data[p + ch]).sort((a, z) => a - z);
+    return v[v.length >> 1];
   });
 }
 
-const measured = coreR
-  ? coreMedians(coreR).map((m) => ({ hex: rgbToHex(m.rgb), n: m.n }))
-  : centers.map((c) => ({ hex: rgbToHex(c), n: null }));
+/** 輝度で並べた内部画素の [lo, hi) 分位区間の中央値 */
+function bandMedian(sorted, lo, hi) {
+  const a = Math.floor(sorted.length * lo);
+  const b = Math.max(a + 1, Math.floor(sorted.length * hi));
+  return medianRgb(sorted.slice(a, b));
+}
+
+let measured;
+if (coreR) {
+  const buckets = coreBuckets(coreR);
+  measured = centers.map((c, i) => {
+    const b = buckets[i];
+    if (b.length === 0) return { hex: rgbToHex(c), n: 0 };
+    const m = { hex: rgbToHex(medianRgb(b)), n: b.length };
+    if (spread) {
+      const sorted = b
+        .slice()
+        .sort(
+          (p, q) =>
+            lum([data[p], data[p + 1], data[p + 2]]) - lum([data[q], data[q + 1], data[q + 2]]),
+        );
+      m.low = rgbToHex(bandMedian(sorted, 0.1, 0.3));
+      m.mid = rgbToHex(bandMedian(sorted, 0.4, 0.6));
+      m.high = rgbToHex(bandMedian(sorted, 0.7, 0.9));
+    }
+    return m;
+  });
+} else {
+  measured = centers.map((c) => ({ hex: rgbToHex(c), n: null }));
+}
 
 console.log(
-  `${file} (${w}×${h} に縮小、k=${k}${flattenSigma ? `、--flatten=${flattenSigma}` : ""}${blurSigma ? `、--blur=${blurSigma}` : ""}${coreR ? `、--core=${coreR}: 領域内部の中央値` : ""})`,
+  `${file} (${w}×${h} に縮小、k=${k}${crop ? `、--crop=${crop.left},${crop.top},${crop.width},${crop.height}` : ""}${flattenSigma ? `、--flatten=${flattenSigma}` : ""}${blurSigma ? `、--blur=${blurSigma}` : ""}${coreR ? `、--core=${coreR}: 領域内部の中央値` : ""})`,
 );
-for (const m of measured) console.log(`  ${m.hex}${m.n === null ? "" : `  (内部画素 ${m.n})`}`);
+for (const m of measured) {
+  let line = `  ${m.hex}${m.n === null ? "" : `  (内部画素 ${m.n})`}`;
+  if (spread && m.low)
+    line += `  輝度下位 10-30% ${m.low} / 40-60% ${m.mid} / 上位 70-90% ${m.high}`;
+  console.log(line);
+}
+if (spread) {
+  console.log(
+    "  (--spread: 下位と中央値が 6 以上離れるクラスタは影・別の版の混入を疑う。最暗版は下位側、最明版は上位側の値が実物に近いことが多い)",
+  );
+}
 console.log("\n// PRESETS.colors 用スニペット (name は実物の呼称に置き換える)");
 console.log("colors: [");
 for (const m of measured) console.log(`  { name: '', hex: '${m.hex}' },`);

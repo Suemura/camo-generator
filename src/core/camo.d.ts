@@ -35,7 +35,9 @@ export type PresetKey =
   | "t99dk"
   | "flectar_d"
   | "schneetarn"
-  | "m84urban";
+  | "m84urban"
+  | "m05"
+  | "m05_snow";
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
@@ -68,6 +70,8 @@ export function registerSources(mod: {
 }): void;
 export function hasSources(key: PresetKey): boolean;
 export function generate(key: PresetKey, w: number, h: number, seed: number, scale: number, opt?: GenerateOptions): GenResult;
+/** 斑点配置エンジン本体。テストで P.dots など単一の knob を外した出力と比較する用途に公開している */
+export function genSpots(w: number, h: number, seed: number, scale: number, P: Preset, opt?: GenerateOptions): GenResult;
 export function toRGBA(res: GenResult, palette: string[]): Uint8ClampedArray<ArrayBuffer>;
 export function hexToRgb(hex: string): [number, number, number];
 export function hash2(ix: number, iy: number, seed: number): number;

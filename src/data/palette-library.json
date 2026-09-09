@@ -3749,5 +3749,107 @@
     "note": "最後に刷る版のブラック (実測 16.5%)。M81 と同じく他色の上に丸ごと乗る",
     "noteEn": "Black, the last-printed plate (measured 16.5%). Sits whole on top of the other colours like M81",
     "source": "同上"
+  },
+  {
+    "id": "m05-khaki",
+    "name": "M05 カーキ",
+    "nameEn": "M05 Khaki",
+    "std": "M05 (実測)",
+    "stdEn": "M05 (measured)",
+    "code": "m05-1",
+    "hex": "#635a29",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-m05", "uniform"],
+      "country": ["fi"]
+    },
+    "note": "森林型の地布の色 (量産布地の可視面積 約 25%)。3 版はこの上に刷られる",
+    "noteEn": "Ground fabric of the woodland pattern (about 25% visible on production fabric). The 3 plates are printed over it",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05.jpg 4 --core=2 --max-edge=918 --blur=1.5`。参照画像は Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。織り目を --blur で落とし、領域内部の中央値を採った。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m05-lightgreen",
+    "name": "M05 ライトグリーン",
+    "nameEn": "M05 Light Green",
+    "std": "M05 (実測)",
+    "stdEn": "M05 (measured)",
+    "code": "m05-2",
+    "hex": "#586916",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-m05", "uniform"],
+      "country": ["fi"]
+    },
+    "note": "小〜中の斑 (約 12%)。明度が最も高く、グリーン域の中に点々と現れる",
+    "noteEn": "Small to medium blotches (about 12%). Brightest color, dotted inside the green areas",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05.jpg 4 --core=2 --max-edge=918 --blur=1.5`。参照画像は Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。織り目を --blur で落とし、領域内部の中央値を採った。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m05-green",
+    "name": "M05 グリーン",
+    "nameEn": "M05 Green",
+    "std": "M05 (実測)",
+    "stdEn": "M05 (measured)",
+    "code": "m05-3",
+    "hex": "#313d11",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-m05", "uniform"],
+      "country": ["fi"]
+    },
+    "note": "最大面積の版 (約 45%)。量産布地では地色より広い",
+    "noteEn": "Largest plate (about 45%). Covers more than the ground on production fabric",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05.jpg 4 --core=2 --max-edge=918 --blur=1.5`。参照画像は Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。織り目を --blur で落とし、領域内部の中央値を採った。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m05-charcoal",
+    "name": "M05 チャコールグレー",
+    "nameEn": "M05 Charcoal Grey",
+    "std": "M05 (実測)",
+    "stdEn": "M05 (measured)",
+    "code": "m05-4",
+    "hex": "#26262b",
+    "tags": {
+      "hue": "grey",
+      "use": ["camo-m05", "uniform"],
+      "country": ["fi"]
+    },
+    "note": "3 版目 (約 18%)。最も暗い版。わずかに寒色の近黒グレー",
+    "noteEn": "3rd plate (about 18%). Darkest plate. Near-black grey with a slight cool tint",
+    "source": "app プリセット実測値 (src/core/camo.js)。Wikimedia Commons「M05 woodland pattern.jpg」Public domain (Pekka Vilhunen) の k-means 値 #273126 は意匠登録図面の Uncalibrated スキャンで緑寄りに転んでおり、実物布地の写真 (joint-forces.com の M05 記事の日光下着用写真 2 枚 #43444e / #40444e、同スタジオ接写、camopedia.org の Finland5 スウォッチ) では最暗版はいずれも青〜青紫のグレー。明度はスキャン基準 (V 43) に揃え、実物写真で近黒に見えることから彩度 0.12 の寒色寄りグレーにした。画像はリポジトリに含めない"
+  },
+  {
+    "id": "m05snow-white",
+    "name": "M05 雪型 ホワイト",
+    "nameEn": "M05 Snow White",
+    "std": "M05 雪型 (実測)",
+    "stdEn": "M05 Snow (measured)",
+    "code": "m05snow-1",
+    "hex": "#fcfeec",
+    "tags": {
+      "hue": "grey",
+      "use": ["camo-m05", "uniform"],
+      "country": ["fi"]
+    },
+    "note": "雪型の地布の色 (可視面積 約 64%)",
+    "noteEn": "Ground fabric of the snow pattern (about 64% visible)",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05_snow.jpg 2 --core=2 --max-edge=913 --blur=1.5`。参照画像は Wikimedia Commons「M05 snow pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。k=4 でも中間グレーの内部画素は 0 で版は 1 つ。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "m05snow-darkgrey",
+    "name": "M05 雪型 ダークグレー",
+    "nameEn": "M05 Snow Dark Grey",
+    "std": "M05 雪型 (実測)",
+    "stdEn": "M05 Snow (measured)",
+    "code": "m05snow-2",
+    "hex": "#585b53",
+    "tags": {
+      "hue": "grey",
+      "use": ["camo-m05", "uniform"],
+      "country": ["fi"]
+    },
+    "note": "雪型の唯一の版 (約 36%)。森林型と同じ点描で刷られる",
+    "noteEn": "The only plate of the snow pattern (about 36%). Printed with the same stippling as the woodland pattern",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs refs/private/m05_snow.jpg 2 --core=2 --max-edge=913 --blur=1.5`。参照画像は Wikimedia Commons「M05 snow pattern.jpg」Public domain (Pekka Vilhunen) の布地写真。k=4 でも中間グレーの内部画素は 0 で版は 1 つ。画像はリポジトリに含めない)"
   }
 ]

@@ -3752,87 +3752,87 @@
   },
   {
     "id": "mm14-greygreen",
-    "name": "MM-14 グレーグリーン (Nutria)",
-    "nameEn": "MM-14 Grey Green (Nutria)",
-    "std": "MM-14 (Pantone TCX 仕様)",
-    "stdEn": "MM-14 (Pantone TCX specification)",
-    "code": "18-0825 TCX",
-    "hex": "#75663e",
-    "tags": {
-      "hue": "brown",
-      "use": ["camo-mm14", "uniform"],
-      "country": ["ua"]
-    },
-    "note": "製造元呼称はグレーグリーン (Pantone 名 Nutria)。地色 (約 32%)。写真では褐色寄りのオリーブに写る",
-    "noteEn": "Called grey-green by the maker (Pantone name Nutria). Ground color (about 32%). Reads as a brownish olive in photos",
-    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 18-0825 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
-  },
-  {
-    "id": "mm14-lightbeige",
-    "name": "MM-14 ライトベージュ (Pale Khaki)",
-    "nameEn": "MM-14 Light Beige (Pale Khaki)",
-    "std": "MM-14 (Pantone TCX 仕様)",
-    "stdEn": "MM-14 (Pantone TCX specification)",
-    "code": "15-1216 TCX",
-    "hex": "#bfaf92",
-    "tags": {
-      "hue": "tan",
-      "use": ["camo-mm14", "uniform"],
-      "country": ["ua"]
-    },
-    "note": "最明色 (約 21%)。ライトグリーンの内側だけに現れる大きな塊",
-    "noteEn": "Lightest color (about 21%). Large clusters that appear only inside the light green",
-    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 15-1216 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
-  },
-  {
-    "id": "mm14-lightgreen",
-    "name": "MM-14 ライトグリーン (Silver Sage)",
-    "nameEn": "MM-14 Light Green (Silver Sage)",
-    "std": "MM-14 (Pantone TCX 仕様)",
-    "stdEn": "MM-14 (Pantone TCX specification)",
-    "code": "17-0510 TCX",
-    "hex": "#938b78",
-    "tags": {
-      "hue": "grey",
-      "use": ["camo-mm14", "uniform"],
-      "country": ["ua"]
-    },
-    "note": "2 番目の明色 (約 19%)。ライトベージュを縁取り、スワンプグリーンの内側に収まる",
-    "noteEn": "Second-lightest color (about 19%). Rims the light beige and sits inside the swamp green",
-    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 17-0510 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
-  },
-  {
-    "id": "mm14-swampgreen",
-    "name": "MM-14 スワンプグリーン (Aloe)",
-    "nameEn": "MM-14 Swamp Green (Aloe)",
-    "std": "MM-14 (Pantone TCX 仕様)",
-    "stdEn": "MM-14 (Pantone TCX specification)",
-    "code": "17-0620 TCX",
-    "hex": "#817a60",
+    "name": "MM-14 グレーグリーン",
+    "nameEn": "MM-14 Grey Green",
+    "std": "MM-14 (実測)",
+    "stdEn": "MM-14 (measured)",
+    "code": "mm14-1",
+    "hex": "#686e51",
     "tags": {
       "hue": "green",
       "use": ["camo-mm14", "uniform"],
       "country": ["ua"]
     },
-    "note": "中間色 (約 16%)。地の上に広がり、明色 2 色を内側に抱く",
-    "noteEn": "Mid tone (about 16%). Spreads on the ground and encloses the two light colors",
-    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 17-0620 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
+    "note": "地色 (約 32%)。製造元呼称はグレーグリーン。他の 4 色を繋ぐ。製造元仕様では Pantone 18-0825 TCX Nutria",
+    "noteEn": "Ground color (about 32%). Called grey-green by the maker. Links the other four colors. Pantone 18-0825 TCX Nutria in the maker's specification",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 5 --max-edge=992 --core=3`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--core=2 / --blur=1 でも各色の差は 1 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。製造元 PROF1 Group の仕様は Pantone Textile 5 色 (15-1216 / 17-0510 / 17-0620 / 18-0825 / 19-0414 TCX) だが、その第三者 sRGB 換算値は褐色寄りで実物写真 3 枚のいずれとも印象が合わないため採らない。画像はリポジトリに含めない)"
   },
   {
-    "id": "mm14-darkgrey",
-    "name": "MM-14 ダークグレー (Forest Night)",
-    "nameEn": "MM-14 Dark Grey (Forest Night)",
-    "std": "MM-14 (Pantone TCX 仕様)",
-    "stdEn": "MM-14 (Pantone TCX specification)",
-    "code": "19-0414 TCX",
-    "hex": "#434237",
+    "id": "mm14-lightbeige",
+    "name": "MM-14 ライトベージュ",
+    "nameEn": "MM-14 Light Beige",
+    "std": "MM-14 (実測)",
+    "stdEn": "MM-14 (measured)",
+    "code": "mm14-2",
+    "hex": "#b0af8f",
     "tags": {
-      "hue": "black",
+      "hue": "tan",
       "use": ["camo-mm14", "uniform"],
       "country": ["ua"]
     },
-    "note": "最暗色 (約 12%)。地の上だけに出る小塊と対角方向の階段状の鎖",
-    "noteEn": "Darkest color (about 12%). Small clusters and diagonal staircase chains that appear only on the ground",
-    "source": "製造元 PROF1 Group の仕様 Pantone Textile 5 色 (fr.wikipedia.org「Camouflage MM-14」、cgtrader の MM14 テクスチャ記載) のうち PANTONE 19-0414 TCX の sRGB 換算値。Pantone 公式はサブスクリプション限定のため、encycolorpedia / colorshunter / colorxs / icolorpalette で一致する第三者換算値を採用。布地写真 (Wikimedia Commons「MM14.jpg」CC BY-SA 4.0、camopedia の 2 枚) は色被りが写真ごとに逆方向で、写真間の差が仕様との差より大きいため実測値は採らない。画像はリポジトリに含めない"
+    "note": "最明色 (約 21%)。ライトグリーンの内側だけに現れる大きな塊。製造元仕様では Pantone 15-1216 TCX Pale Khaki",
+    "noteEn": "Lightest color (about 21%). Large clusters that appear only inside the light green. Pantone 15-1216 TCX Pale Khaki in the maker's specification",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 5 --max-edge=992 --core=3`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--core=2 / --blur=1 でも各色の差は 1 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。製造元 PROF1 Group の仕様は Pantone Textile 5 色 (15-1216 / 17-0510 / 17-0620 / 18-0825 / 19-0414 TCX) だが、その第三者 sRGB 換算値は褐色寄りで実物写真 3 枚のいずれとも印象が合わないため採らない。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "mm14-lightgreen",
+    "name": "MM-14 ライトグリーン",
+    "nameEn": "MM-14 Light Green",
+    "std": "MM-14 (実測)",
+    "stdEn": "MM-14 (measured)",
+    "code": "mm14-3",
+    "hex": "#989b79",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-mm14", "uniform"],
+      "country": ["ua"]
+    },
+    "note": "2 番目の明色 (約 19%)。ライトベージュを縁取り、スワンプグリーンの内側に収まる。製造元仕様では Pantone 17-0510 TCX Silver Sage",
+    "noteEn": "Second-lightest color (about 19%). Rims the light beige and sits inside the swamp green. Pantone 17-0510 TCX Silver Sage in the maker's specification",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 5 --max-edge=992 --core=3`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--core=2 / --blur=1 でも各色の差は 1 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。製造元 PROF1 Group の仕様は Pantone Textile 5 色 (15-1216 / 17-0510 / 17-0620 / 18-0825 / 19-0414 TCX) だが、その第三者 sRGB 換算値は褐色寄りで実物写真 3 枚のいずれとも印象が合わないため採らない。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "mm14-swampgreen",
+    "name": "MM-14 スワンプグリーン",
+    "nameEn": "MM-14 Swamp Green",
+    "std": "MM-14 (実測)",
+    "stdEn": "MM-14 (measured)",
+    "code": "mm14-4",
+    "hex": "#7d876b",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-mm14", "uniform"],
+      "country": ["ua"]
+    },
+    "note": "中間色 (約 16%)。5 色の中で唯一青みがかった灰緑で、地の上に広がり明色 2 色を内側に抱く。製造元仕様では Pantone 17-0620 TCX Aloe",
+    "noteEn": "Mid tone (about 16%). The only bluish grey-green of the five; spreads on the ground and encloses the two light colors. Pantone 17-0620 TCX Aloe in the maker's specification",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 5 --max-edge=992 --core=3`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--core=2 / --blur=1 でも各色の差は 1 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。製造元 PROF1 Group の仕様は Pantone Textile 5 色 (15-1216 / 17-0510 / 17-0620 / 18-0825 / 19-0414 TCX) だが、その第三者 sRGB 換算値は褐色寄りで実物写真 3 枚のいずれとも印象が合わないため採らない。画像はリポジトリに含めない)"
+  },
+  {
+    "id": "mm14-darkgrey",
+    "name": "MM-14 ダークグレー",
+    "nameEn": "MM-14 Dark Grey",
+    "std": "MM-14 (実測)",
+    "stdEn": "MM-14 (measured)",
+    "code": "mm14-5",
+    "hex": "#51563b",
+    "tags": {
+      "hue": "green",
+      "use": ["camo-mm14", "uniform"],
+      "country": ["ua"]
+    },
+    "note": "最暗色 (約 12%)。地の上だけに出る小塊と対角方向の階段状の鎖。製造元仕様では Pantone 19-0414 TCX Forest Night",
+    "noteEn": "Darkest color (about 12%). Small clusters and diagonal staircase chains that appear only on the ground. Pantone 19-0414 TCX Forest Night in the maker's specification",
+    "source": "app プリセット実測値 (src/core/camo.js、`node tools/extract-palette.mjs <crop.png> 5 --max-edge=992 --core=3`。<crop.png> は参照画像の左端 70px の影帯を除いた 630×992 の切り出し。--core=2 / --blur=1 でも各色の差は 1 以内。参照画像は Wikimedia Commons「MM14.jpg」CC BY-SA 4.0 の布地写真。製造元 PROF1 Group の仕様は Pantone Textile 5 色 (15-1216 / 17-0510 / 17-0620 / 18-0825 / 19-0414 TCX) だが、その第三者 sRGB 換算値は褐色寄りで実物写真 3 枚のいずれとも印象が合わないため採らない。画像はリポジトリに含めない)"
   }
 ]

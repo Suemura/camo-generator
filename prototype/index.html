@@ -2557,25 +2557,28 @@ const PRESETS = {
     name: 'MM-14 (ウクライナ)', kind: 'growth', ref: 'mm14',
     cell: 10, growDither: 1,
     layers: [
-      {color: 3, ratio: 0.56, eat: [0], min: 0.012, max: 0.050, compact: 1.5, drift: 1.4, jitter: 1.0, wander: 0.30, stratify: 5},
-      {color: 2, ratio: 0.42, eat: [3], min: 0.008, max: 0.035, compact: 1.5, drift: 1.4, jitter: 1.0, wander: 0.30},
-      {color: 1, ratio: 0.22, eat: [2], min: 0.004, max: 0.018, compact: 1.7, drift: 1.3, jitter: 1.0, wander: 0.30},
+      {color: 3, ratio: 0.56, eat: [0], min: 0.010, max: 0.035, compact: 1.5, drift: 1.4, jitter: 1.0, wander: 0.30, stratify: 6},
+      {color: 2, ratio: 0.42, eat: [3], min: 0.005, max: 0.020, compact: 1.5, drift: 1.4, jitter: 1.0, wander: 0.30},
+      {color: 1, ratio: 0.22, eat: [2], min: 0.003, max: 0.012, compact: 1.7, drift: 1.3, jitter: 1.0, wander: 0.30},
       {color: 4, ratio: 0.12, eat: [0], min: 0.0008, max: 0.004, compact: 0.6, drift: 3.2, jitter: 0.8, wander: 0.25},
     ],
     growSpeckle: [
       {on: 1, dot: 2, density: 0.02}, {on: 2, dot: 1, density: 0.02},
       {on: 3, dot: 0, density: 0.02}, {on: 0, dot: 3, density: 0.02},
     ],
-    // 色は製造元仕様の Pantone TCX 5 色の sRGB 換算値 (Pantone 公式は非公開のため、encycolorpedia / colorshunter / colorxs で
-    // 一致する第三者換算値)。布地写真からの実測 (k=5 --core=2: #a9a988 / #929574 / #7b8266 / #676c4f / #53583f) は
-    // 写真の緑被りで全色が緑側へ寄り、明暗差も圧縮されるため採らない。camopedia の 2 枚は暖色 / 寒色に被りが逆で、
-    // 写真間の差が仕様との差より大きい
+    // 色は参照写真 (refs/private/mm14.jpg の影帯を除いた切り出し) の k=5 実測:
+    //   node tools/extract-palette.mjs <crop.png> 5 --max-edge=992 --core=6  (--core=2〜5 / --blur=1 でも各色の差は 2 以内)
+    // ダークグレーだけは最暗クラスタの中央値 (#4d5339) ではなく輝度下位 10〜30% の中央値 (#434930) を採る。最暗クラスタには
+    // 折り目の影に沈んだ地色が混入して中央値が持ち上がり、鎖の内部を直接拾うと #3e4231〜#4a4d3a に読めるため
+    // 製造元仕様の Pantone TCX 5 色 (15-1216 / 17-0510 / 17-0620 / 18-0825 / 19-0414) の第三者 sRGB 換算値
+    // (#bfaf92 / #938b78 / #817a60 / #75663e / #434237) も試したが、褐色寄りで実物写真の緑がかった印象から離れたため採らない。
+    // 色名は製造元の呼称 (ライトベージュ / ライトグリーン / スワンプグリーン / グレーグリーン / ダークグレー) を明度順に対応させている
     colors: [
-      {name:'グレーグリーン',   hex:'#75663e'},
-      {name:'ライトベージュ',   hex:'#bfaf92'},
-      {name:'ライトグリーン',   hex:'#938b78'},
-      {name:'スワンプグリーン', hex:'#817a60'},
-      {name:'ダークグレー',     hex:'#434237'},
+      {name:'グレーグリーン',   hex:'#686e51'},
+      {name:'ライトベージュ',   hex:'#b0af8f'},
+      {name:'ライトグリーン',   hex:'#989b79'},
+      {name:'スワンプグリーン', hex:'#7b866d'},
+      {name:'ダークグレー',     hex:'#434930'},
     ],
   },
   dcu: {

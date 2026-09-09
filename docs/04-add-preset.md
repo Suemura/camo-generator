@@ -30,7 +30,7 @@ Issue（#21 のサブ Issue）
 | # | 何を | どこに | 備考 |
 |---|------|--------|------|
 | 1 | 生成パラメータ | `src/core/camo.js` の `PRESETS[key]` | `kind` で生成関数にディスパッチ。`ref` は参照画像のキー（= `key`）。コメントには「実物のどの特徴を再現する意図か」を書く |
-| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（`{ ja, en }` 型。ja は「〜風」表記、en は `"<Name>-inspired (<designation>)"`）/ `note`（`{ ja, en }` 型。年代・色数・形状など）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（系統: `woodland`/`desert`/`digital`/`stroke`/`geometric`/`other`）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`marine`/`transitional` から選択）/ `era`（採用年代: `1930s`/`1940s`/`1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
+| 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（`{ ja, en }` 型。ja は「〜風」表記、en は `"<Name>-inspired (<designation>)"`）/ `note`（`{ ja, en }` 型。年代・色数・形状など）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（系統: `woodland`/`desert`/`digital`/`stroke`/`geometric`/`other`）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`marine`/`snow`/`transitional` から選択）/ `era`（採用年代: `1930s`/`1940s`/`1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
 | 3 | 参照画像 | `refs/private/<key>.<ext>`（手元のみ・非コミット） | ファイル名は `PRESETS` のキーに一致させる |
 | 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `src/data/palette.ts` | §3 参照。**PR に含める**（後追いにしない） |
@@ -175,7 +175,7 @@ Claude Code / Codex 共通の精度確認環境はローカルの Camo Lab。**�
 
 公開するのは**生成器の出力のみ**。`--compare` の実物側、`refs/private/` の画像、参照画像付きプロトタイプを、別名・結合画像・別ブランチでも公開しない。Git のパス検査は結合画像の内容まで検査できないため、公開候補を目視する。実物比較画像は手元の検証用に残す。
 
-1. `render.mjs` で生成のみの通常画像、複数スケール、`--tile` と `--crop` を出力する。必要なら生成画像同士を結合し、`<key>-generated.png` / `<key>-scales.png` / `<key>-tile-crop.png` とする。
+1. `render.mjs` で生成のみの画像を出力する。**スケール比較は ×1 / ×2 / ×5 / ×10**（`node tools/render.mjs <out> 1234 <scale> --preset=<key>` を 4 回。UI の模様スケール上限 10 まで見せる。§4 の目視用 0.7〜2.0 とは別）、加えて 3 シード × ×1、`--tile` と `--size=2048x2048 --crop=512`。生成画像同士を結合し、`<key>-generated.png`（3 シード）/ `<key>-scales.png`（×1 / ×2 / ×5 / ×10）/ `<key>-tile-crop.png` とする。
 2. `git fetch origin verify-assets` の後、衝突しない一時パスへ `git worktree add --detach <一時パス> origin/verify-assets`。登録済み worktree を上書きしない。
 3. 内容を確認した生成画像だけを `issue-<N>/` にコピーし、対象ファイルを選んでコミットする。`git push origin HEAD:verify-assets` で公開する。更新競合時は fetch して既存画像を保持したまま統合し、force push しない。
 4. PR 本文では `https://raw.githubusercontent.com/Suemura/camo-generator/verify-assets/issue-<N>/<key>-generated.png` 等を参照する。

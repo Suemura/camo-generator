@@ -17,6 +17,7 @@ export const COUNTRY_LABEL: Record<string, L10n> = {
   il: { ja: "イスラエル", en: "Israel" },
   vn: { ja: "ベトナム", en: "Vietnam" },
   dk: { ja: "デンマーク", en: "Denmark" },
+  fi: { ja: "フィンランド", en: "Finland" },
   ua: { ja: "ウクライナ", en: "Ukraine" },
   // ISO 3166-1 から削除されたコード。迷彩を制定した当時の国名で示す (rh: 現ジンバブエ、dd: 東ドイツ)
   rh: { ja: "ローデシア", en: "Rhodesia" },

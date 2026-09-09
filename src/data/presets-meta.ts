@@ -19,7 +19,7 @@ export const PRESET_GROUPS: { key: PresetGroup; label: L10n }[] = [
 ];
 
 /** 想定する使用環境。実物が配備された地域・地形から付ける (色味の印象ではなく運用実態) */
-export type PresetEnv = "forest" | "jungle" | "arid" | "urban" | "marine" | "transitional";
+export type PresetEnv = "forest" | "jungle" | "arid" | "urban" | "marine" | "snow" | "transitional";
 
 export const ENV_LABEL: Record<PresetEnv, L10n> = {
   forest: { ja: "森林 / 温帯林", en: "Forest / temperate woodland" },
@@ -27,6 +27,7 @@ export const ENV_LABEL: Record<PresetEnv, L10n> = {
   arid: { ja: "砂漠 / 乾燥地", en: "Desert / arid" },
   urban: { ja: "市街地", en: "Urban" },
   marine: { ja: "海上 / 沿岸", en: "Maritime / coastal" },
+  snow: { ja: "雪上 / 寒冷地", en: "Snow / arctic" },
   transitional: { ja: "汎用 / 移行帯", en: "Universal / transitional" },
 };
 export const ALL_ENVS = Object.keys(ENV_LABEL) as PresetEnv[];
@@ -475,7 +476,7 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     note: { ja: "3 色。白地に黒とオリーブ", en: "3 colors. Black and olive on white" },
     country: "de",
     group: "other",
-    env: ["transitional"],
+    env: ["snow"],
     era: "2000s",
     svg: false,
   },
@@ -488,6 +489,32 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     country: "dk",
     group: "other",
     env: ["urban"],
+    era: "2000s",
+    svg: false,
+  },
+  m05: {
+    // フィンランド国防軍 M05 森林型。六方格子のドットで描かれた点描様式の斑点図案
+    label: { ja: "M05 風 (フィンランド 森林型)", en: "M05-inspired (Finland, woodland)" },
+    note: {
+      ja: "2005〜 4 色。六方格子ドットの点描輪郭",
+      en: "2005– 4 colors. Stippled outlines of hex-grid dots",
+    },
+    country: "fi",
+    group: "woodland",
+    env: ["forest"],
+    era: "2000s",
+    svg: false,
+  },
+  m05_snow: {
+    // M05 雪型。白地にダークグレー 1 版。参照の実測で 2 色 (Issue 記載の 3 色ではない)
+    label: { ja: "M05 風 (フィンランド 雪型)", en: "M05-inspired (Finland, snow)" },
+    note: {
+      ja: "2005〜 2 色。白地の冬季迷彩、森林型と同じ点描",
+      en: "2005– 2 colors. White-ground winter camo with the same stippling",
+    },
+    country: "fi",
+    group: "other",
+    env: ["snow"],
     era: "2000s",
     svg: false,
   },

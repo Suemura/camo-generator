@@ -33,7 +33,15 @@ export const ENV_LABEL: Record<PresetEnv, L10n> = {
 export const ALL_ENVS = Object.keys(ENV_LABEL) as PresetEnv[];
 
 /** 制式採用年代 (10 年刻み)。note 冒頭の年代表記と一致させる */
-export type PresetEra = "1930s" | "1940s" | "1950s" | "1960s" | "1980s" | "1990s" | "2000s";
+export type PresetEra =
+  | "1930s"
+  | "1940s"
+  | "1950s"
+  | "1960s"
+  | "1980s"
+  | "1990s"
+  | "2000s"
+  | "2010s";
 
 export const ERA_LABEL: Record<PresetEra, L10n> = {
   "1930s": { ja: "1930 年代", en: "1930s" },
@@ -43,6 +51,7 @@ export const ERA_LABEL: Record<PresetEra, L10n> = {
   "1980s": { ja: "1980 年代", en: "1980s" },
   "1990s": { ja: "1990 年代", en: "1990s" },
   "2000s": { ja: "2000 年代", en: "2000s" },
+  "2010s": { ja: "2010 年代", en: "2010s" },
 };
 export const ALL_ERAS = Object.keys(ERA_LABEL) as PresetEra[];
 
@@ -352,6 +361,18 @@ export const PRESET_META: Record<PresetKey, PresetMeta> = {
     group: "digital",
     env: ["urban", "transitional"],
     era: "2000s",
+    svg: true,
+  },
+  mm14: {
+    label: { ja: "MM-14 風 (ウクライナ)", en: "MM-14-inspired (Ukraine)" },
+    note: {
+      ja: "2014〜 5 色。明度順に入れ子になる粗いピクセル",
+      en: "2014– 5 colors. Coarse pixels nested in luminance order",
+    },
+    country: "ua",
+    group: "digital",
+    env: ["transitional", "arid"],
+    era: "2010s",
     svg: true,
   },
   flecktarn: {

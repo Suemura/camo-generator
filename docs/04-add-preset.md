@@ -32,7 +32,7 @@ Issue（#21 のサブ Issue）
 | 1 | 生成パラメータ | `src/core/camo.js` の `PRESETS[key]` | `kind` で生成関数にディスパッチ。`ref` は参照画像のキー（= `key`）。コメントには「実物のどの特徴を再現する意図か」を書く |
 | 2 | 表示メタ | `src/data/presets-meta.ts` の `PRESET_META[key]` | `label`（`{ ja, en }` 型。ja は「〜風」表記、en は `"<Name>-inspired (<designation>)"`）/ `note`（`{ ja, en }` 型。年代・色数・形状など）/ `country`（国コード: `us`, `fr`, `jp` など）/ `group`（系統: `woodland`/`desert`/`digital`/`stroke`/`geometric`/`other`）/ `env`（配備地域: 配列、1 件以上。`forest`/`jungle`/`arid`/`urban`/`marine`/`snow`/`transitional` から選択）/ `era`（採用年代: `1930s`/`1940s`/`1950s`/`1960s`/`1980s`/`1990s`/`2000s` から選択）/ `svg` |
 | 3 | 参照画像 | `refs/private/<key>.<ext>`（手元のみ・非コミット） | ファイル名は `PRESETS` のキーに一致させる |
-| 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k>` の実測値。感覚で決めない。`k` は色数と一致させるのが基本だが、小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8） |
+| 4 | パレット既定値 | `PRESETS[key].colors` | `node tools/extract-palette.mjs refs/private/<key>.<ext> <k> --core --spread` の実測値。感覚で決めない。`k` は製造元が公表する色数に合わせる（§4「色と版の構造を 1 回で決める」）。小面積の色が分離しないときは大きめの `k` で測って選ぶ（DBDU は k=8）。製造元の Pantone 等の色仕様は色数・名称・明度順の裏取りに使い、その sRGB 換算値は採らない |
 | 5 | **カラーライブラリ登録** | `src/data/palette-library.json` + `src/data/palette.ts` | §3 参照。**PR に含める**（後追いにしない） |
 | 6 | **サムネイル生成** | `public/thumbs/<key>.jpg` | `node tools/gen-thumbs.mjs [--force] [--preset=key]`。既定は既存ファイルを skip。既存プリセットは再生成不要（JPEG エンコーダ差での無意味な diff を避けるため）。生成手法を変えて見た目が変わったときだけ `--force` で全体再生成 |
 | 7 | 決定性スナップショット | `tests/__snapshots__/determinism.test.ts.snap` | `pnpm test -u`。差分が新プリセットの 1 行追加だけであることを確認する（既存プリセットの行が変わっていたら共通ロジックに触っている） |
@@ -114,6 +114,17 @@ node tools/render.mjs /tmp/camo-render/hi 1234 --size=2048x2048 --crop=512 --pre
 - 性能: 512px の生成時間を既存プリセットと比較し、PR 本文に書く
 - **記録の置き場所**: パラメータの値と根拠は `PRESETS[key]` のコメント。検証したシード・スケール・面積比・性能は PR 本文。残課題は Issue。`docs/01-tech-verification.md` には**新しい知見だけ**を該当する節（手法の選び方 / 既知アーティファクト / 試して捨てた案 / 参照画像とパレット実測 / 計測と指標 / 決定性と互換）へ箇条書きで足す。時系列の節（vN）や作業報告は書かない。既存プリセットと同じ手順で同じ結果が出ただけなら追記しない
 - **`pnpm test -u` は目視確認の後**。先にスナップショットを更新しない
+
+### 色と版の構造を 1 回で決める手順
+
+色調整のやり直し（MM-14 は 4 色実測 → Pantone 換算 → 5 色実測の 3 回）を避けるための順番。色は「参照写真の実測」、構造は「隣接行列」で決め、目視は最後の確認にだけ使う。
+
+1. **色数と名称を製造元・一次資料で確定する**。Pantone / FS 番号が見つかっても、公式測色データ（FS 595 の CIELab）が無い限り **sRGB 換算値は使わない**（MM-14 の Pantone TCX 換算は褐色寄りで実物写真のどれとも合わず却下）。番号は版の数・名称・明度順の裏取りと `note` の参考情報に留める
+2. **写真の不要部分を `--crop` で切る**。衣服の折り目の影帯・別の生地・背景が写り込む範囲は `--flatten` で消そうとせず切り落とす（`--flatten` は影帯を含めた平均へ正規化して最明色が沈む）。Node の sharp を手で書かず `extract-palette.mjs` / `analyze-adjacency.mjs` の `--crop=L,T,W,H` を使う
+3. **`k` = 色数で `--core=R --spread` を原寸で測る**。`R` はピクセル迷彩ならセル幅の 1/3（15px セルで 5〜6）、ブロブ図案なら 2〜3。`--spread` の下位 10〜30% / 中央値 / 上位 70〜90% が 6 以上離れるクラスタは影や別の版の混入なので、最暗版は下位側・最明版は上位側を採り、その判断を `PRESETS` のコメントに書く。`k` を 1 つ増やして新しい版が出ないことも確認する（影・織り目で 1 版が割れるだけなら色数は確定）
+4. **`analyze-adjacency.mjs ref` で版の隣接関係を取る**。`--minrun=1` と `--minrun=<セル幅/2>` の両方で同じ構造なら本物。行ごとに 1 列だけが 90% 以上なら入れ子、明度順の隣だけが大きければ鎖（等高線状の入れ子）、散っていれば独立した層。これが `layers` の `eat` / `seedNear` / `rim` を決める（鎖なら子の `eat` は親の版だけ + `rim: true`、`growDither: 0`）
+5. **生成側も `analyze-adjacency.mjs gen <key>` と面積比で参照に合わせてから** `render.mjs --compare` を見る。行列が合っていないのに目視で「似ている」と判断しない
+6. **ユーザーへの提示は `--compare` の生成側と、拡大クロップ（`--size=2048x2048 --crop=512`）**。色の印象は縮小画像では判断できない
 
 ### 布地写真をソースにするときの前処理（`--blur` / `--flatten`）とパラメータの決め方
 
@@ -219,7 +230,7 @@ PR を作ったら終わりではない。ユーザーがローカル Camo Lab�
 ```
 - [ ] リファレンス画像を refs/private/ に用意し（コミットしない）、同梱する派生データのライセンスを判断した
 - [ ] PRESETS / PRESET_META を追加し、env / era / country（国コード）を付与、label / note は `{ ja, en }`（ja は「〜風」、en は「-inspired」表記）。新しい色役割名は src/i18n/color-roles.ts にも追加
-- [ ] colors は extract-palette.mjs の実測値
+- [ ] colors は extract-palette.mjs --core --spread の実測値（k は製造元の色数、影帯は --crop、Pantone 等の換算値は不採用）。4 色以上なら analyze-adjacency.mjs で参照と生成の隣接行列を比べた
 2. `src/data/palette.ts` の `USE_LABEL` に `camo-<key>` の `{ ja, en }` ラベルを追加（用途タブの見出しになる。無いとタグ名がそのまま表示される）。国タグが新しければ `COUNTRY_LABEL` にも追加
 3. 日本語を含む `name` / `std` / `code` / `note` には `*En` を付ける（`tests/i18n-data.test.ts` が検証する）
 4. 測り方で新しい判断があったときだけ `docs/design/palette-library-sources.md`「実測で判断が要った点」に箇条書きを足す。「第 N 弾」のような追加履歴の節は作らない

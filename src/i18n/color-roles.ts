@@ -50,6 +50,9 @@ export const COLOR_ROLE_EN: Record<string, string> = {
   ペールイエロー: "Pale Yellow",
   ホワイト: "White",
   ミッドグレー: "Mid Grey",
+  グレーグリーン: "Grey Green",
+  ライトベージュ: "Light Beige",
+  スワンプグリーン: "Swamp Green",
   ダークグレー: "Dark Grey",
   チャコールグレー: "Charcoal Grey",
 };

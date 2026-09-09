@@ -76,6 +76,7 @@ export const USE_LABEL: Record<string, L10n> = {
   "camo-tigerstripe": { ja: "タイガーストライプ", en: "Tigerstripe" },
   "camo-berezka": { ja: "ベリョースカ (KLMK)", en: "Berezka (KLMK)" },
   "camo-nwu1": { ja: "NWU Type I", en: "NWU Type I" },
+  "camo-mm14": { ja: "MM-14 (ウクライナ)", en: "MM-14 (Ukraine)" },
   "camo-brushstroke": { ja: "ローデシアン・ブラッシュストローク", en: "Rhodesian Brushstroke" },
   "camo-lizard": { ja: "リザード (TAP47)", en: "Lizard (TAP47)" },
   "camo-splinter": { ja: "スプリンター (Splittertarn)", en: "Splinter (Splittertarn)" },

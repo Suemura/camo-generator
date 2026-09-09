@@ -26,6 +26,7 @@ export type PresetKey =
   | "berezka"
   | "splinter"
   | "strichtarn"
+  | "desert_night"
   | "flecktarn"
   | "wuestentarn"
   | "tibetarn"
@@ -41,7 +42,7 @@ export type PresetKey =
 export interface PresetColor { name: string; hex: string; }
 export interface Preset {
   name: string;
-  kind: "quilt" | "growth" | "spots" | "splinter" | "rain";
+  kind: "quilt" | "growth" | "spots" | "splinter" | "rain" | "grid";
   ref?: string;
   colors: PresetColor[];
   [k: string]: unknown;
@@ -59,7 +60,7 @@ export interface GenResult {
   h: number;
   /** 色インデックス (0..colors.length-1)。形状と色を分離するための正本 */
   index: Uint8Array;
-  /** クラスタ成長系のみ: セルグリッド (SVG 出力用) */
+  /** セルグリッド系 (クラスタ成長 / 格子) のみ: セルグリッド (SVG 出力用) */
   grid?: { gw: number; gh: number; cellPx: number; cellColor: Uint8Array };
 }
 export const PRESETS: Record<PresetKey, Preset>;

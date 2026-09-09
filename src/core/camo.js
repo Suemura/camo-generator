@@ -2108,6 +2108,90 @@ export function genRain(w, h, seed, scale, P, opt={}){
   return {type:'rain', w, h, index: out};
 }
 
+/* ================= 格子図案 (genGrid、デザートナイト系) ================= */
+// 米陸軍 Desert Night Camouflage (1980 年代、暗視装置対策のオーバーガーメント): 暗いオリーブの地に
+// 明るいカーキの正方形が等間隔の格子状に並び、その格子が丸ごと欠落する不規則な暗斑が重なる 2 色図案。
+// 参照写真 (refs/private/desert_night.jpg、6000×4000 布地写真を render.mjs --compare と同じ cover 換算
+// 4000 → 512 の 0.128 倍) で見える実物の特徴と、それを担う仕組み:
+//   - 明色は「線」ではなく正方形セル側。格子の暗線 (幅 0.4 ピッチ) が明の正方形 (0.6 ピッチ) を区切る
+//     → 1 ピッチを sub セルに分け、先頭 sq セルを明・残りを暗にする (sub 5 / sq 3 = duty 0.6)
+//   - 格子自体は等間隔・等幅。参照で格子が波打つのは布地の歪みで、印刷の揺らぎではない → ジッタは入れない
+//     (均一セル幅を前提にする SVG 出力 gridToSvg の契約とも両立する)
+//   - 暗斑は 1〜2 ピッチの小欠落から 10 ピッチ超の大斑まで幅広く、縁はギザギザで正方形が部分的に欠ける
+//     → セル座標の周期 fbm を quantile で被覆目標に閾値化 (サブセル粒度なので正方形が縁で部分欠けする)
+//   - 暗斑の周辺では正方形が「薄く残る」ゴースト域があり、2 色に量子化すると正方形単位でまばらに欠けて見える
+//     → 閾値の上側 soft 帯で正方形単位に hash2 確率脱落 (サブセル粒度の確率脱落は砂粒ノイズになる)
+// 暗斑の寸法は canvas 分割数や 512 基準 px ではなくピッチ単位 (P.blotch.size) で持ち、ノイズ格子数 nx を
+// 正方形数 nSq から求める。オクターブは nx·lac^i を整数に丸めるので周期が閉じ、scale 追従は構造的に保たれる
+// (docs/01-tech-verification.md「斑点の塊がスケールに追従しない」の轍を避ける)。
+// セルグリッド構造なので genGrowth と同じ grid を返し SVG 出力に対応する。index は grid の最近傍展開で、
+// PNG と SVG は同じ図形になる。rng は使わず hash2 / pvnoise / vnoise だけで決定的。opt.baseMax は参照しない。
+export function genGrid(w, h, seed, scale, P, opt={}){
+  const wrap = opt.tileable !== false;
+  const progress = typeof opt.progress === 'function' ? opt.progress : null;
+  const u = (w/512) / scale;
+  const sub = P.sub ?? 5, sq = P.sq ?? 3;
+  const pitchPx = P.pitch * u;
+  // 正方形数はキャンバスを厳密に割り切る (トーラス上で格子が閉じる)。上限 floor(w/sub) はセル幅 ≥ 1px の
+  // 下限クランプ: これを超える scale ではサブピクセルのセルが最近傍展開で飛び、正方形や線が欠ける
+  // (genRain の「列間隔の下限」と同じ判断)。以降は同じ出力になる
+  const nSqX = Math.max(1, Math.min(Math.round(w / pitchPx), Math.floor(w / sub)));
+  const nSqY = Math.max(1, Math.min(Math.round(h / pitchPx), Math.floor(h / sub)));
+  const gw = nSqX * sub, gh = nSqY * sub;
+  const B = P.blotch;
+  // 暗斑ノイズの 1 段目格子数 (ピッチ単位の差し渡し B.size で割る)。整数でなければ周期にならない
+  const nx0 = Math.max(1, Math.round(nSqX / B.size)), ny0 = Math.max(1, Math.round(nSqY / B.size));
+  const oct = B.oct ?? 4, gain = B.gain ?? 0.5, lac = B.lac ?? 2;
+  const field = new Float32Array(gw*gh);
+  for(let gy=0; gy<gh; gy++){
+    const fy = (gy + 0.5) / gh;
+    for(let gx=0; gx<gw; gx++){
+      const fx = (gx + 0.5) / gw;
+      let amp = 1, f = 1, sum = 0, norm = 0;
+      for(let o=0; o<oct; o++){
+        const nx = Math.max(1, Math.round(nx0 * f)), ny = Math.max(1, Math.round(ny0 * f));
+        sum += amp * (wrap ? pvnoise(fx*nx, fy*ny, nx, ny, seed + o*101)
+                           : vnoise(fx*nx, fy*ny, seed + o*101));
+        norm += amp; amp *= gain; f *= lac;
+      }
+      field[gy*gw+gx] = sum / norm;
+    }
+    if(progress && (gy & 15) === 15) progress(0.6 * gy / gh);
+  }
+  // 被覆目標の分位点を閾値にする (seed で被覆が振れない)。soft 帯は正方形単位の確率脱落
+  const thr = quantile(field, B.cover);
+  const soft = B.soft ?? 0;
+  const grid = new Uint8Array(gw*gh);   // 0 = 地色 (線 + 暗斑)、1 = 明の正方形
+  for(let gy=0; gy<gh; gy++){
+    if((gy % sub) >= sq) continue;      // 横線の行
+    const sy = Math.floor(gy / sub);
+    for(let gx=0; gx<gw; gx++){
+      if((gx % sub) >= sq) continue;    // 縦線の列
+      const i = gy*gw + gx;
+      if(field[i] <= thr) continue;     // 暗斑の芯 (サブセル粒度)
+      if(soft > 0){
+        // 正方形の中心セルの値で判定し、正方形全体を同じ結果にする
+        const sx = Math.floor(gx / sub);
+        const cx = sx*sub + (sq >> 1), cy = sy*sub + (sq >> 1);
+        const p = (field[cy*gw + cx] - thr) / soft;
+        if(p < 1 && hash2(sx, sy, seed ^ 0x6d1d) >= p) continue;
+      }
+      grid[i] = 1;
+    }
+  }
+  if(progress) progress(0.8);
+  const index = new Uint8Array(w*h);
+  for(let y=0;y<h;y++){
+    const gy = Math.min(gh-1, Math.floor(y*gh/h));
+    for(let x=0;x<w;x++){
+      const gx = Math.min(gw-1, Math.floor(x*gw/w));
+      index[y*w+x] = grid[gy*gw+gx];
+    }
+  }
+  if(progress) progress(1);
+  return {type:'grid', w, h, index, grid:{gw, gh, cellPx: w/gw, cellColor: grid}};
+}
+
 /* ドイツ フレックターンの版構成。M/84 系・中国 Tibetarn・商用 Arid など多数の迷彩が
    「この図案の配色替え」なので、層定義を 1 か所に置いて参照で共有する。
    各層の意図は PRESETS.flecktarn のコメントを参照。配色違い側は colors (と必要なら remap) だけ差し替える。
@@ -2844,6 +2928,33 @@ export const PRESETS = {
       {name:'ペールグレー', hex:'#b0b4b6'},
     ],
   },
+  desert_night: {
+    // 米陸軍 デザートナイト迷彩 (Desert Night Camouflage、1980 年代)。暗視装置対策のオーバーガーメント用。実物の特徴:
+    //   - 2 色のみ。暗いオリーブの地に明るいカーキの正方形が等間隔の格子状に並ぶ (明色は線ではなく正方形側)
+    //   - 格子が丸ごと欠落する不規則な暗斑。1〜2 ピッチの小欠落から 10 ピッチ超まで、縁で正方形が部分的に欠ける
+    // → kind: 'grid' (genGrid) を選ぶ理由: 正方形格子 + 欠落という構造は、ブロブ系 (クイルト / 斑点)・
+    //   セル成長・平面分割のどれにも無い。均一セル格子なので genGrowth と同じ grid を返して SVG 出力に対応する
+    // → ソース図案を作らない理由: 参照が CC BY-SA 4.0 の写真で、量子化マップの同梱は share-alike の派生物になる
+    //   (docs/04-add-preset.md §1)。参照は目視比較・寸法実測・パレット実測にのみ使う
+    // → Issue の「格子線の間隔・太さを揺らす」は採らない: 参照の格子は等間隔・等幅で、波打ちは布地の歪み
+    // リファレンスは refs/private/desert_night.jpg (Wikimedia Commons「Desert Night Camouflage.jpg」6000×4000)
+    name: 'デザートナイト迷彩風 (米国)', kind: 'grid', ref: 'desert_night',
+    // 寸法は写真を 1500px に縮小し k=2 量子化した明マスクの自己相関で実測、render.mjs --compare と同じ
+    // 「4000 → 512 に cover」の 0.128 倍で換算した値:
+    //   格子ピッチ 25px (x) / 24px (y) @1500 → 100px @6000 → pitch 12.8
+    //   明ラン中央 15px / 暗ラン 10px (÷ピッチ 0.61 / 0.41) → sub 5 / sq 3 (正方形 0.6、線 0.4)
+    pitch: 12.8, sub: 5, sq: 3,
+    // 暗斑: 全体の明比 0.257 と健在部の明比 0.42 から被覆 ≈ 0.35。うち硬い欠落 (局所密度 < 0.4×健在) 0.15、
+    // 残りは正方形が薄く残るゴースト域 → 芯 cover 0.28 + soft 帯 0.1 の正方形単位脱落で明比 ≈ 0.26 に合わせる。
+    // size 6 (ピッチ単位): 暗斑の連結成分の等価直径は上位 11.5 / 7.6 / 6.1 / 4.5 ピッチで上位 4 個が面積の半分。
+    // oct 4 / gain 0.5 で 1〜2 ピッチの小欠落とギザギザの縁が出る (oct 3 では縁が滑らかすぎ、gain 0.6 超はレース状に崩れる)
+    blotch: { size: 6, oct: 4, gain: 0.5, lac: 2, cover: 0.22, soft: 0.06 },
+    // 実測: node tools/extract-palette.mjs refs/private/desert_night.jpg 2 --max-edge=1500 --core=2
+    colors: [
+      {name:'ダークオリーブ', hex:'#383726'},
+      {name:'カーキ',         hex:'#887a4e'},
+    ],
+  },
   flecktarn: {
     // ドイツ連邦軍 フレックターン (1990〜現用)。実物の特徴:
     //   - 5 色。ライトグリーンの地布に、グリーン / レッドブラウン / ダークグリーン / ブラックの
@@ -3124,6 +3235,7 @@ export function generate(key, w, h, seed, scale, opt={}){
     case 'spots':  return genSpots(w, h, seed, scale, P, opt);
     case 'splinter': return genSplinter(w, h, seed, scale, P, opt);
     case 'rain':   return genRain(w, h, seed, scale, P, opt);
+    case 'grid':   return genGrid(w, h, seed, scale, P, opt);
     default: throw new Error('unknown kind: ' + P.kind);
   }
 }
